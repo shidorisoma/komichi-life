@@ -53,15 +53,17 @@ function loadGame(){
  }catch(e){console.warn('セーブデータを読み込めませんでした',e);return false}
 }
 const hasSave=loadGame();
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+function safeColor(value,fallback){return /^#[0-9a-f]{3,8}$/i.test(String(value||''))?value:fallback}
 function residentAvatar(p){
  if(p.kind==='nagisumi')return '<svg class="avatar" viewBox="0 0 40 44"><circle cx="20" cy="14" r="11" fill="#efcdbd"/><path d="M8 17Q7 3 21 3Q34 4 32 19L28 13Q20 18 10 13Z" fill="#c9cbd1"/><path d="M14 25Q20 21 26 25L30 42H10Z" fill="#272a31"/><path d="M12 29L28 29L27 42H13Z" fill="#e8e7e4"/></svg>';
  if(p.kind==='yaku')return '<svg class="avatar" viewBox="0 0 40 44"><circle cx="20" cy="14" r="11" fill="#e5b99b"/><path d="M8 18Q5 4 19 3Q34 3 33 20L30 29L27 18Q17 22 9 17Z" fill="#24232a"/><path d="M13 26Q20 22 27 26L30 42H10Z" fill="#4b7590"/><path d="M13 27H27L26 42H14Z" fill="#527e9b"/></svg>';
- const hair=p.hair||'#655b4c',shirt=p.color||'#778768';
+ const hair=safeColor(p.hair,'#655b4c'),shirt=safeColor(p.color,'#778768');
  return '<svg class="avatar" viewBox="0 0 40 44"><circle cx="20" cy="14" r="11" fill="#e8c4ae"/><path d="M8 18Q7 3 20 3Q34 3 32 19L28 13Q19 18 10 13Z" fill="'+hair+'"/><path d="M13 26Q20 22 27 26L30 42H10Z" fill="'+shirt+'"/></svg>';
 }
 function renderResidentStatus(){
  const root=document.getElementById('residentStatus');if(!root)return;
- root.innerHTML=chars.map((p,i)=>'<div class="person '+(i===selected?'selected':'')+'" data-index="'+i+'">'+residentAvatar(p)+'<div><div class="pname">'+p.name+'</div><div class="activity">'+(p.activity||'街を散歩中')+'</div></div></div>').join('');
+ root.innerHTML=chars.map((p,i)=>'<div class="person '+(i===selected?'selected':'')+'" data-index="'+i+'">'+residentAvatar(p)+'<div><div class="pname">'+escapeHtml(p.name)+'</div><div class="activity">'+escapeHtml(p.activity||'街を散歩中')+'</div></div></div>').join('');
 }
 renderResidentStatus();
 function addResident(definition){const id=definition.id||'resident-'+Date.now();if(chars.some(p=>p.id===id))return null;const offset=chars.length%5;const resident={id,name:definition.name||'新しい住人',profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},x:420+offset*28,y:700+offset*32,tx:420+offset*28,ty:700+offset*32,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame();return resident;}
@@ -212,7 +214,7 @@ document.getElementById('zin').onclick=()=>{zoom=Math.min(2.4,zoom+.1);drawWorld
 const panel=document.getElementById('panel'),title=document.getElementById('panelTitle'),body=document.getElementById('panelBody');function meter(label,value){return '<div class="meter"><span>'+label+'</span><div class="track"><div class="fill" style="width:'+Math.round(value)+'%"></div></div><b>'+Math.round(value)+'</b></div>'}
 function showTab(t,force=false){if(!force&&t===tab&&t!=='walk')t='walk';tab=t;document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));panel.classList.toggle('show',t!=='walk');panel.classList.toggle('mapPanel',t==='map');document.getElementById('mapToggle').classList.toggle('active',t==='map');if(t==='walk'){document.getElementById('hint').style.display='block';return}document.getElementById('hint').style.display='none';if(t==='map'){title.textContent='街の地図';body.innerHTML='<div class="mapGrid">'+places.map(place=>'<button class="actionBtn mapPlace" data-place="'+place.id+'">'+place.icon+' '+place.name+'</button>').join('')+'</div><p class="subtle">場所を選ぶと、その場所を地図に映します。</p>';body.querySelectorAll('.mapPlace').forEach(b=>b.onclick=()=>{const place=getPlace(b.dataset.place);if(!place)return;panX=450-place.x;panY=720-place.y;drawWorld();showTab('walk')})}if(t==='residents'){
  title.textContent='街の住人';
- body.innerHTML=chars.map((p,i)=>'<div class="entry"><b>'+p.name+'</b><span class="pill">'+(p.profile?.role||'住人')+'</span><br>'+p.activity+'<br><small>'+(p.profile?.detail||'プロフィール情報は未登録です。')+'</small></div>'+meter('元気',p.needs.energy)+meter('空腹',p.needs.hunger)+meter('気分',p.needs.mood)).join('')+'<div class="subtle">住人の一覧と、それぞれのプロフィール・現在の様子を確認できます。</div>';
+ body.innerHTML=chars.map((p,i)=>'<div class="entry"><b>'+escapeHtml(p.name)+'</b><span class="pill">'+escapeHtml(p.profile?.role||'住人')+'</span><br>'+escapeHtml(p.activity)+'<br><small>'+escapeHtml(p.profile?.detail||'プロフィール情報は未登録です。')+'</small></div>'+meter('元気',p.needs.energy)+meter('空腹',p.needs.hunger)+meter('気分',p.needs.mood)).join('')+'<div class="subtle">住人の一覧と、それぞれのプロフィール・現在の様子を確認できます。</div>';
 }
 if(t==='relations'){
  const relation={id:'nagisumi-yaku',label:'凪澄 ＆ 夜玖',status:'恋人',stats:bond};
