@@ -147,6 +147,28 @@ function drawWorld(){ctx.clearRect(0,0,W,H);ctx.save();const fit=Math.min(W/900,
  // ベンチ、街灯、案内板
  bench(795,800);bench(90,760);lamp(565,730);lamp(310,520);lamp(860,1000);
  poly([[420,450],[456,432],[456,475],[420,493]],'#8a6d4b');ctx.fillStyle='#fff3d4';ctx.font='bold 11px sans-serif';ctx.fillText('こみち',419,460);
+ // 時刻に合わせた街の明るさ
+ const nightFactor=hour>=22||hour<5?1:hour>=20?((hour-20)/2):hour>=5&&hour<7?((7-hour)/2):hour>=18?((hour-18)/2):0;
+ if(nightFactor>0){
+  ctx.save();
+  ctx.fillStyle='rgba(35,48,75,'+(nightFactor*.38)+')';
+  ctx.fillRect(-200,-200,1300,1800);
+  ctx.globalAlpha=nightFactor;
+  ctx.fillStyle='#fff0c2';
+  ctx.beginPath();ctx.arc(430,245,24,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#52617a';
+  ctx.beginPath();ctx.arc(441,236,22,0,Math.PI*2);ctx.fill();
+  for(let i=0;i<34;i++){
+   const sx=35+(i*137)%690,sy=210+(i*83)%360;
+   ctx.globalAlpha=nightFactor*(.45+(i%4)*.13);
+   ctx.fillStyle='#fff5d8';ctx.beginPath();ctx.arc(sx,sy,i%5===0?2.2:1.2,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=nightFactor*.8;
+  ctx.fillStyle='#ffe4a8';
+  ctx.fillRect(596,326,12,18);ctx.fillRect(686,333,12,18);
+  ctx.fillRect(201,826,12,18);ctx.fillRect(293,842,12,18);
+  ctx.restore();
+ }
  // キャラクター
  chars.forEach((p,i)=>drawChar(p,i));
  ctx.restore()}
@@ -365,7 +387,7 @@ function tickLife(){
  updateRelationshipPanel();
 }
 function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;addDiary('新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){let dx=p.tx-p.x,dy=p.ty-p.y,d=Math.hypot(dx,dy);if(d>2){let step=Math.min(d,dt*42);p.x+=dx/d*step;p.y+=dy/d*step}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0)chooseRoutine(p,i)}})}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
-const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）'}updateClock();setInterval(updateClock,500);
+const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）';const night=hour>=20||hour<6;document.querySelector('.sun').textContent=night?'☾':hour>=17?'🌇':'☀'}updateClock();setInterval(updateClock,500);
 function select(i){if(!chars[i])return;selected=i;panX=450-chars[i].x;panY=720-chars[i].y;renderResidentStatus();drawWorld()};document.getElementById('residentStatus').addEventListener('click',e=>{const person=e.target.closest('.person');if(person)select(Number(person.dataset.index))});
 const activePointers=new Map();let gesture=null;
 function screenToWorld(x,y){const fit=Math.min(W/900,H/1400)*1.04,scale=fit*zoom;return{x:(x-W/2)/scale+450-panX,y:(y-H/2)/scale+720-panY}}
