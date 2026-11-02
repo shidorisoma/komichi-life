@@ -180,7 +180,7 @@ function recordMemory(id,title,text,pairId=null){
  const stamp=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');
  memories.unshift({time:stamp,title,text,pairId});
  if(memories.length>100)memories.pop();
- const pairLabel=pairId==='nagisumi-yaku'?'凪澄＆夜玖':pairId;
+ const pairLabel=pairId?(relationships[pairId]?.label||(pairId==='nagisumi-yaku'?'凪澄＆夜玖':pairId)):'';
  addDiary(pairId?'思い出ができた：「'+pairLabel+'」':'思い出ができた：「'+title+'」');
  saveGame();
  return true;
