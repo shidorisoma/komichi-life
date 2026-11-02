@@ -261,13 +261,19 @@ function chooseRoutine(p,i){
  if(sharedGoal&&['nagisumi','yaku'].includes(p.id)){setAction(p,i,'date',i===0?250:310,i===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',35+Math.random()*20);return}
  const previous=p.action;
  const options=[];
- if(p.needs.hunger<42&&previous!=='cafe')options.push({weight:5,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+25+Math.random()*45,cafe.y+35+Math.random()*35,'喫茶店へ向かっている','喫茶店でひと休み','sit',18+Math.random()*14)}});
- if(p.needs.energy<38&&previous!=='bench')options.push({weight:5,run:()=>{const seats=[{bench:0,slot:0,x:783,y:780},{bench:0,slot:1,x:807,y:780},{bench:1,slot:0,x:78,y:740},{bench:1,slot:1,x:102,y:740}];const occupied=chars.filter((q,j)=>j!==i&&q.action==='bench'&&q.benchSeat).map(q=>q.benchSeat.bench+':'+q.benchSeat.slot);const free=seats.filter(q=>!occupied.includes(q.bench+':'+q.slot));const seat=free.length?free[(Math.random()*free.length)|0]:seats[(i+Math.floor(Math.random()*seats.length))%seats.length];setAction(p,i,'bench',seat.x,seat.y,'ベンチへ向かっている','ベンチで休憩中','sit',18+Math.random()*18);p.benchSeat={bench:seat.bench,slot:seat.slot}}});
+ if(p.needs.hunger<42&&previous!=='cafe')options.push({action:'cafe',weight:5,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+25+Math.random()*45,cafe.y+35+Math.random()*35,'喫茶店へ向かっている','喫茶店でひと休み','sit',18+Math.random()*14)}});
+ if(p.needs.energy<38&&previous!=='bench')options.push({action:'bench',weight:5,run:()=>{const seats=[{bench:0,slot:0,x:783,y:780},{bench:0,slot:1,x:807,y:780},{bench:1,slot:0,x:78,y:740},{bench:1,slot:1,x:102,y:740}];const occupied=chars.filter((q,j)=>j!==i&&q.action==='bench'&&q.benchSeat).map(q=>q.benchSeat.bench+':'+q.benchSeat.slot);const free=seats.filter(q=>!occupied.includes(q.bench+':'+q.slot));const seat=free.length?free[(Math.random()*free.length)|0]:seats[(i+Math.floor(Math.random()*seats.length))%seats.length];setAction(p,i,'bench',seat.x,seat.y,'ベンチへ向かっている','ベンチで休憩中','sit',18+Math.random()*18);p.benchSeat={bench:seat.bench,slot:seat.slot}}});
  if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=[{id:'flower-west',x:145,y:430},{id:'flower-east',x:610,y:510},{id:'flower-southwest',x:120,y:930},{id:'flower-southeast',x:730,y:1020},{id:'flower-center',x:360,y:560}];const q=chooseFreshSpot(p,spots);setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている','花や草木を眺めている','look',12+Math.random()*18)}});
  if(previous!=='walk')options.push({action:'walk',weight:2.5+(p.activityLevel??50)/20+(p.curiosity??50)/60,run:()=>{const spots=[{id:'riverside-north',x:770,y:520,label:'川沿い'},{id:'bridge',x:760,y:745,label:'小さな橋'},{id:'plaza',x:600,y:760,label:'川辺の広場'},{id:'tree-west',x:90,y:570,label:'大きな木のそば'},{id:'tree-south',x:350,y:1040,label:'木陰'},{id:'path-center',x:420,y:650,label:'こみちの途中'},{id:'riverside-south',x:820,y:1050,label:'川辺'}];const q=chooseFreshSpot(p,spots);setAction(p,i,'walk',q.x,ySafe(q.y),q.label+'まで散歩中',q.label+'で景色を眺めている','stand',8+Math.random()*12+(p.activityLevel??50)*.12)}});
  if(previous!=='cafe'&&p.needs.hunger>=42)options.push({action:'cafe',weight:1.5+(p.curiosity??50)/100,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+25+Math.random()*45,cafe.y+35+Math.random()*35,'喫茶店へ向かっている','喫茶店でひと休み','sit',12+Math.random()*12)}});
  if(previous!=='bench'&&p.needs.energy>=38)options.push({action:'bench',weight:2,run:()=>{const seats=[{bench:0,slot:0,x:783,y:780},{bench:0,slot:1,x:807,y:780},{bench:1,slot:0,x:78,y:740},{bench:1,slot:1,x:102,y:740}];const seat=seats[(Math.random()*seats.length)|0];setAction(p,i,'bench',seat.x,seat.y,'ベンチへ向かっている','ベンチでひと休み','sit',10+Math.random()*14);p.benchSeat={bench:seat.bench,slot:seat.slot}}});
  applyScheduleWeights(options,p);
+ const hunger=Math.max(0,Math.min(100,p.needs.hunger??100));
+ const energy=Math.max(0,Math.min(100,p.needs.energy??100));
+ options.forEach(option=>{
+  if(option.action==='cafe'&&hunger<42)option.weight*=hunger<20?8:hunger<30?5:2.5;
+  if(option.action==='bench'&&energy<38)option.weight*=energy<18?7:energy<28?4:2.5;
+ });
  const total=options.reduce((n,o)=>n+o.weight,0);let pick=Math.random()*total;for(const o of options){pick-=o.weight;if(pick<=0){o.run();return}}if(options.length)options[0].run();
 }
 function ySafe(y){return Math.max(260,Math.min(1260,y))}
