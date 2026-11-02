@@ -131,7 +131,7 @@ function chooseRoutine(p,i){const r=Math.random();if(sharedGoal){setAction(p,i,'
 function arrive(p,i){p.phaseState='staying';p.x=p.tx;p.y=p.ty;p.activity=p.stayText;p.pose=p.action==='bench'||p.action==='cafe'||p.action==='date'?'sit':p.action==='flowers'?'look':'stand';document.getElementById('act'+i).textContent=p.activity;if(p.action==='flowers')addDiary(chars[i].name+'が花壇のそばで足を止め、花を眺めている。');if(p.action==='bench')addDiary(chars[i].name+'がベンチに座ってひと休みしている。')}
 function updateRelationshipPanel(){
  if(tab!=='relations')return;
- const values=[needs[0].energy,needs[0].hunger,needs[0].mood,needs[1].energy,needs[1].hunger,needs[1].mood,bond.affection,bond.trust,bond.intimacy];
+ const values=[bond.affection,bond.trust,bond.intimacy];
  panel.querySelectorAll('.meter').forEach((el,i)=>{if(values[i]===undefined)return;const v=Math.round(values[i]);const fill=el.querySelector('.fill'),number=el.querySelector('b');if(fill)fill.style.width=v+'%';if(number)number.textContent=v});
 }
 function tickLife(){
@@ -186,7 +186,7 @@ function showTab(t,force=false){if(!force&&t===tab&&t!=='walk')t='walk';tab=t;do
 if(t==='relations'){
  title.textContent='住人同士の関係';
  body.innerHTML='<div class="entry"><b>凪澄 × 夜玖</b><span class="pill">恋人</span><br><small>一緒に過ごす時間や日々の行動によって、関係性が少しずつ変化します。</small></div><div class="metricTitle">ふたりの関係</div>'+meter('愛情',bond.affection)+meter('信頼',bond.trust)+meter('親密',bond.intimacy)+'<button class="actionBtn" id="dateBtn">☕ ふたりで喫茶店へ行く</button><div class="subtle">'+(sharedGoal?'イベント進行中。ふたりは喫茶店で過ごしています。':'ふたりで過ごす時間を作ると、関係性が変化します。')+'</div>';
- document.getElementById('dateBtn').onclick=()=>{if(!sharedGoal){sharedGoal='cafe';goalTicks=0;chars.forEach((p,i)=>{p.tx=i===0?250:310;p.ty=i===0?330:365;p.activity='ふたりで喫茶店へ向かっている';p.action='date';p.phaseState='moving';p.pose='stand';p.stayText='喫茶店で一緒に過ごしている';document.getElementById('act'+i).textContent=p.activity});addDiary('今日はふたりで喫茶店へ行くことにした。');showTab('relations',true)}};
+ document.getElementById('dateBtn').onclick=()=>{if(!sharedGoal){sharedGoal='cafe';goalTicks=0;chars.forEach((p,i)=>{p.tx=i===0?250:310;p.ty=i===0?330:365;p.activity='ふたりで喫茶店へ向かっている';p.action='date';p.phaseState='moving';p.pose='stand';p.stay=60;p.stayText='喫茶店で一緒に過ごしている';document.getElementById('act'+i).textContent=p.activity});addDiary('今日はふたりで喫茶店へ行くことにした。');showTab('relations',true)}};
 }if(t==='memories'){title.textContent='ふたりの日記';body.innerHTML=diary.map(d=>'<div class="entry"><small>'+d.time+'</small>'+d.text+'</div>').join('')}}
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 c.addEventListener('click',()=>{if(panel.classList.contains('show'))showTab('walk')});
