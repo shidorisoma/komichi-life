@@ -228,7 +228,10 @@ function householdForResident(p){
  const romanticPairs=Object.values(relationships).filter(r=>String(r.status||'').includes('恋人')&&Array.isArray(r.residentIds)&&r.residentIds.length===2).sort((a,b)=>a.id.localeCompare(b.id));
  const relation=romanticPairs.find(r=>r.residentIds.includes(p.id));
  if(relation){const partnerId=relation.residentIds.find(id=>id!==p.id);const pairIndex=romanticPairs.findIndex(r=>r.id===relation.id);return {homeId:pairIndex%2===0?'home':'home2',partner:residentById(partnerId)}}
- const index=chars.findIndex(other=>other.id===p.id);return {homeId:index%2===0?'home':'home2',partner:null};
+ const index=chars.findIndex(other=>other.id===p.id);
+ // 恋人世帯がある場合、単身住人はその世帯とは反対側の住宅へ。
+ if(romanticPairs.length){const firstPairHome=romanticPairs[0]&&'home';return {homeId:firstPairHome==='home'?'home2':'home',partner:null}}
+ return {homeId:index%2===0?'home':'home2',partner:null};
 }
 function chooseRoutine(p,i){
  if(hour>=22||hour<6){const household=householdForResident(p);const home=getPlace(household.homeId);const partner=household.partner;const offset=partner?(p.id<partner.id?-12:12):((i%2)*14-7);const sleepX=home.x+offset;const sleepY=home.y+48+(partner?0:(i%3)*5);const stayText=partner?partner.name+'と一緒に眠っている':'家で眠っている';setAction(p,i,'sleep',sleepX,sleepY,'家へ帰っている',stayText,'sit',55+Math.random()*15);return}
