@@ -13,7 +13,7 @@
 <div class="panel" id="panel"><h3 id="panelTitle">街の地図</h3><div id="panelBody"></div></div>
 <div class="status" id="residentStatus"></div><nav class="nav"><button class="active" data-tab="walk"><span class="ico">⌁</span>さんぽ</button><button data-tab="residents"><span class="ico">♙</span>住人</button><button data-tab="relations"><span class="ico">♡</span>関係</button><button data-tab="memories"><span class="ico">▤</span>ログ</button></nav></div>
 <script>
-(()=>{const c=document.getElementById('world'),ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,paused=false,minute=25,hour=15,day=2,selected=0,tab='walk',last=0,elapsed=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;
+(()=>{const c=document.getElementById('world'),ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,paused=false,minute=25,hour=15,day=2,selected=0,tab='walk',last=0,elapsed=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
 const places=[
  {id:'home',name:'住宅',icon:'🏡',x:645,y:340,type:'home',description:'ふたりの暮らす家',actions:['帰宅','休憩']},
  {id:'cafe',name:'喫茶こもれび',icon:'☕',x:240,y:290,type:'cafe',description:'飲み物を楽しめる喫茶店',actions:['食事','休憩','デート']},
@@ -59,14 +59,14 @@ function restoreRelationships(saved,legacyBond){
 function relationMeter(label,value,key){return '<div class="meter" data-relation-stat="'+key+'"><span>'+label+'</span><div class="track"><div class="fill" style="width:'+Math.round(value)+'%"></div></div><b>'+Math.round(value)+'</b></div>'}
 function saveGame(){
  try{
-  const data={version:3,savedAt:Date.now(),clock:{hour,minute,day},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},residents:chars.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}))};
+  const data={version:3,savedAt:Date.now(),clock:{hour,minute,day},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},residents:chars.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}))};
   localStorage.setItem(SAVE_KEY,JSON.stringify(data));
  }catch(e){console.warn('セーブに失敗しました',e)}
 }
 function loadGame(){
  try{
   const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;
-  const data=JSON.parse(raw);if(!data||![1,2,3].includes(data.version))return false;
+  const data=JSON.parse(raw);if(!data||![1,2,3].includes(data.version))return false;lastSocialPairId=typeof data.lastSocialPairId==='string'?data.lastSocialPairId:'';sameSocialPairCount=Number.isFinite(data.sameSocialPairCount)?Math.max(0,data.sameSocialPairCount):0;
   if(data.clock){hour=Number.isFinite(data.clock.hour)?data.clock.hour:hour;minute=Number.isFinite(data.clock.minute)?data.clock.minute:minute;day=Number.isFinite(data.clock.day)?data.clock.day:day}
   
   if(data.bond)Object.keys(bond).forEach(k=>{if(Number.isFinite(data.bond[k]))bond[k]=Math.max(0,Math.min(100,data.bond[k]))});
@@ -78,7 +78,7 @@ function loadGame(){
   if(savedResidents){
    const restored=savedResidents.map((saved,i)=>{
     const base=defaultResidents.find(p=>p.id===saved.id)||defaultResidents[i]||{};
-    return {...base,...saved,profile:{...(base.profile||{}),...(saved.profile||{})},needs:{energy:80,hunger:75,mood:80,...(base.needs||{}),...(saved.needs||{})}};
+    return {...base,...saved,profile:{...(base.profile||{}),...(saved.profile||{})},needs:{energy:80,hunger:75,mood:80,...(base.needs||{}),...(saved.needs||{})},sociability:Number.isFinite(saved.sociability)?Math.max(0,Math.min(100,saved.sociability)):50,lastInitiatedSocialStamp:Number.isFinite(saved.lastInitiatedSocialStamp)?saved.lastInitiatedSocialStamp:-1,lastSocialStamp:Number.isFinite(saved.lastSocialStamp)?saved.lastSocialStamp:-1};
    });
    chars.splice(0,chars.length,...restored);
   }
@@ -102,7 +102,7 @@ function renderResidentStatus(){
  root.innerHTML=chars.map((p,i)=>'<div class="person '+(i===selected?'selected':'')+'" data-index="'+i+'">'+residentAvatar(p)+'<div><div class="pname">'+escapeHtml(p.name)+'</div><div class="activity">'+escapeHtml(p.activity||'街を散歩中')+'</div></div></div>').join('');
 }
 renderResidentStatus();
-function addResident(definition){const id=definition.id||'resident-'+Date.now();if(chars.some(p=>p.id===id))return null;const offset=chars.length%5;const resident={id,name:definition.name||'新しい住人',profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},x:420+offset*28,y:700+offset*32,tx:420+offset*28,ty:700+offset*32,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame();return resident;}
+function addResident(definition){const id=definition.id||'resident-'+Date.now();if(chars.some(p=>p.id===id))return null;const offset=chars.length%5;const resident={id,name:definition.name||'新しい住人',profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},sociability:Number.isFinite(definition.sociability)?Math.max(0,Math.min(100,definition.sociability)):50,lastInitiatedSocialStamp:-1,lastSocialStamp:-1,x:420+offset*28,y:700+offset*32,tx:420+offset*28,ty:700+offset*32,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame();return resident;}
 window.addResident=addResident;
 window.addEventListener('pagehide',saveGame);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveGame()});
@@ -225,33 +225,51 @@ function relationshipPriority(r){
  if(status.includes('家族'))return 3.5+bondScore;
  return 1.2+bondScore*.5;
 }
-function startSocialVisit(a,b,r){
+function isSocialBusy(p){return p.action==='social'&&(p.phaseState==='moving'||p.phaseState==='staying')}
+function startSocialVisit(a,b,r,initiator){
  const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
  const angle=Math.random()*Math.PI*2,dist=24;
- const ax=ySafe(my+Math.sin(angle)*dist),ay=ySafe(my+Math.cos(angle)*dist);
- const bx=ySafe(my-Math.sin(angle)*dist),by=ySafe(my-Math.cos(angle)*dist);
+ const ax=ySafe(my+Math.sin(angle)*dist),by=ySafe(my-Math.cos(angle)*dist);
  setAction(a,chars.indexOf(a),'social',Math.max(90,Math.min(810,mx+Math.cos(angle)*dist)),ax,
-  b.name+'のところへ向かっている',b.name+'と一緒に過ごしている','stand',22+Math.random()*12);
+  b.name+'のところへ向かっている',b.name+'と一緒に過ごしている','stand',18+Math.random()*10);
  setAction(b,chars.indexOf(b),'social',Math.max(90,Math.min(810,mx-Math.cos(angle)*dist)),by,
-  a.name+'のところへ向かっている',a.name+'と一緒に過ごしている','stand',22+Math.random()*12);
- r.lastSocialVisitStamp=day*1440+hour*60+minute;
+  a.name+'のところへ向かっている',a.name+'と一緒に過ごしている','stand',18+Math.random()*10);
+ const stamp=day*1440+hour*60+minute;
+ r.lastSocialVisitStamp=stamp;
+ a.lastSocialStamp=stamp;b.lastSocialStamp=stamp;
+ initiator.lastInitiatedSocialStamp=stamp;
+ const pairId=r.id;
+ sameSocialPairCount=lastSocialPairId===pairId?sameSocialPairCount+1:1;
+ lastSocialPairId=pairId;
  addDiary(a.name+'と'+b.name+'が待ち合わせて、一緒に過ごしに向かった。');
 }
 function scheduleSocialVisits(nowStamp){
- if(sharedGoal||chars.length<2||nowStamp%15!==0)return;
+ if(sharedGoal||chars.length<2||nowStamp%30!==0)return;
+ const available=chars.filter(p=>{
+  const sociability=Math.max(0,Math.min(100,Number.isFinite(p.sociability)?p.sociability:50));
+  const cooldown=300-sociability*2.1;
+  return !isSocialBusy(p)&&nowStamp-(Number.isFinite(p.lastInitiatedSocialStamp)?p.lastInitiatedSocialStamp:-1)>=cooldown;
+ });
+ if(!available.length)return;
+ const initiatorWeights=available.map(p=>({p,weight:.15+Math.pow((p.sociability??50)/100,1.7)*4}));
+ const initiatorTotal=initiatorWeights.reduce((n,x)=>n+x.weight,0);
+ let roll=Math.random()*initiatorTotal,initiator=initiatorWeights[0].p;
+ for(const item of initiatorWeights){roll-=item.weight;if(roll<=0){initiator=item.p;break}}
  const candidates=[];
- for(let i=0;i<chars.length;i++)for(let j=i+1;j<chars.length;j++){
-  const a=chars[i],b=chars[j],r=relationshipFor(a,b);
-  if(!r||nowStamp-r.lastSocialVisitStamp<90)continue;
-  if(a.phaseState==='moving'&&a.action==='social'||b.phaseState==='moving'&&b.action==='social')continue;
-  const need=Math.min(1,Math.hypot(a.x-b.x,a.y-b.y)/650);
-  const weight=relationshipPriority(r)*(0.8+need*.5);
-  candidates.push({a,b,r,weight});
+ for(const other of chars){
+  if(other===initiator||isSocialBusy(other))continue;
+  const r=relationshipFor(initiator,other);if(!r||nowStamp-r.lastSocialVisitStamp<75)continue;
+  const samePair=r.id===lastSocialPairId;
+  if(samePair&&sameSocialPairCount>=3&&String(r.status||'').includes('恋人'))continue;
+  const need=Math.min(1,Math.hypot(initiator.x-other.x,initiator.y-other.y)/650);
+  const invitationFactor=1+(100-(other.sociability??50))/250;
+  const repeatFactor=samePair?.55:1;
+  candidates.push({other,r,weight:relationshipPriority(r)*(0.8+need*.5)*invitationFactor*repeatFactor});
  }
  if(!candidates.length)return;
  const total=candidates.reduce((n,x)=>n+x.weight,0);
  let pick=Math.random()*total;
- for(const candidate of candidates){pick-=candidate.weight;if(pick<=0){startSocialVisit(candidate.a,candidate.b,candidate.r);return}}
+ for(const candidate of candidates){pick-=candidate.weight;if(pick<=0){startSocialVisit(initiator,candidate.other,candidate.r,initiator);return}}
 }
 function tickLife(){
  chars.forEach(p=>{const n=p.needs;n.energy=Math.max(8,n.energy-.12);n.hunger=Math.max(8,n.hunger-.08);n.mood=Math.max(20,Math.min(100,n.mood+(n.energy<25?-.15:.025)))});
@@ -312,9 +330,9 @@ function renderResidentManager(){
  const editing=chars.find(p=>p.id===editingResidentId)||null;
  const viewing=chars.find(p=>p.id===residentPageId)||null;
  if(editing){
-  body.innerHTML='<div class="residentPageHeader"><button class="relationBack" id="residentPageBack">‹</button><b>住人を編集</b></div><form class="residentForm" id="residentForm"><label>名前<input name="name" maxlength="24" required value="'+escapeHtml(editing.name)+'"></label><label>プロフィール<textarea name="detail" maxlength="180">'+escapeHtml(editing.profile?.detail||'')+'</textarea></label><div class="colorFields"><label>髪色<input name="hair" type="color" value="'+safeColor(editing.hair,'#655b4c')+'"></label><label>服の色<input name="color" type="color" value="'+safeColor(editing.color,'#778768')+'"></label></div><div class="formActions"><button type="submit">保存</button><button type="button" id="cancelResidentEdit">キャンセル</button></div></form>';
+  body.innerHTML='<div class="residentPageHeader"><button class="relationBack" id="residentPageBack">‹</button><b>住人を編集</b></div><form class="residentForm" id="residentForm"><label>名前<input name="name" maxlength="24" required value="'+escapeHtml(editing.name)+'"></label><label>プロフィール<textarea name="detail" maxlength="180">'+escapeHtml(editing.profile?.detail||'')+'</textarea></label><label>社交性 <span class="subtle">'+Math.round(editing.sociability??50)+' / 100</span><input name="sociability" type="range" min="0" max="100" step="5" value="'+Math.round(editing.sociability??50)+'"></label><div class="colorFields"><label>髪色<input name="hair" type="color" value="'+safeColor(editing.hair,'#655b4c')+'"></label><label>服の色<input name="color" type="color" value="'+safeColor(editing.color,'#778768')+'"></label></div><div class="formActions"><button type="submit">保存</button><button type="button" id="cancelResidentEdit">キャンセル</button></div></form>';
   document.getElementById('residentPageBack').onclick=()=>{editingResidentId='';renderResidentManager()};
-  const form=document.getElementById('residentForm');form.onsubmit=e=>{e.preventDefault();const p=residentById(editingResidentId);if(!p)return;const fd=new FormData(form);p.name=String(fd.get('name')||'').trim()||p.name;p.profile={...p.profile,detail:String(fd.get('detail')||'').trim()};p.hair=safeColor(fd.get('hair'),'#655b4c');p.color=safeColor(fd.get('color'),'#778768');ensureAllRelationships();renderResidentStatus();saveGame();editingResidentId='';renderResidentManager()};document.getElementById('cancelResidentEdit').onclick=()=>{editingResidentId='';renderResidentManager()};
+  const form=document.getElementById('residentForm');form.onsubmit=e=>{e.preventDefault();const p=residentById(editingResidentId);if(!p)return;const fd=new FormData(form);p.name=String(fd.get('name')||'').trim()||p.name;p.profile={...p.profile,detail:String(fd.get('detail')||'').trim()};p.sociability=Math.max(0,Math.min(100,Number(fd.get('sociability'))||0));p.hair=safeColor(fd.get('hair'),'#655b4c');p.color=safeColor(fd.get('color'),'#778768');ensureAllRelationships();renderResidentStatus();saveGame();editingResidentId='';renderResidentManager()};document.getElementById('cancelResidentEdit').onclick=()=>{editingResidentId='';renderResidentManager()};
   return;
  }
  if(viewing){
