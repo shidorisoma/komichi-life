@@ -68,7 +68,7 @@ function loadGame(){
   if(data.clock){hour=Number.isFinite(data.clock.hour)?data.clock.hour:hour;minute=Number.isFinite(data.clock.minute)?data.clock.minute:minute;day=Number.isFinite(data.clock.day)?data.clock.day:day}
   
   if(data.bond)Object.keys(bond).forEach(k=>{if(Number.isFinite(data.bond[k]))bond[k]=Math.max(0,Math.min(100,data.bond[k]))});
-  if(Array.isArray(data.diary))diary=data.diary.filter(d=>d&&typeof d.time==='string'&&typeof d.text==='string').slice(0,300);if(Array.isArray(data.memories))memories=data.memories.filter(m=>m&&typeof m.time==='string'&&typeof m.title==='string'&&typeof m.text==='string').map(m=>m.title==='ふたりの喫茶店時間'?{...m,pairId:m.pairId||'nagisumi-yaku'}:m).slice(0,100);if(data.unlockedEvents&&typeof data.unlockedEvents==='object')unlockedEvents=data.unlockedEvents;
+  if(Array.isArray(data.diary))diary=data.diary.filter(d=>d&&typeof d.time==='string'&&typeof d.text==='string').slice(0,300);if(Array.isArray(data.memories))memories=data.memories.filter(m=>m&&typeof m.time==='string'&&typeof m.title==='string'&&typeof m.text==='string'&&(m.pairId||m.title==='ふたりの喫茶店時間')).map(m=>m.title==='ふたりの喫茶店時間'?{...m,pairId:m.pairId||'nagisumi-yaku'}:m).slice(0,100);if(data.unlockedEvents&&typeof data.unlockedEvents==='object')unlockedEvents=data.unlockedEvents;
   sharedGoal=typeof data.sharedGoal==='string'?data.sharedGoal:'';goalTicks=Number.isFinite(data.goalTicks)?data.goalTicks:0;lastRoutine=Number.isFinite(data.lastRoutine)?data.lastRoutine:0;lastRecoveryStamp=Number.isFinite(data.lastRecoveryStamp)?data.lastRecoveryStamp:-1;lastBondStamp=Number.isFinite(data.lastBondStamp)?data.lastBondStamp:-1;
   if(Number.isInteger(data.selected))selected=Math.max(0,data.selected);
   if(data.view){if(Number.isFinite(data.view.zoom))zoom=Math.max(.65,Math.min(2.4,data.view.zoom));if(Number.isFinite(data.view.panX))panX=data.view.panX;if(Number.isFinite(data.view.panY))panY=data.view.panY}
@@ -175,16 +175,18 @@ function drawChar(p,i){
 function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
 function addDiary(text){const stamp=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');diary.unshift({time:stamp,text});if(diary.length>300)diary.pop()}
 function recordMemory(id,title,text,pairId=null){
- if(unlockedEvents[id])return false;
+ if(!pairId||unlockedEvents[id])return false;
+ const relation=relationships[pairId]||Object.values(relationships).find(r=>r.id===pairId);
+ if(!relation||!Array.isArray(relation.residentIds)||relation.residentIds.length!==2)return false;
  unlockedEvents[id]=true;
  const stamp=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');
- memories.unshift({time:stamp,title,text,pairId});
+ memories.unshift({time:stamp,title,text,pairId:relation.id});
  if(memories.length>100)memories.pop();
- const pairLabel=pairId?(relationships[pairId]?.label||(pairId==='nagisumi-yaku'?'凪澄＆夜玖':pairId)):'';
- addDiary(pairId?'思い出ができた：「'+pairLabel+'」':'思い出ができた：「'+title+'」');
+ addDiary('思い出ができた：「'+relation.label+'」 '+title);
  saveGame();
  return true;
 }
+
 function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;p.action=kind;p.tx=targetX;p.ty=targetY;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
 function chooseRoutine(p,i){
  if(sharedGoal&&['nagisumi','yaku'].includes(p.id)){setAction(p,i,'date',i===0?250:310,i===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',35+Math.random()*20);return}
@@ -206,9 +208,7 @@ function arrive(p,i){
  
  const actionLog={flowers:p.name+'が花壇のそばで足を止め、花を眺めている。',bench:p.name+'がベンチに座ってひと休みしている。',cafe:p.name+'が喫茶こもれびでひと休みしている。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が街を散歩している。'};
  addDiary(actionLog[p.action]||p.name+'が'+p.activity+'。');
- if(p.action==='flowers')recordMemory('first_flowers_'+i,'花壇で見つけた景色',p.name+'が川辺の花壇で足を止め、ゆっくり花を眺めた。');
- if(p.action==='bench')recordMemory('first_bench_'+i,'ベンチでひと休み',p.name+'が街のベンチに座って、のんびりひと休みした。');
- if(p.action==='cafe')recordMemory('first_cafe_'+i,'喫茶こもれび',p.name+'が喫茶こもれびでひと休みした。');
+
 }
 function updateRelationshipPanel(){
  if(tab!=='relations'||!expandedRelationId)return;
@@ -216,7 +216,7 @@ function updateRelationshipPanel(){
  ['affection','trust','intimacy'].forEach(key=>{const el=panel.querySelector('[data-relation-stat="'+key+'"]');if(!el)return;const v=Math.round(relation[key]);const fill=el.querySelector('.fill'),number=el.querySelector('b');if(fill)fill.style.width=v+'%';if(number)number.textContent=v});
 }
 function tickLife(){
- chars.forEach(p=>{const n=p.needs;n.energy=Math.max(8,n.energy-.12);n.hunger=Math.max(8,n.hunger-.18);n.mood=Math.max(20,Math.min(100,n.mood+(n.energy<25?-.15:.025)))});
+ chars.forEach(p=>{const n=p.needs;n.energy=Math.max(8,n.energy-.12);n.hunger=Math.max(8,n.hunger-.08);n.mood=Math.max(20,Math.min(100,n.mood+(n.energy<25?-.15:.025)))});
  const nowStamp=day*1440+hour*60+minute;
  if(sharedGoal){
   const datePair=['nagisumi','yaku'].map(residentById).filter(Boolean);const together=datePair.length===2&&datePair.every(p=>p.phaseState==='staying'&&p.action==='date')&&Math.hypot(datePair[0].x-datePair[1].x,datePair[0].y-datePair[1].y)<110;
@@ -243,7 +243,7 @@ function tickLife(){
  const recoveryStamp=day*1440+hour*60+minute;
  if(minute%10===0&&recoveryStamp!==lastRecoveryStamp){
   lastRecoveryStamp=recoveryStamp;
-  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe')){n.energy=Math.min(100,n.energy+(p.action==='bench'?7:3));n.mood=Math.min(100,n.mood+2);if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+7)}});
+  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe')){n.energy=Math.min(100,n.energy+(p.action==='bench'?9:3));n.mood=Math.min(100,n.mood+2);if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+22)}});
  }
  updateRelationshipPanel();
 }
