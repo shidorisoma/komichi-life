@@ -283,6 +283,18 @@ function scheduleSocialVisits(nowStamp){
  let pick=Math.random()*total;
  for(const candidate of candidates){pick-=candidate.weight;if(pick<=0){startSocialVisit(initiator,candidate.other,candidate.r,initiator);return}}
 }
+function socialMoodRecoveryRate(p){
+ const partner=chars.find(other=>other.id!==p.id&&other.action==='social'&&other.phaseState==='staying'&&Math.hypot(other.x-p.x,other.y-p.y)<115);
+ if(!partner)return 0;
+ const relation=relationshipFor(p,partner);
+ if(!relation)return 0;
+ const status=String(relation.status||'');
+ const sociability=Math.max(0,Math.min(100,p.sociability??50));
+ if(status.includes('恋人'))return 1.5;
+ if(status.includes('親友')||status.includes('友人'))return .65;
+ if(sociability<=20)return 0;
+ return .25;
+}
 function recoverMoodFromRoutine(p,nowStamp){
  if(nowStamp%10!==0||p.lastMoodRecoveryStamp===nowStamp)return;
  p.lastMoodRecoveryStamp=nowStamp;
@@ -290,7 +302,7 @@ function recoverMoodFromRoutine(p,nowStamp){
  const activityLevel=Math.max(0,Math.min(100,p.activityLevel??50));
  const curiosity=Math.max(0,Math.min(100,p.curiosity??50));
  let change=0;
- if(p.action==='social'&&p.phaseState==='staying')change=1.15+sociability/180;
+ if(p.action==='social'&&p.phaseState==='staying')change=(1.15+sociability/180)*socialMoodRecoveryRate(p);
  else if(p.action==='cafe'&&p.phaseState==='staying')change=.8;
  else if(p.action==='bench'&&p.phaseState==='staying')change=.55;
  else if(p.action==='flowers'&&p.phaseState==='staying')change=.35+curiosity/300;
