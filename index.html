@@ -186,7 +186,20 @@ function recordMemory(id,title,text,pairId=null){
  return true;
 }
 function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;p.action=kind;p.tx=targetX;p.ty=targetY;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
-function chooseRoutine(p,i){const r=Math.random();if(sharedGoal&&['nagisumi','yaku'].includes(p.id)){setAction(p,i,'date',i===0?250:310,i===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',60);return}if(p.needs.hunger<35){const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+25+(i%3)*28,cafe.y+40+(i%2)*20,'喫茶店へ向かっている','喫茶店でひと休み','sit',45);return}if(p.needs.energy<28||r<.62){const seats=[{bench:0,slot:0,x:783,y:780},{bench:0,slot:1,x:807,y:780},{bench:1,slot:0,x:78,y:740},{bench:1,slot:1,x:102,y:740}];const occupied=chars.filter((c,j)=>j!==i&&c.action==='bench'&&c.benchSeat).map(c=>c.benchSeat.bench+':'+c.benchSeat.slot);const free=seats.filter(q=>!occupied.includes(q.bench+':'+q.slot));if(free.length){const seat=free[(Math.random()*free.length)|0];setAction(p,i,'bench',seat.x,seat.y,'ベンチへ向かっている','ベンチで休憩中','sit',50);p.benchSeat={bench:seat.bench,slot:seat.slot};return}}if(r<.82){const spots=[{x:145,y:430},{x:610,y:510},{x:120,y:930}];const q=spots[(Math.random()*spots.length)|0];setAction(p,i,'flowers',q.x,q.y,'花壇へ向かっている','花を眺めている','look',38);return}const q={x:330+Math.random()*260,y:650+Math.random()*420};setAction(p,i,'walk',q.x,q.y,p.id==='nagisumi'?'街を見回りながら散歩中':'街を散歩中',p.id==='nagisumi'?'街の様子を眺めている':'景色を眺めている','stand',12)}
+function chooseRoutine(p,i){
+ if(sharedGoal&&['nagisumi','yaku'].includes(p.id)){setAction(p,i,'date',i===0?250:310,i===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',35+Math.random()*20);return}
+ const previous=p.action;
+ const options=[];
+ if(p.needs.hunger<42&&previous!=='cafe')options.push({weight:5,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+25+Math.random()*45,cafe.y+35+Math.random()*35,'喫茶店へ向かっている','喫茶店でひと休み','sit',18+Math.random()*14)}});
+ if(p.needs.energy<38&&previous!=='bench')options.push({weight:5,run:()=>{const seats=[{bench:0,slot:0,x:783,y:780},{bench:0,slot:1,x:807,y:780},{bench:1,slot:0,x:78,y:740},{bench:1,slot:1,x:102,y:740}];const occupied=chars.filter((q,j)=>j!==i&&q.action==='bench'&&q.benchSeat).map(q=>q.benchSeat.bench+':'+q.benchSeat.slot);const free=seats.filter(q=>!occupied.includes(q.bench+':'+q.slot));const seat=free.length?free[(Math.random()*free.length)|0]:seats[(i+Math.floor(Math.random()*seats.length))%seats.length];setAction(p,i,'bench',seat.x,seat.y,'ベンチへ向かっている','ベンチで休憩中','sit',18+Math.random()*18);p.benchSeat={bench:seat.bench,slot:seat.slot}}});
+ if(previous!=='flowers')options.push({weight:3,run:()=>{const spots=[{x:145,y:430},{x:610,y:510},{x:120,y:930},{x:730,y:1020},{x:360,y:560}];const q=spots[(Math.random()*spots.length)|0];setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている','花や草木を眺めている','look',12+Math.random()*18)}});
+ if(previous!=='walk')options.push({weight:5,run:()=>{const q={x:150+Math.random()*650,y:300+Math.random()*850};setAction(p,i,'walk',q.x,q.y,p.id==='nagisumi'?'街を見回りながら散歩中':'街を散歩中','景色を眺めながら歩いている','stand',8+Math.random()*12)}});
+ if(previous!=='cafe'&&p.needs.hunger>=42)options.push({weight:2,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+25+Math.random()*45,cafe.y+35+Math.random()*35,'喫茶店へ向かっている','喫茶店でひと休み','sit',12+Math.random()*12)}});
+ if(previous!=='bench'&&p.needs.energy>=38)options.push({weight:2,run:()=>{const seats=[{bench:0,slot:0,x:783,y:780},{bench:0,slot:1,x:807,y:780},{bench:1,slot:0,x:78,y:740},{bench:1,slot:1,x:102,y:740}];const seat=seats[(Math.random()*seats.length)|0];setAction(p,i,'bench',seat.x,seat.y,'ベンチへ向かっている','ベンチでひと休み','sit',10+Math.random()*14);p.benchSeat={bench:seat.bench,slot:seat.slot}}});
+ const total=options.reduce((n,o)=>n+o.weight,0);let pick=Math.random()*total;for(const o of options){pick-=o.weight;if(pick<=0){o.run();return}}if(options.length)options[0].run();
+}
+function ySafe(y){return Math.max(260,Math.min(1260,y))}
+
 function arrive(p,i){
  p.phaseState='staying';p.x=p.tx;p.y=p.ty;p.activity=p.stayText;renderResidentStatus();
  p.pose=p.action==='bench'||p.action==='cafe'||p.action==='date'?'sit':p.action==='flowers'?'look':'stand';
@@ -230,7 +243,7 @@ function tickLife(){
  const recoveryStamp=day*1440+hour*60+minute;
  if(minute%10===0&&recoveryStamp!==lastRecoveryStamp){
   lastRecoveryStamp=recoveryStamp;
-  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe')){n.energy=Math.min(100,n.energy+4);n.mood=Math.min(100,n.mood+2)}});
+  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe')){n.energy=Math.min(100,n.energy+(p.action==='bench'?7:3));n.mood=Math.min(100,n.mood+2);if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+7)}});
  }
  updateRelationshipPanel();
 }
