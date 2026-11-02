@@ -13,7 +13,7 @@
 <div class="panel" id="panel"><h3 id="panelTitle">街の地図</h3><div id="panelBody"></div></div>
 <div class="status" id="residentStatus"></div><nav class="nav"><button class="active" data-tab="walk"><span class="ico">⌁</span>さんぽ</button><button data-tab="residents"><span class="ico">♙</span>住人</button><button data-tab="relations"><span class="ico">♡</span>関係</button><button data-tab="memories"><span class="ico">▤</span>ログ</button></nav></div>
 <script>
-(()=>{const c=document.getElementById('world'),ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,paused=false,minute=25,hour=15,day=2,selected=0,tab='walk',last=0,elapsed=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;
+(()=>{const c=document.getElementById('world'),ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,paused=false,minute=25,hour=15,day=2,selected=0,tab='walk',last=0,elapsed=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;
 const places=[
  {id:'home',name:'住宅',icon:'🏡',x:645,y:340,type:'home',description:'ふたりの暮らす家',actions:['帰宅','休憩']},
  {id:'cafe',name:'喫茶こもれび',icon:'☕',x:240,y:290,type:'cafe',description:'飲み物を楽しめる喫茶店',actions:['食事','休憩','デート']},
@@ -22,16 +22,49 @@ const places=[
 function getPlace(id){return places.find(place=>place.id===id)||null}
 const SAVE_KEY='komichi-life-save-v1';
 let saveElapsed=0;
+function pairIdFor(a,b){return [typeof a==='string'?a:a.id,typeof b==='string'?b:b.id].sort().join('-')}
+function residentById(id){return chars.find(p=>p.id===id)||null}
+function relationshipLabel(ids){return ids.map(id=>residentById(id)?.name||id).join(' ＆ ')}
+function ensureRelationship(a,b,seed){
+ const ids=[typeof a==='string'?a:a.id,typeof b==='string'?b:b.id].sort(),id=ids.join('-');
+ if(!residentById(ids[0])||!residentById(ids[1])||ids[0]===ids[1])return null;
+ if(!relationships[id]){
+  const original=id==='nagisumi-yaku';
+  relationships[id]={id,residentIds:ids,label:relationshipLabel(ids),status:original?'恋人':'知り合い',affection:original?68:20,trust:original?76:20,intimacy:original?61:10,lastInteractionStamp:-1,...(seed||{})};
+ }
+ const r=relationships[id];r.id=id;r.residentIds=ids;r.label=relationshipLabel(ids);
+ ['affection','trust','intimacy'].forEach(k=>{r[k]=Number.isFinite(r[k])?Math.max(0,Math.min(100,r[k])):(id==='nagisumi-yaku'?bond[k]:20)});
+ if(typeof r.status!=='string')r.status=id==='nagisumi-yaku'?'恋人':'知り合い';
+ if(!Number.isFinite(r.lastInteractionStamp))r.lastInteractionStamp=-1;
+ return r;
+}
+function ensureAllRelationships(){
+ for(let i=0;i<chars.length;i++)for(let j=i+1;j<chars.length;j++)ensureRelationship(chars[i],chars[j]);
+ const primary=ensureRelationship('nagisumi','yaku');if(primary)bond=primary;
+ return relationships;
+}
+function relationshipFor(a,b){return ensureRelationship(a,b)}
+function restoreRelationships(saved,legacyBond){
+ relationships={};
+ if(saved&&typeof saved==='object')Object.entries(saved).forEach(([id,value])=>{
+  if(!value||!Array.isArray(value.residentIds)||value.residentIds.length!==2)return;
+  const [a,b]=value.residentIds;if(!residentById(a)||!residentById(b))return;
+  const key=pairIdFor(a,b);relationships[key]={...value,id:key,residentIds:[a,b].sort()};
+ });
+ if(!relationships['nagisumi-yaku']&&legacyBond&&typeof legacyBond==='object')relationships['nagisumi-yaku']={id:'nagisumi-yaku',residentIds:['nagisumi','yaku'],label:'凪澄 ＆ 夜玖',status:'恋人',affection:legacyBond.affection,trust:legacyBond.trust,intimacy:legacyBond.intimacy,lastInteractionStamp:-1};
+ ensureAllRelationships();
+}
+function relationMeter(label,value,key){return '<div class="meter" data-relation-stat="'+key+'"><span>'+label+'</span><div class="track"><div class="fill" style="width:'+Math.round(value)+'%"></div></div><b>'+Math.round(value)+'</b></div>'}
 function saveGame(){
  try{
-  const data={version:2,savedAt:Date.now(),clock:{hour,minute,day},bond,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},residents:chars.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}))};
+  const data={version:3,savedAt:Date.now(),clock:{hour,minute,day},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},residents:chars.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}))};
   localStorage.setItem(SAVE_KEY,JSON.stringify(data));
  }catch(e){console.warn('セーブに失敗しました',e)}
 }
 function loadGame(){
  try{
   const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;
-  const data=JSON.parse(raw);if(!data||![1,2].includes(data.version))return false;
+  const data=JSON.parse(raw);if(!data||![1,2,3].includes(data.version))return false;
   if(data.clock){hour=Number.isFinite(data.clock.hour)?data.clock.hour:hour;minute=Number.isFinite(data.clock.minute)?data.clock.minute:minute;day=Number.isFinite(data.clock.day)?data.clock.day:day}
   
   if(data.bond)Object.keys(bond).forEach(k=>{if(Number.isFinite(data.bond[k]))bond[k]=Math.max(0,Math.min(100,data.bond[k]))});
@@ -48,6 +81,7 @@ function loadGame(){
    chars.splice(0,chars.length,...restored);
   }
   selected=Math.min(selected,Math.max(0,chars.length-1));
+  restoreRelationships(data.relationships,data.bond);
   renderResidentStatus();
   return true;
  }catch(e){console.warn('セーブデータを読み込めませんでした',e);return false}
@@ -156,7 +190,7 @@ function chooseRoutine(p,i){const r=Math.random();if(sharedGoal&&['nagisumi','ya
 function arrive(p,i){
  p.phaseState='staying';p.x=p.tx;p.y=p.ty;p.activity=p.stayText;renderResidentStatus();
  p.pose=p.action==='bench'||p.action==='cafe'||p.action==='date'?'sit':p.action==='flowers'?'look':'stand';
- document.getElementById('act'+i).textContent=p.activity;
+ 
  const actionLog={flowers:p.name+'が花壇のそばで足を止め、花を眺めている。',bench:p.name+'がベンチに座ってひと休みしている。',cafe:p.name+'が喫茶こもれびでひと休みしている。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が街を散歩している。'};
  addDiary(actionLog[p.action]||p.name+'が'+p.activity+'。');
  if(p.action==='flowers')recordMemory('first_flowers_'+i,'花壇で見つけた景色',p.name+'が川辺の花壇で足を止め、ゆっくり花を眺めた。');
@@ -164,33 +198,34 @@ function arrive(p,i){
  if(p.action==='cafe')recordMemory('first_cafe_'+i,'喫茶こもれび',p.name+'が喫茶こもれびでひと休みした。');
 }
 function updateRelationshipPanel(){
- if(tab!=='relations')return;
- const values=[bond.affection,bond.trust,bond.intimacy];
- panel.querySelectorAll('.meter').forEach((el,i)=>{if(values[i]===undefined)return;const v=Math.round(values[i]);const fill=el.querySelector('.fill'),number=el.querySelector('b');if(fill)fill.style.width=v+'%';if(number)number.textContent=v});
+ if(tab!=='relations'||!expandedRelationId)return;
+ const relation=relationships[expandedRelationId];if(!relation)return;
+ ['affection','trust','intimacy'].forEach(key=>{const el=panel.querySelector('[data-relation-stat="'+key+'"]');if(!el)return;const v=Math.round(relation[key]);const fill=el.querySelector('.fill'),number=el.querySelector('b');if(fill)fill.style.width=v+'%';if(number)number.textContent=v});
 }
 function tickLife(){
  chars.forEach(p=>{const n=p.needs;n.energy=Math.max(8,n.energy-.12);n.hunger=Math.max(8,n.hunger-.18);n.mood=Math.max(20,Math.min(100,n.mood+(n.energy<25?-.15:.025)))});
  const nowStamp=day*1440+hour*60+minute;
  if(sharedGoal){
-  const datePair=chars.filter(p=>p.id==='nagisumi'||p.id==='yaku');const together=datePair.length===2&&datePair.every(p=>p.phaseState==='staying'&&p.action==='date')&&Math.hypot(datePair[0].x-datePair[1].x,datePair[0].y-datePair[1].y)<110;
+  const datePair=['nagisumi','yaku'].map(residentById).filter(Boolean);const together=datePair.length===2&&datePair.every(p=>p.phaseState==='staying'&&p.action==='date')&&Math.hypot(datePair[0].x-datePair[1].x,datePair[0].y-datePair[1].y)<110;
   if(together)goalTicks++;else goalTicks=0;
   if(goalTicks>=20){
    sharedGoal='';goalTicks=0;
    datePair.forEach(p=>{p.needs.hunger=Math.min(100,p.needs.hunger+18);p.needs.mood=Math.min(100,p.needs.mood+12)});
    bond.affection=Math.min(100,bond.affection+3);bond.trust=Math.min(100,bond.trust+2);bond.intimacy=Math.min(100,bond.intimacy+3);
    datePair.forEach(p=>{p.action='cafe';p.activity='喫茶店で一緒に過ごしている';p.stayText=p.activity;p.phaseState='staying';p.pose='sit';p.stay=30});renderResidentStatus();
-   addDiary('ふたりで喫茶店へ。温かい飲み物を片手に、ゆっくり話をした。');recordMemory('first_shared_cafe','ふたりの喫茶店時間','凪澄と夜玖が一緒に喫茶店で過ごし、温かい飲み物を片手にゆっくり話をした。','nagisumi-yaku');
+   addDiary(datePair.map(p=>p.name).join('と')+'で喫茶店へ。温かい飲み物を片手に、ゆっくり話をした。');recordMemory('first_shared_cafe','ふたりの喫茶店時間',datePair.map(p=>p.name).join('と')+'が一緒に喫茶店で過ごし、温かい飲み物を片手にゆっくり話をした。',pairIdFor(datePair[0],datePair[1]));
   }
  }else if(hour!==lastRoutine){
   lastRoutine=hour;
   chars.forEach((p,i)=>{if(p.phaseState!=='moving'&&p.phaseState!=='staying')chooseRoutine(p,i)});
  }
- const bondPair=chars.filter(p=>p.id==='nagisumi'||p.id==='yaku');const nearAndTogether=bondPair.length===2&&bondPair.every(p=>p.phaseState==='staying')&&Math.hypot(bondPair[0].x-bondPair[1].x,bondPair[0].y-bondPair[1].y)<95;
- if(nearAndTogether&&nowStamp-lastBondStamp>=15){
-  lastBondStamp=nowStamp;
-  bond.affection=Math.min(100,bond.affection+.15);
-  bond.trust=Math.min(100,bond.trust+.2);
-  bond.intimacy=Math.min(100,bond.intimacy+.15);
+ ensureAllRelationships();
+ for(let i=0;i<chars.length;i++)for(let j=i+1;j<chars.length;j++){
+  const a=chars[i],b=chars[j],relation=relationshipFor(a,b);
+  const close=a.phaseState==='staying'&&b.phaseState==='staying'&&Math.hypot(a.x-b.x,a.y-b.y)<95;
+  if(close&&nowStamp-relation.lastInteractionStamp>=15){
+   relation.lastInteractionStamp=nowStamp;relation.affection=Math.min(100,relation.affection+.15);relation.trust=Math.min(100,relation.trust+.2);relation.intimacy=Math.min(100,relation.intimacy+.15);
+  }
  }
  const recoveryStamp=day*1440+hour*60+minute;
  if(minute%10===0&&recoveryStamp!==lastRecoveryStamp){
@@ -217,17 +252,20 @@ function showTab(t,force=false){if(!force&&t===tab&&t!=='walk')t='walk';tab=t;do
  body.innerHTML=chars.map((p,i)=>'<div class="entry"><b>'+escapeHtml(p.name)+'</b><span class="pill">'+escapeHtml(p.profile?.role||'住人')+'</span><br>'+escapeHtml(p.activity)+'<br><small>'+escapeHtml(p.profile?.detail||'プロフィール情報は未登録です。')+'</small></div>'+meter('元気',p.needs.energy)+meter('空腹',p.needs.hunger)+meter('気分',p.needs.mood)).join('')+'<div class="subtle">住人の一覧と、それぞれのプロフィール・現在の様子を確認できます。</div>';
 }
 if(t==='relations'){
- const relation={id:'nagisumi-yaku',label:'凪澄 ＆ 夜玖',status:'恋人',stats:bond};
- if(expandedRelationId===relation.id){
+ ensureAllRelationships();
+ const relationList=Object.values(relationships).sort((a,b)=>a.label.localeCompare(b.label,'ja'));
+ const relation=relationList.find(r=>r.id===expandedRelationId);
+ if(relation){
   title.textContent='';
   const pairMemories=memories.filter(m=>m.pairId===relation.id);
-  body.innerHTML='<div class="relationPageHeader"><button class="relationBack" aria-label="戻る">‹</button><b>'+relation.label+'</b></div><div class="relationDetail"><div class="metricTitle">関係パラメーター</div>'+meter('愛情',relation.stats.affection)+meter('信頼',relation.stats.trust)+meter('親密',relation.stats.intimacy)+'<div class="metricTitle">ふたりの思い出</div>'+
-  (pairMemories.length?pairMemories.map(m=>'<div class="entry"><small>'+m.time+'</small><b>'+m.title+'</b><br>'+m.text+'</div>').join(''):'<div class="subtle">ふたりの思い出は、これから少しずつ増えていきます。</div>')+'</div>';
+  body.innerHTML='<div class="relationPageHeader"><button class="relationBack" aria-label="戻る">‹</button><b>'+escapeHtml(relation.label)+'</b></div><div class="relationDetail"><div class="metricTitle">関係パラメーター</div>'+relationMeter('愛情',relation.affection,'affection')+relationMeter('信頼',relation.trust,'trust')+relationMeter('親密',relation.intimacy,'intimacy')+'<div class="metricTitle">ふたりの思い出</div>'+
+  (pairMemories.length?pairMemories.map(m=>'<div class="entry"><small>'+escapeHtml(m.time)+'</small><b>'+escapeHtml(m.title)+'</b><br>'+escapeHtml(m.text)+'</div>').join(''):'<div class="subtle">ふたりの思い出は、これから少しずつ増えていきます。</div>')+'</div>';
   body.querySelector('.relationBack').onclick=()=>{expandedRelationId='';showTab('relations',true)};
  }else{
+  expandedRelationId='';
   title.textContent='住人同士の関係';
-  body.innerHTML='<button class="relationSummary" data-relation="'+relation.id+'"><b>'+relation.label+'</b><span class="pill">'+relation.status+'</span><span class="relationChevron">›</span></button><button class="actionBtn eventTrigger">イベントを起こす</button>';
-  body.querySelector('.relationSummary').onclick=()=>{expandedRelationId=relation.id;showTab('relations',true)};
+  body.innerHTML=relationList.length?relationList.map(r=>'<button class="relationSummary" data-relation="'+escapeHtml(r.id)+'"><b>'+escapeHtml(r.label)+'</b><span class="pill">'+escapeHtml(r.status)+'</span><span class="relationChevron">›</span></button>').join(''):'<div class="subtle">住人が2人以上になると、ここに関係が表示されます。</div>';
+  body.querySelectorAll('.relationSummary').forEach(button=>button.onclick=()=>{expandedRelationId=button.dataset.relation;showTab('relations',true)});
  }
 }
 if(t==='memories'){
