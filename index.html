@@ -15,6 +15,35 @@
 <nav class="nav"><button class="active" data-tab="walk"><span class="ico">⌁</span>さんぽ</button><button data-tab="map"><span class="ico">◫</span>街の地図</button><button data-tab="two"><span class="ico">♡</span>ふたり</button><button data-tab="memories"><span class="ico">▤</span>おもいで</button></nav></div>
 <script>
 (()=>{const c=document.getElementById('world'),ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,paused=false,minute=25,hour=15,day=2,selected=0,tab='walk',last=0,elapsed=0;const needs=[{energy:86,hunger:72,mood:82},{energy:74,hunger:68,mood:88}];let bond={affection:68,trust:76,intimacy:61};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let sharedGoal='';let goalTicks=0;let lastRoutine=0;const chars=[{name:'凪澄',x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi'},{name:'夜玖',x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku'}];
+const SAVE_KEY='komichi-life-save-v1';
+let saveElapsed=0;
+function saveGame(){
+ try{
+  const data={version:1,savedAt:Date.now(),clock:{hour,minute,day},needs,bond,diary:diary.slice(0,80),sharedGoal,goalTicks,lastRoutine,selected,view:{zoom,panX,panY},chars:chars.map(p=>({x:p.x,y:p.y,tx:p.tx,ty:p.ty,phase:p.phase,activity:p.activity,action:p.action,stayText:p.stayText,phaseState:p.phaseState,pose:p.pose,stay:p.stay,benchSeat:p.benchSeat||null}))};
+  localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+ }catch(e){console.warn('セーブに失敗しました',e)}
+}
+function loadGame(){
+ try{
+  const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;
+  const data=JSON.parse(raw);if(!data||data.version!==1)return false;
+  if(data.clock){hour=Number.isFinite(data.clock.hour)?data.clock.hour:hour;minute=Number.isFinite(data.clock.minute)?data.clock.minute:minute;day=Number.isFinite(data.clock.day)?data.clock.day:day}
+  if(Array.isArray(data.needs)&&data.needs.length===2)data.needs.forEach((n,i)=>{['energy','hunger','mood'].forEach(k=>{if(Number.isFinite(n[k]))needs[i][k]=Math.max(0,Math.min(100,n[k]))})});
+  if(data.bond)Object.keys(bond).forEach(k=>{if(Number.isFinite(data.bond[k]))bond[k]=Math.max(0,Math.min(100,data.bond[k]))});
+  if(Array.isArray(data.diary))diary=data.diary.filter(d=>d&&typeof d.time==='string'&&typeof d.text==='string').slice(0,80);
+  sharedGoal=typeof data.sharedGoal==='string'?data.sharedGoal:'';goalTicks=Number.isFinite(data.goalTicks)?data.goalTicks:0;lastRoutine=Number.isFinite(data.lastRoutine)?data.lastRoutine:0;
+  if(Number.isInteger(data.selected))selected=Math.max(0,Math.min(1,data.selected));
+  if(data.view){if(Number.isFinite(data.view.zoom))zoom=Math.max(.65,Math.min(2.4,data.view.zoom));if(Number.isFinite(data.view.panX))panX=data.view.panX;if(Number.isFinite(data.view.panY))panY=data.view.panY}
+  if(Array.isArray(data.chars))data.chars.forEach((saved,i)=>{const p=chars[i];if(!p||!saved)return;['x','y','tx','ty','phase','stay'].forEach(k=>{if(Number.isFinite(saved[k]))p[k]=saved[k]});['activity','action','stayText','phaseState','pose'].forEach(k=>{if(typeof saved[k]==='string')p[k]=saved[k]});p.benchSeat=saved.benchSeat&&Number.isFinite(saved.benchSeat.bench)&&Number.isFinite(saved.benchSeat.slot)?saved.benchSeat:null});
+  chars.forEach((p,i)=>{document.getElementById('act'+i).textContent=p.activity});
+  document.querySelectorAll('.person').forEach((el,i)=>el.classList.toggle('selected',i===selected));
+  return true;
+ }catch(e){console.warn('セーブデータを読み込めませんでした',e);return false}
+}
+const hasSave=loadGame();
+window.addEventListener('pagehide',saveGame);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveGame()});
+
 function resize(){dpr=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=c.clientHeight;c.width=W*dpr;c.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}new ResizeObserver(resize).observe(c);resize();
 function poly(points,fill,stroke='#9e8b6c',lw=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke()}}
 function ellipse(x,y,rx,ry,fill){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill()}
@@ -101,8 +130,8 @@ function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',dur
 function chooseRoutine(p,i){const r=Math.random();if(sharedGoal){setAction(p,i,'date',i===0?250:310,i===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',60);return}if(needs[i].hunger<35){setAction(p,i,'cafe',i===0?265:300,330,'喫茶店へ向かっている','喫茶店でひと休み','sit',45);return}if(needs[i].energy<28||r<.62){const seats=[{bench:0,slot:0,x:783,y:780},{bench:0,slot:1,x:807,y:780},{bench:1,slot:0,x:78,y:740},{bench:1,slot:1,x:102,y:740}];const occupied=chars.filter((c,j)=>j!==i&&c.action==='bench'&&c.benchSeat).map(c=>c.benchSeat.bench+':'+c.benchSeat.slot);const free=seats.filter(q=>!occupied.includes(q.bench+':'+q.slot));if(free.length){const seat=free[(Math.random()*free.length)|0];setAction(p,i,'bench',seat.x,seat.y,'ベンチへ向かっている','ベンチで休憩中','sit',50);p.benchSeat={bench:seat.bench,slot:seat.slot};return}}if(r<.82){const spots=[{x:145,y:430},{x:610,y:510},{x:120,y:930}];const q=spots[(Math.random()*spots.length)|0];setAction(p,i,'flowers',q.x,q.y,'花壇へ向かっている','花を眺めている','look',38);return}const q=i===0?{x:450+Math.random()*120,y:650+Math.random()*220}:{x:330+Math.random()*170,y:760+Math.random()*200};setAction(p,i,'walk',q.x,q.y,i===0?'街を見回りながら散歩中':'街を散歩中',i===0?'街の様子を眺めている':'景色を眺めている','stand',12)}
 function arrive(p,i){p.phaseState='staying';p.x=p.tx;p.y=p.ty;p.activity=p.stayText;p.pose=p.action==='bench'||p.action==='cafe'?'sit':p.action==='flowers'?'look':'stand';document.getElementById('act'+i).textContent=p.activity;if(p.action==='flowers')addDiary(chars[i].name+'が花壇のそばで足を止め、花を眺めている。');if(p.action==='bench')addDiary(chars[i].name+'がベンチに座ってひと休みしている。')}
 function tickLife(){needs.forEach((n,i)=>{n.energy=Math.max(8,n.energy-.12);n.hunger=Math.max(8,n.hunger-.18);n.mood=Math.max(20,Math.min(100,n.mood+(n.energy<25?-.15:.025)))});if(sharedGoal){goalTicks++;if(goalTicks>60){sharedGoal='';goalTicks=0;needs.forEach(n=>{n.hunger=Math.min(100,n.hunger+18);n.mood=Math.min(100,n.mood+12)});bond.affection=Math.min(100,bond.affection+2);bond.intimacy=Math.min(100,bond.intimacy+2);chars.forEach((p,i)=>setAction(p,i,'cafe',i===0?280:330,i===0?315:350,'喫茶店へ向かっている','喫茶店で一緒に過ごしている','sit',60));addDiary('ふたりで喫茶店へ。温かい飲み物を片手に、ゆっくり過ごした。')}}else if(hour!==lastRoutine){lastRoutine=hour;chars.forEach((p,i)=>{if(p.phaseState==='staying'&&p.stay>0){p.stay-=1;if(p.stay<=0)chooseRoutine(p,i)}else chooseRoutine(p,i)})}if(minute%10===0){needs.forEach((n,i)=>{if(chars[i].phaseState==='staying'&&(chars[i].action==='bench'||chars[i].action==='cafe')){n.energy=Math.min(100,n.energy+4);n.mood=Math.min(100,n.mood+2)}})}}
-function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;addDiary('新しい一日が始まった。ふたりの暮らしは続いていく。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){let dx=p.tx-p.x,dy=p.ty-p.y,d=Math.hypot(dx,dy);if(d>2){let step=Math.min(d,dt*42);p.x+=dx/d*step;p.y+=dy/d*step}else arrive(p,i)}else if(p.phaseState==='staying'&&p.stay>0){p.stay-=dt;if(p.stay<=0)chooseRoutine(p,i)}})}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
-const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）';document.getElementById('smalltime').textContent=s}setInterval(updateClock,500);
+function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;addDiary('新しい一日が始まった。ふたりの暮らしは続いていく。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){let dx=p.tx-p.x,dy=p.ty-p.y,d=Math.hypot(dx,dy);if(d>2){let step=Math.min(d,dt*42);p.x+=dx/d*step;p.y+=dy/d*step}else arrive(p,i)}else if(p.phaseState==='staying'&&p.stay>0){p.stay-=dt;if(p.stay<=0)chooseRoutine(p,i)}})}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）';/* removed obsolete smalltime reference */}setInterval(updateClock,500);
 function select(i){selected=i;panX=450-chars[i].x;panY=720-chars[i].y;document.querySelectorAll('.person').forEach((e,j)=>e.classList.toggle('selected',j===i));drawWorld()};document.getElementById('p0').onclick=()=>select(0);document.getElementById('p1').onclick=()=>select(1);
 const activePointers=new Map();let gesture=null;
 function screenToWorld(x,y){const fit=Math.min(W/900,H/1400)*1.04,scale=fit*zoom;return{x:(x-W/2)/scale+450-panX,y:(y-H/2)/scale+720-panY}}
