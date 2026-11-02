@@ -22,7 +22,7 @@ const places=[
 function getPlace(id){return places.find(place=>place.id===id)||null}
 const SAVE_KEY='komichi-life-save-v1';
 let saveElapsed=0;
-function pairIdFor(a,b){return [typeof a==='string'?a:a.id,typeof b==='string'?b:b.id].sort().join('-')}
+function pairIdFor(a,b){const ids=[typeof a==='string'?a:a.id,typeof b==='string'?b:b.id].sort();return ids[0]==='nagisumi'&&ids[1]==='yaku'?'nagisumi-yaku':'pair:'+encodeURIComponent(JSON.stringify(ids))}
 function residentById(id){return chars.find(p=>p.id===id)||null}
 function relationshipLabel(ids){return ids.map(id=>residentById(id)?.name||id).join(' ＆ ')}
 function ensureRelationship(a,b,seed){
