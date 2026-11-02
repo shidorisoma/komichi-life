@@ -18,7 +18,9 @@ const places=[
  {id:'home',name:'西の住宅',icon:'🏡',x:645,y:340,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'home2',name:'東の住宅',icon:'🏠',x:250,y:850,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'cafe',name:'喫茶こもれび',icon:'☕',x:240,y:290,type:'cafe',description:'飲み物を楽しめる喫茶店',actions:['食事','休憩','デート']},
- {id:'plaza',name:'川辺の広場',icon:'🌳',x:600,y:760,type:'outdoor',description:'川辺の散歩や休憩を楽しめる広場',actions:['散歩','休憩']}
+ {id:'plaza',name:'川辺の広場',icon:'🌳',x:600,y:760,type:'outdoor',description:'川辺の散歩や休憩を楽しめる広場',actions:['散歩','休憩']},
+ {id:'bench-river',name:'川辺のベンチ',icon:'🪑',x:795,y:800,type:'bench',description:'水の流れを眺めながら休めるベンチ',actions:['休憩']},
+ {id:'bench-path',name:'こみちのベンチ',icon:'🪑',x:90,y:760,type:'bench',description:'木陰のそばでひと休みできるベンチ',actions:['休憩']}
 ];
 function getPlace(id){return places.find(place=>place.id===id)||null}
 const SAVE_KEY='komichi-life-save-v1';
