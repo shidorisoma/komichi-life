@@ -201,6 +201,7 @@ function chooseFreshSpot(p,spots){
  return chosen;
 }
 function chooseRoutine(p,i){
+ if(hour>=22||hour<6){const home=getPlace('home');setAction(p,i,'sleep',home.x+12+Math.random()*34,home.y+35+Math.random()*28,'家へ帰っている','家で眠っている','sit',55+Math.random()*15);return}
  if(sharedGoal&&['nagisumi','yaku'].includes(p.id)){setAction(p,i,'date',i===0?250:310,i===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',35+Math.random()*20);return}
  const previous=p.action;
  const options=[];
@@ -216,9 +217,9 @@ function ySafe(y){return Math.max(260,Math.min(1260,y))}
 
 function arrive(p,i){
  p.phaseState='staying';p.x=p.tx;p.y=p.ty;p.activity=p.stayText;renderResidentStatus();
- p.pose=p.action==='bench'||p.action==='cafe'||p.action==='date'?'sit':p.action==='flowers'?'look':'stand';
+ p.pose=p.action==='bench'||p.action==='cafe'||p.action==='date'||p.action==='sleep'?'sit':p.action==='flowers'?'look':'stand';
  
- const actionLog={flowers:p.name+'が花壇のそばで足を止め、花を眺めている。',bench:p.name+'がベンチに座ってひと休みしている。',cafe:p.name+'が喫茶こもれびでひと休みしている。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が街を散歩している。'};
+ const actionLog={sleep:p.name+'が家に帰って眠っている。',flowers:p.name+'が花壇のそばで足を止め、花を眺めている。',bench:p.name+'がベンチに座ってひと休みしている。',cafe:p.name+'が喫茶こもれびでひと休みしている。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が街を散歩している。'};
  addDiary(actionLog[p.action]||p.name+'が'+p.activity+'。');
 
 }
@@ -235,6 +236,7 @@ function relationshipPriority(r){
  if(status.includes('家族'))return 3.5+bondScore;
  return 1.2+bondScore*.5;
 }
+function isSleeping(p){return p.action==='sleep'&&(p.phaseState==='moving'||p.phaseState==='staying')}
 function isSocialBusy(p){return p.action==='social'&&(p.phaseState==='moving'||p.phaseState==='staying')}
 function startSocialVisit(a,b,r,initiator){
  const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
@@ -259,7 +261,7 @@ function scheduleSocialVisits(nowStamp){
   const sociability=Math.max(0,Math.min(100,Number.isFinite(p.sociability)?p.sociability:50));
   const mood=Math.max(20,Math.min(100,p.needs?.mood??80));
   const cooldown=(300-sociability*2.1)*(1.3-mood/250);
-  return !isSocialBusy(p)&&nowStamp-(Number.isFinite(p.lastInitiatedSocialStamp)?p.lastInitiatedSocialStamp:-1)>=cooldown;
+  return !isSocialBusy(p)&&!isSleeping(p)&&nowStamp-(Number.isFinite(p.lastInitiatedSocialStamp)?p.lastInitiatedSocialStamp:-1)>=cooldown;
  });
  if(!available.length)return;
  const initiatorWeights=available.map(p=>{const mood=Math.max(20,Math.min(100,p.needs?.mood??80));return {p,weight:(.15+Math.pow((p.sociability??50)/100,1.7)*4)*(.45+mood/100)}});
@@ -268,7 +270,7 @@ function scheduleSocialVisits(nowStamp){
  for(const item of initiatorWeights){roll-=item.weight;if(roll<=0){initiator=item.p;break}}
  const candidates=[];
  for(const other of chars){
-  if(other===initiator||isSocialBusy(other))continue;
+  if(other===initiator||isSocialBusy(other)||isSleeping(other))continue;
   const r=relationshipFor(initiator,other);if(!r||nowStamp-r.lastSocialVisitStamp<75)continue;
   const samePair=r.id===lastSocialPairId;
   if(samePair&&sameSocialPairCount>=3&&String(r.status||'').includes('恋人'))continue;
@@ -302,7 +304,8 @@ function recoverMoodFromRoutine(p,nowStamp){
  const activityLevel=Math.max(0,Math.min(100,p.activityLevel??50));
  const curiosity=Math.max(0,Math.min(100,p.curiosity??50));
  let change=0;
- if(p.action==='social'&&p.phaseState==='staying')change=(1.15+sociability/180)*socialMoodRecoveryRate(p);
+ if(p.action==='sleep'&&p.phaseState==='staying')change=0;
+ else if(p.action==='social'&&p.phaseState==='staying')change=(1.15+sociability/180)*socialMoodRecoveryRate(p);
  else if(p.action==='cafe'&&p.phaseState==='staying')change=.8;
  else if(p.action==='bench'&&p.phaseState==='staying')change=.55;
  else if(p.action==='flowers'&&p.phaseState==='staying')change=.35+curiosity/300;
@@ -349,7 +352,7 @@ function tickLife(){
  const recoveryStamp=day*1440+hour*60+minute;
  if(minute%10===0&&recoveryStamp!==lastRecoveryStamp){
   lastRecoveryStamp=recoveryStamp;
-  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe')){n.energy=Math.min(100,n.energy+(p.action==='bench'?9:3));n.mood=Math.min(100,n.mood+2);if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+22)}});
+  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe'||p.action==='sleep')){n.energy=Math.min(100,n.energy+(p.action==='sleep'?13:p.action==='bench'?9:3));if(p.action!=='sleep')n.mood=Math.min(100,n.mood+2);if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+22)}});
  }
  updateRelationshipPanel();
 }
