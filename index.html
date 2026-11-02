@@ -15,7 +15,8 @@
 <script>
 (()=>{const c=document.getElementById('world'),ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,paused=false,minute=25,hour=15,day=2,selected=0,tab='walk',last=0,elapsed=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
 const places=[
- {id:'home',name:'住宅',icon:'🏡',x:645,y:340,type:'home',description:'ふたりの暮らす家',actions:['帰宅','休憩']},
+ {id:'home',name:'西の住宅',icon:'🏡',x:645,y:340,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
+ {id:'home2',name:'東の住宅',icon:'🏠',x:250,y:850,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'cafe',name:'喫茶こもれび',icon:'☕',x:240,y:290,type:'cafe',description:'飲み物を楽しめる喫茶店',actions:['食事','休憩','デート']},
  {id:'plaza',name:'川辺の広場',icon:'🌳',x:600,y:760,type:'outdoor',description:'川辺の散歩や休憩を楽しめる広場',actions:['散歩','休憩']}
 ];
@@ -201,8 +202,14 @@ function chooseFreshSpot(p,spots){
  p.recentSpots=[...recent.filter(id=>id!==chosen.id),chosen.id].slice(-4);
  return chosen;
 }
+function householdForResident(p){
+ const romanticPairs=Object.values(relationships).filter(r=>String(r.status||'').includes('恋人')&&Array.isArray(r.residentIds)&&r.residentIds.length===2).sort((a,b)=>a.id.localeCompare(b.id));
+ const relation=romanticPairs.find(r=>r.residentIds.includes(p.id));
+ if(relation){const partnerId=relation.residentIds.find(id=>id!==p.id);const pairIndex=romanticPairs.findIndex(r=>r.id===relation.id);return {homeId:pairIndex%2===0?'home':'home2',partner:residentById(partnerId)}}
+ const index=chars.findIndex(other=>other.id===p.id);return {homeId:index%2===0?'home':'home2',partner:null};
+}
 function chooseRoutine(p,i){
- if(hour>=22||hour<6){const home=getPlace('home');setAction(p,i,'sleep',home.x+12+Math.random()*34,home.y+35+Math.random()*28,'家へ帰っている','家で眠っている','sit',55+Math.random()*15);return}
+ if(hour>=22||hour<6){const household=householdForResident(p);const home=getPlace(household.homeId);const partner=household.partner;const offset=partner?(p.id<partner.id?-12:12):((i%2)*14-7);const sleepX=home.x+offset;const sleepY=home.y+48+(partner?0:(i%3)*5);const stayText=partner?partner.name+'と一緒に眠っている':'家で眠っている';setAction(p,i,'sleep',sleepX,sleepY,'家へ帰っている',stayText,'sit',55+Math.random()*15);return}
  if(sharedGoal&&['nagisumi','yaku'].includes(p.id)){setAction(p,i,'date',i===0?250:310,i===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',35+Math.random()*20);return}
  const previous=p.action;
  const options=[];
