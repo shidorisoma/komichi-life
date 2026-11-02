@@ -283,9 +283,26 @@ function scheduleSocialVisits(nowStamp){
  let pick=Math.random()*total;
  for(const candidate of candidates){pick-=candidate.weight;if(pick<=0){startSocialVisit(initiator,candidate.other,candidate.r,initiator);return}}
 }
+function recoverMoodFromRoutine(p,nowStamp){
+ if(nowStamp%10!==0||p.lastMoodRecoveryStamp===nowStamp)return;
+ p.lastMoodRecoveryStamp=nowStamp;
+ const sociability=Math.max(0,Math.min(100,p.sociability??50));
+ const activityLevel=Math.max(0,Math.min(100,p.activityLevel??50));
+ const curiosity=Math.max(0,Math.min(100,p.curiosity??50));
+ let change=0;
+ if(p.action==='social'&&p.phaseState==='staying')change=1.15+sociability/180;
+ else if(p.action==='cafe'&&p.phaseState==='staying')change=.8;
+ else if(p.action==='bench'&&p.phaseState==='staying')change=.55;
+ else if(p.action==='flowers'&&p.phaseState==='staying')change=.35+curiosity/300;
+ else if(p.action==='walk'&&p.phaseState==='staying')change=.2+activityLevel/400;
+ else if(p.phaseState==='moving')change=-.05;
+ if(change>0)p.needs.mood=Math.min(100,p.needs.mood+change);
+ else if(change<0)p.needs.mood=Math.max(20,p.needs.mood+change);
+}
 function tickLife(){
  chars.forEach(p=>{const n=p.needs;n.energy=Math.max(8,n.energy-.12);n.hunger=Math.max(8,n.hunger-.08);n.mood=Math.max(20,Math.min(100,n.mood+(n.energy<25?-.15:.025)))});
  const nowStamp=day*1440+hour*60+minute;
+ chars.forEach(p=>recoverMoodFromRoutine(p,nowStamp));
  if(sharedGoal){
   const datePair=['nagisumi','yaku'].map(residentById).filter(Boolean);const together=datePair.length===2&&datePair.every(p=>p.phaseState==='staying'&&p.action==='date')&&Math.hypot(datePair[0].x-datePair[1].x,datePair[0].y-datePair[1].y)<110;
   if(together)goalTicks++;else goalTicks=0;
