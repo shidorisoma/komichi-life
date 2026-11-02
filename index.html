@@ -138,7 +138,8 @@ function recordMemory(id,title,text,pairId=null){
  const stamp=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');
  memories.unshift({time:stamp,title,text,pairId});
  if(memories.length>100)memories.pop();
- addDiary('思い出ができた：「'+title+'」');
+ const pairLabel=pairId==='nagisumi-yaku'?'凪澄＆夜玖':pairId;
+ addDiary(pairId?'思い出ができた：「'+pairLabel+'」':'思い出ができた：「'+title+'」');
  saveGame();
  return true;
 }
@@ -190,7 +191,7 @@ function tickLife(){
  }
  updateRelationshipPanel();
 }
-function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;addDiary('新しい一日が始まった。ふたりの暮らしは続いていく。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){let dx=p.tx-p.x,dy=p.ty-p.y,d=Math.hypot(dx,dy);if(d>2){let step=Math.min(d,dt*42);p.x+=dx/d*step;p.y+=dy/d*step}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0)chooseRoutine(p,i)}})}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;addDiary('新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){let dx=p.tx-p.x,dy=p.ty-p.y,d=Math.hypot(dx,dy);if(d>2){let step=Math.min(d,dt*42);p.x+=dx/d*step;p.y+=dy/d*step}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0)chooseRoutine(p,i)}})}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）'}updateClock();setInterval(updateClock,500);
 function select(i){selected=i;panX=450-chars[i].x;panY=720-chars[i].y;document.querySelectorAll('.person').forEach((e,j)=>e.classList.toggle('selected',j===i));drawWorld()};document.getElementById('p0').onclick=()=>select(0);document.getElementById('p1').onclick=()=>select(1);
 const activePointers=new Map();let gesture=null;
@@ -210,12 +211,13 @@ function showTab(t,force=false){if(!force&&t===tab&&t!=='walk')t='walk';tab=t;do
 }
 if(t==='relations'){
  title.textContent='住人同士の関係';
- const relation={id:'nagisumi-yaku',label:'凪澄 × 夜玖',status:'恋人',stats:bond};
+ const relation={id:'nagisumi-yaku',label:'凪澄 ＆ 夜玖',status:'恋人',stats:bond};
  const expanded=expandedRelationId===relation.id;
  body.innerHTML='<button class="relationSummary" data-relation="'+relation.id+'"><b>'+relation.label+'</b><span class="pill">'+relation.status+'</span><span class="relationChevron">'+(expanded?'⌃':'⌄')+'</span></button>'+
  (expanded?'<div class="relationDetail"><div class="metricTitle">関係パラメーター</div>'+meter('愛情',relation.stats.affection)+meter('信頼',relation.stats.trust)+meter('親密',relation.stats.intimacy)+'<div class="metricTitle">ふたりの思い出</div>'+
  (memories.filter(m=>m.pairId===relation.id).length?memories.filter(m=>m.pairId===relation.id).map(m=>'<div class="entry"><small>'+m.time+'</small><b>'+m.title+'</b><br>'+m.text+'</div>').join(''):'<div class="subtle">ふたりの思い出は、これから少しずつ増えていきます。</div>')+
- '<button class="actionBtn eventTrigger">イベントを起こす</button></div>':'');
+ '</div>':'')+
+ '<button class="actionBtn eventTrigger">イベントを起こす</button>';
  body.querySelector('.relationSummary').onclick=()=>{expandedRelationId=expanded?'':relation.id;showTab('relations',true)};
 }
 if(t==='memories'){
