@@ -257,11 +257,12 @@ function scheduleSocialVisits(nowStamp){
  if(sharedGoal||chars.length<2||nowStamp%30!==0)return;
  const available=chars.filter(p=>{
   const sociability=Math.max(0,Math.min(100,Number.isFinite(p.sociability)?p.sociability:50));
-  const cooldown=300-sociability*2.1;
+  const mood=Math.max(20,Math.min(100,p.needs?.mood??80));
+  const cooldown=(300-sociability*2.1)*(1.3-mood/250);
   return !isSocialBusy(p)&&nowStamp-(Number.isFinite(p.lastInitiatedSocialStamp)?p.lastInitiatedSocialStamp:-1)>=cooldown;
  });
  if(!available.length)return;
- const initiatorWeights=available.map(p=>({p,weight:.15+Math.pow((p.sociability??50)/100,1.7)*4}));
+ const initiatorWeights=available.map(p=>{const mood=Math.max(20,Math.min(100,p.needs?.mood??80));return {p,weight:(.15+Math.pow((p.sociability??50)/100,1.7)*4)*(.45+mood/100)}});
  const initiatorTotal=initiatorWeights.reduce((n,x)=>n+x.weight,0);
  let roll=Math.random()*initiatorTotal,initiator=initiatorWeights[0].p;
  for(const item of initiatorWeights){roll-=item.weight;if(roll<=0){initiator=item.p;break}}
@@ -272,7 +273,8 @@ function scheduleSocialVisits(nowStamp){
   const samePair=r.id===lastSocialPairId;
   if(samePair&&sameSocialPairCount>=3&&String(r.status||'').includes('恋人'))continue;
   const need=Math.min(1,Math.hypot(initiator.x-other.x,initiator.y-other.y)/650);
-  const invitationFactor=1+(100-(other.sociability??50))/250;
+  const otherMood=Math.max(20,Math.min(100,other.needs?.mood??80));
+  const invitationFactor=(1+(100-(other.sociability??50))/250)*(.9+(100-otherMood)/500);
   const repeatFactor=samePair?.55:1;
   candidates.push({other,r,weight:relationshipPriority(r)*(0.8+need*.5)*invitationFactor*repeatFactor});
  }
