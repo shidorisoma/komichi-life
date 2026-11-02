@@ -30,12 +30,13 @@ function ensureRelationship(a,b,seed){
  if(!residentById(ids[0])||!residentById(ids[1])||ids[0]===ids[1])return null;
  if(!relationships[id]){
   const original=id==='nagisumi-yaku';
-  relationships[id]={id,residentIds:ids,label:relationshipLabel(ids),status:original?'恋人':'知り合い',affection:original?68:20,trust:original?76:20,intimacy:original?61:10,lastInteractionStamp:-1,...(seed||{})};
+  relationships[id]={id,residentIds:ids,label:relationshipLabel(ids),status:original?'恋人':'知り合い',affection:original?68:20,trust:original?76:20,intimacy:original?61:10,lastInteractionStamp:-1,lastSocialStamp:-1,...(seed||{})};
  }
  const r=relationships[id];r.id=id;r.residentIds=ids;r.label=relationshipLabel(ids);
  ['affection','trust','intimacy'].forEach(k=>{r[k]=Number.isFinite(r[k])?Math.max(0,Math.min(100,r[k])):(id==='nagisumi-yaku'?bond[k]:20)});
  if(typeof r.status!=='string')r.status=id==='nagisumi-yaku'?'恋人':'知り合い';
  if(!Number.isFinite(r.lastInteractionStamp))r.lastInteractionStamp=-1;
+ if(!Number.isFinite(r.lastSocialStamp))r.lastSocialStamp=-1;
  return r;
 }
 function ensureAllRelationships(){
@@ -238,6 +239,14 @@ function tickLife(){
   const close=a.phaseState==='staying'&&b.phaseState==='staying'&&Math.hypot(a.x-b.x,a.y-b.y)<95;
   if(close&&nowStamp-relation.lastInteractionStamp>=15){
    relation.lastInteractionStamp=nowStamp;relation.affection=Math.min(100,relation.affection+.15);relation.trust=Math.min(100,relation.trust+.2);relation.intimacy=Math.min(100,relation.intimacy+.15);
+  }
+  if(close&&nowStamp-relation.lastSocialStamp>=30){
+   relation.lastSocialStamp=nowStamp;
+   const pairNames=a.name+'と'+b.name;
+   const sharedActivity=(a.action==='cafe'||b.action==='cafe')?'喫茶店で一緒にひと休み':(a.action==='flowers'||b.action==='flowers')?'並んで花や景色を眺め':(a.action==='bench'||b.action==='bench')?'近くで休憩しながら': '散歩の途中で';
+   addDiary(pairNames+'が'+sharedActivity+'、穏やかな時間を過ごした。');
+   const eventKey='first_pair_time_'+encodeURIComponent(relation.id);
+   recordMemory(eventKey,'一緒に過ごした時間',pairNames+'が'+sharedActivity+'、穏やかな時間を過ごした。',relation.id);
   }
  }
  const recoveryStamp=day*1440+hour*60+minute;
