@@ -30,13 +30,14 @@ function ensureRelationship(a,b,seed){
  if(!residentById(ids[0])||!residentById(ids[1])||ids[0]===ids[1])return null;
  if(!relationships[id]){
   const original=id==='nagisumi-yaku';
-  relationships[id]={id,residentIds:ids,label:relationshipLabel(ids),status:original?'恋人':'知り合い',affection:original?68:20,trust:original?76:20,intimacy:original?61:10,lastInteractionStamp:-1,lastSocialStamp:-1,...(seed||{})};
+  relationships[id]={id,residentIds:ids,label:relationshipLabel(ids),status:original?'恋人':'知り合い',affection:original?68:20,trust:original?76:20,intimacy:original?61:10,lastInteractionStamp:-1,lastSocialStamp:-1,lastSocialVisitStamp:-1,...(seed||{})};
  }
  const r=relationships[id];r.id=id;r.residentIds=ids;r.label=relationshipLabel(ids);
  ['affection','trust','intimacy'].forEach(k=>{r[k]=Number.isFinite(r[k])?Math.max(0,Math.min(100,r[k])):(id==='nagisumi-yaku'?bond[k]:20)});
  if(typeof r.status!=='string')r.status=id==='nagisumi-yaku'?'恋人':'知り合い';
  if(!Number.isFinite(r.lastInteractionStamp))r.lastInteractionStamp=-1;
  if(!Number.isFinite(r.lastSocialStamp))r.lastSocialStamp=-1;
+ if(!Number.isFinite(r.lastSocialVisitStamp))r.lastSocialVisitStamp=-1;
  return r;
 }
 function ensureAllRelationships(){
@@ -216,6 +217,42 @@ function updateRelationshipPanel(){
  const relation=relationships[expandedRelationId];if(!relation)return;
  ['affection','trust','intimacy'].forEach(key=>{const el=panel.querySelector('[data-relation-stat="'+key+'"]');if(!el)return;const v=Math.round(relation[key]);const fill=el.querySelector('.fill'),number=el.querySelector('b');if(fill)fill.style.width=v+'%';if(number)number.textContent=v});
 }
+function relationshipPriority(r){
+ const status=String(r.status||'');
+ const bondScore=Math.max(0,Math.min(100,(r.affection||0)))/100;
+ if(status.includes('恋人'))return 5.5+bondScore;
+ if(status.includes('友人')||status.includes('親友'))return 4+bondScore;
+ if(status.includes('家族'))return 3.5+bondScore;
+ return 1.2+bondScore*.5;
+}
+function startSocialVisit(a,b,r){
+ const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+ const angle=Math.random()*Math.PI*2,dist=24;
+ const ax=ySafe(my+Math.sin(angle)*dist),ay=ySafe(my+Math.cos(angle)*dist);
+ const bx=ySafe(my-Math.sin(angle)*dist),by=ySafe(my-Math.cos(angle)*dist);
+ setAction(a,chars.indexOf(a),'social',Math.max(90,Math.min(810,mx+Math.cos(angle)*dist)),ax,
+  b.name+'のところへ向かっている',b.name+'と一緒に過ごしている','stand',22+Math.random()*12);
+ setAction(b,chars.indexOf(b),'social',Math.max(90,Math.min(810,mx-Math.cos(angle)*dist)),by,
+  a.name+'のところへ向かっている',a.name+'と一緒に過ごしている','stand',22+Math.random()*12);
+ r.lastSocialVisitStamp=day*1440+hour*60+minute;
+ addDiary(a.name+'と'+b.name+'が待ち合わせて、一緒に過ごしに向かった。');
+}
+function scheduleSocialVisits(nowStamp){
+ if(sharedGoal||chars.length<2||nowStamp%15!==0)return;
+ const candidates=[];
+ for(let i=0;i<chars.length;i++)for(let j=i+1;j<chars.length;j++){
+  const a=chars[i],b=chars[j],r=relationshipFor(a,b);
+  if(!r||nowStamp-r.lastSocialVisitStamp<90)continue;
+  if(a.phaseState==='moving'&&a.action==='social'||b.phaseState==='moving'&&b.action==='social')continue;
+  const need=Math.min(1,Math.hypot(a.x-b.x,a.y-b.y)/650);
+  const weight=relationshipPriority(r)*(0.8+need*.5);
+  candidates.push({a,b,r,weight});
+ }
+ if(!candidates.length)return;
+ const total=candidates.reduce((n,x)=>n+x.weight,0);
+ let pick=Math.random()*total;
+ for(const candidate of candidates){pick-=candidate.weight;if(pick<=0){startSocialVisit(candidate.a,candidate.b,candidate.r);return}}
+}
 function tickLife(){
  chars.forEach(p=>{const n=p.needs;n.energy=Math.max(8,n.energy-.12);n.hunger=Math.max(8,n.hunger-.08);n.mood=Math.max(20,Math.min(100,n.mood+(n.energy<25?-.15:.025)))});
  const nowStamp=day*1440+hour*60+minute;
@@ -234,16 +271,17 @@ function tickLife(){
   chars.forEach((p,i)=>{if(p.phaseState!=='moving'&&p.phaseState!=='staying')chooseRoutine(p,i)});
  }
  ensureAllRelationships();
+ scheduleSocialVisits(nowStamp);
  for(let i=0;i<chars.length;i++)for(let j=i+1;j<chars.length;j++){
   const a=chars[i],b=chars[j],relation=relationshipFor(a,b);
-  const close=a.phaseState==='staying'&&b.phaseState==='staying'&&Math.hypot(a.x-b.x,a.y-b.y)<95;
+  const close=(a.phaseState==='staying'||a.phaseState==='moving')&&(b.phaseState==='staying'||b.phaseState==='moving')&&Math.hypot(a.x-b.x,a.y-b.y)<95;
   if(close&&nowStamp-relation.lastInteractionStamp>=15){
    relation.lastInteractionStamp=nowStamp;relation.affection=Math.min(100,relation.affection+.15);relation.trust=Math.min(100,relation.trust+.2);relation.intimacy=Math.min(100,relation.intimacy+.15);
   }
   if(close&&nowStamp-relation.lastSocialStamp>=30){
    relation.lastSocialStamp=nowStamp;
    const pairNames=a.name+'と'+b.name;
-   const sharedActivity=(a.action==='cafe'||b.action==='cafe')?'喫茶店で一緒にひと休み':(a.action==='flowers'||b.action==='flowers')?'並んで花や景色を眺め':(a.action==='bench'||b.action==='bench')?'近くで休憩しながら': '散歩の途中で';
+   const sharedActivity=(a.action==='cafe'||b.action==='cafe')?'喫茶店で一緒にひと休み':(a.action==='flowers'||b.action==='flowers')?'並んで花や景色を眺め':(a.action==='bench'||b.action==='bench')?'近くで休憩しながら':(a.action==='social'||b.action==='social')?'待ち合わせて一緒に過ごし':'散歩の途中で';
    addDiary(pairNames+'が'+sharedActivity+'、穏やかな時間を過ごした。');
    const eventKey='first_pair_time_'+encodeURIComponent(relation.id);
    recordMemory(eventKey,'一緒に過ごした時間',pairNames+'が'+sharedActivity+'、穏やかな時間を過ごした。',relation.id);
