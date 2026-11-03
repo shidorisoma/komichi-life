@@ -748,16 +748,31 @@ function homeSouthRoadNode(home){
  return accessNodes.reduce((best,n)=>Math.hypot(n.x-home.x,n.y-(home.y+128))<Math.hypot(best.x-home.x,best.y-(home.y+128))?n:best,accessNodes[0]||roadNodes[0]);
 }
 function roadNodePath(start,goal){
- const queue=[[start.id]],visited=new Set([start.id]);let ids=null;
- while(queue.length){
-  const path=queue.shift(),id=path[path.length-1];
-  if(id===goal.id){ids=path;break}
-  const node=roadNodes.find(n=>n.id===id);
-  // 道路接続は両方向。片側だけにlinksが書かれていても逆方向に通行できる。
-  const neighbors=roadNodes.filter(n=>(node?.links||[]).includes(n.id)||(n.links||[]).includes(id));
-  neighbors.forEach(next=>{if(!visited.has(next.id)){visited.add(next.id);queue.push([...path,next.id])}});
+ if(!start||!goal)return start?[start]:[];
+ if(start.id===goal.id)return [start];
+ // 道路接続は双方向。距離を重みとして、遠回りの少ない経路を選ぶ。
+ const distance=new Map(roadNodes.map(n=>[n.id,Infinity]));
+ const previous=new Map(),unvisited=new Set(roadNodes.map(n=>n.id));
+ distance.set(start.id,0);
+ while(unvisited.size){
+  let currentId=null,currentDistance=Infinity;
+  for(const id of unvisited){const d=distance.get(id);if(d<currentDistance){currentDistance=d;currentId=id}}
+  if(currentId===null||!Number.isFinite(currentDistance))break;
+  if(currentId===goal.id)break;
+  unvisited.delete(currentId);
+  const current=roadNodes.find(n=>n.id===currentId);
+  const neighbors=roadNodes.filter(n=>unvisited.has(n.id)&&((current?.links||[]).includes(n.id)||(n.links||[]).includes(currentId)));
+  neighbors.forEach(next=>{
+   const edge=Math.hypot(next.x-current.x,next.y-current.y);
+   const candidate=currentDistance+edge;
+   if(candidate<distance.get(next.id)){distance.set(next.id,candidate);previous.set(next.id,currentId)}
+  });
  }
- return (ids||[start.id]).map(id=>roadNodes.find(n=>n.id===id)).filter(Boolean);
+ if(!Number.isFinite(distance.get(goal.id)))return [start];
+ const ids=[goal.id];let cursor=goal.id;
+ while(cursor!==start.id){cursor=previous.get(cursor);if(!cursor)return [start];ids.push(cursor)}
+ ids.reverse();
+ return ids.map(id=>roadNodes.find(n=>n.id===id)).filter(Boolean);
 }
 function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
