@@ -897,7 +897,7 @@ function chooseRoutine(p,i){
   variants.forEach(variant=>{const action=(variant==='outdoor'||hobby.mode==='walk')?'walk':hobby.mode==='flowers'?'flowers':hobby.mode==='cafe'?'cafe':'home';options.push({action,weight:baseWeight,isHobby:true,run:()=>{
    if(hobby.mode==='home'&&variant!=='outdoor'){
     const home=getPlace(householdForResident(p).homeId);const room=variant==='living'?'living':hobby.room;
-    p.homeHobby={kind:hobby.kind,room,name:hobby.name};setAction(p,i,'home',home.x,home.y+28,'家へ戻っている',hobby.label,'sit',16+Math.random()*24);return
+    const fishMeal=hobby.kind==='cooking'&&(Number(p.fishIngredients)||0)>0;if(fishMeal)p.fishIngredients=Math.max(0,(Number(p.fishIngredients)||0)-1);p.homeHobby={kind:hobby.kind,room,name:hobby.name,fishMeal};const hobbyLabel=fishMeal?'釣った魚を使って料理をしている':hobby.label;setAction(p,i,'home',home.x,home.y+28,'家へ戻っている',hobbyLabel,'sit',16+Math.random()*24);return
    }
    p.homeHobby=null;
    if(variant==='outdoor'){
@@ -937,7 +937,7 @@ function arrive(p,i){
  p.phaseState='staying';p.x=p.tx;p.y=p.ty;p.activity=p.stayText;renderResidentStatus();
  p.pose=p.action==='bench'||p.action==='cafe'||p.action==='date'||p.action==='sleep'||p.action==='home'?'sit':p.action==='flowers'?'look':'stand';
  if(p.action==='cafe'){const cost=450;p.money=Math.max(0,(Number(p.money)||0)-cost);recordMoney(p,'expense',cost,'喫茶こもれび');}
- if(p.action==='walk'&&p.fishingTrip){const catchValue=80+Math.floor(Math.random()*121);p.money=(Number(p.money)||0)+catchValue;p.fishingTrip=false;recordMoney(p,'income',catchValue,'釣りで得た収入');addDiary(p.name+'が川辺で釣りを楽しみ、小さな収入を得た。');}
+ if(p.action==='walk'&&p.fishingTrip){p.fishIngredients=Math.min(5,(Number(p.fishIngredients)||0)+1);p.fishingTrip=false;addDiary(p.name+'が川辺で魚を釣り、自宅へ持ち帰った。');}
  
  const actionLog={work:p.name+'が仕事をしている。',sleep:p.name+'が家に帰って眠っている。',home:p.name+'が家で過ごしている。',flowers:p.name+'が'+(p.flowerScene?.diary||'花壇のそばで花を眺めた')+'。',bench:p.name+'が'+(p.benchScene?.diary||'ベンチでひと休みした')+'。',cafe:p.name+'が喫茶こもれびで'+(p.cafeScene||'ひと休みしている')+'。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が'+(p.walkScene?.diary||'街を散歩した')+'。'};
  addDiary(actionLog[p.action]||p.name+'が'+p.activity+'。');
@@ -1080,6 +1080,7 @@ function recoverMoodFromRoutine(p,nowStamp){
   change=(hobbyBonus[kind]??.7)+curiosity/500;
   if(kind==='reading'||kind==='craft'||kind==='music')change+=curiosity/250;
   if(kind==='game')change+=sociability/500;
+  if(kind==='cooking'&&p.homeHobby.fishMeal){change+=5;p.needs.hunger=Math.min(100,p.needs.hunger+18);p.homeHobby.fishMeal=false;addDiary(p.name+'が釣った魚を料理して食べ、いつもより満足そうにしている。');}
  }
  else if(p.phaseState==='moving')change=-.05;
  if(change>0)p.needs.mood=Math.min(100,p.needs.mood+change);
