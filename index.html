@@ -373,15 +373,7 @@ function loadGame(){
 const hasSave=loadGame();
 ensureFurnitureWorld((()=>{try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'{}').furnitureWorld||null}catch(e){return null}})());
 syncHomePlaces();
-// 保存済みの移動状態は古い道路ルートを含む可能性があるため、起動時に全員分を再構築。
-chars.forEach(p=>{
- if(p.phaseState==='moving'&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.tx)&&Number.isFinite(p.ty)){
-  const destinationHome=(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null;
-  p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,destinationHome,p);
-  p.routeIndex=1;p.stuckTime=0;p.routeRetries=0;
- }
-});
-saveGame();
+
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function safeColor(value,fallback){return /^#[0-9a-f]{3,8}$/i.test(String(value||''))?value:fallback}
 function residentAvatar(p){
@@ -731,6 +723,15 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  points.push({x:toX,y:toY});
  return points;
 }
+// 道路データと住人・住宅の初期化が完了してから保存済み経路を再構築する。
+chars.forEach(p=>{
+ if(p.phaseState==='moving'&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.tx)&&Number.isFinite(p.ty)){
+  const destinationHome=(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null;
+  p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,destinationHome,p);
+  p.routeIndex=1;p.stuckTime=0;p.routeRetries=0;
+ }
+});
+saveGame();
 function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
 function chooseFreshSpot(p,spots){
  const recent=Array.isArray(p.recentSpots)?p.recentSpots:[];
