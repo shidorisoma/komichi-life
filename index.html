@@ -636,7 +636,7 @@ if(t==='memories'){
  title.textContent='住人の行動ログ';
  body.innerHTML=diary.length?diary.map(d=>'<div class="entry"><small>'+d.time+'</small>'+d.text+'</div>').join(''):'<div class="subtle">住人たちの行動がここに記録されます。</div>';
 }
-}document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+}document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{const target=b.dataset.tab;if(target==='walk'&&interiorHomeId){interiorHomeId='';homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;showTab('walk',true);drawWorld();return}showTab(target)});
 document.getElementById('mapToggle').onclick=()=>{if(interiorHomeId){interiorHomeId='';homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;showTab('walk',true);drawWorld()}else showTab('map')};
 showTab('walk',true);
 c.addEventListener('click',()=>{if(panel.classList.contains('show'))showTab('walk')});
