@@ -909,8 +909,18 @@ function startSocialVisit(a,b,r,initiator){
   {match:/^cooking$/,text:'好きな料理やお菓子の話をしている',diary:'好きな料理やお菓子の話をした'},
   {match:/^(walk|photography|gardening|fishing)$/,text:'街や自然の楽しみ方について話している',diary:'街や自然の楽しみ方について話した'}
  ];
- const scene=sharedHobby?scenes.find(x=>x.match.test(sharedHobby.kind)):null;
- const stayText=scene?scene.text:'近況を話しながら一緒に過ごしている';
+ const sharedScene=sharedHobby?scenes.find(x=>x.match.test(sharedHobby.kind)):null;
+ const sociability=((Number(a.sociability)||50)+(Number(b.sociability)||50))/2;
+ const curiosity=((Number(a.curiosity)||50)+(Number(b.curiosity)||50))/2;
+ const personalityScene=curiosity>=68
+  ?{text:'最近見つけたものや気になっていることを話している',diary:'最近の発見や気になることを話した'}
+  :sociability>=68
+   ?{text:'楽しそうに近況を話し、会話が弾んでいる',diary:'近況を話して会話が弾んだ'}
+   :sociability<=32
+    ?{text:'静かな時間を一緒に過ごし、ゆっくり言葉を交わしている',diary:'静かな時間を一緒に過ごした'}
+    :{text:'近況を話しながら一緒に過ごしている',diary:'近況を話しながら一緒に過ごした'};
+ const scene=sharedScene||personalityScene;
+ const stayText=scene.text;
  setAction(a,chars.indexOf(a),'social',Math.max(90,Math.min(810,mx+Math.cos(angle)*dist)),ax,
   b.name+'のところへ向かっている',stayText,'stand',duration);
  setAction(b,chars.indexOf(b),'social',Math.max(90,Math.min(810,mx-Math.cos(angle)*dist)),by,
@@ -923,7 +933,7 @@ function startSocialVisit(a,b,r,initiator){
  const pairId=r.id;
  sameSocialPairCount=lastSocialPairId===pairId?sameSocialPairCount+1:1;
  lastSocialPairId=pairId;
- addDiary(a.name+'と'+b.name+'が待ち合わせ、'+(scene?scene.diary:'近況を話しながら一緒に過ごした')+'。');
+ addDiary(a.name+'と'+b.name+'が待ち合わせ、'+scene.diary+'。');
 }
 function scheduleSocialVisits(nowStamp){
  if(sharedGoal||chars.length<2||nowStamp%30!==0)return;
