@@ -800,6 +800,16 @@ function specialNoteWakeRule(p,other=null){
   const partner=p.socialPartnerId?residentById(p.socialPartnerId):null;
   const paired=partner&&partner.action==='social'&&partner.socialPartnerId===p.id;
   const members=paired?[p,partner]:[p];
+  if(paired){
+   members.forEach(q=>{q.needs.mood=Math.min(100,(q.needs?.mood??80)+2)});
+   const relation=relationshipFor(p,partner);
+   if(relation){
+    relation.affection=Math.min(100,relation.affection+.35);
+    relation.trust=Math.min(100,relation.trust+.45);
+    relation.intimacy=Math.min(100,relation.intimacy+.3);
+   }
+   addDiary(p.name+'と'+partner.name+'は、話し終えて穏やかな気分になった。');
+  }
   members.forEach(q=>{
    q.socialPartnerId=null;
    if(q.action==='social'){
