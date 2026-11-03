@@ -256,6 +256,33 @@ function facilityBlocksMovement(x,y,p){
 function isBlockedByStructure(x,y,p){
  return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p)||natureBlocksMovement(x,y,p);
 }
+function movementSegmentClear(x1,y1,x2,y2,p){
+ const distance=Math.hypot(x2-x1,y2-y1),steps=Math.max(2,Math.ceil(distance/8));
+ for(let i=1;i<=steps;i++){
+  const t=i/steps;
+  if(isBlockedByStructure(x1+(x2-x1)*t,y1+(y2-y1)*t,p))return false;
+ }
+ return true;
+}
+function findMovementDetour(p,point){
+ const currentDistance=Math.hypot(point.x-p.x,point.y-p.y);
+ const radii=[34,52,72,96,124];
+ let best=null,bestScore=Infinity;
+ for(const radius of radii){
+  for(let i=0;i<20;i++){
+   const angle=Math.PI*2*i/20;
+   const candidate={x:point.x+Math.cos(angle)*radius,y:point.y+Math.sin(angle)*radius};
+   if(isBlockedByStructure(candidate.x,candidate.y,p))continue;
+   const remaining=Math.hypot(point.x-candidate.x,point.y-candidate.y);
+   const travel=Math.hypot(candidate.x-p.x,candidate.y-p.y);
+   if(remaining>=currentDistance+8||!movementSegmentClear(p.x,p.y,candidate.x,candidate.y,p))continue;
+   const score=remaining+travel*.35;
+   if(score<bestScore){best=candidate;bestScore=score}
+  }
+  if(best)break;
+ }
+ return best;
+}
 function natureBlocksMovement(x,y,p){
  const trees=[{x:690,y:575,r:25},{x:675,y:930,r:22},{x:575,y:710,r:20},{x:360,y:1110,r:21}];
  for(const tree of trees)if(Math.hypot(x-tree.x,y-tree.y)<tree.r)return true;
@@ -1193,10 +1220,16 @@ function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(sa
  let step=Math.min(d,dt*42),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
  if(!isBlockedByStructure(nx,ny,p)){p.x=nx;p.y=ny}
  else{
-  const canX=!isBlockedByStructure(nx,p.y,p),canY=!isBlockedByStructure(p.x,ny,p);
-  if(canX&&canY){if(Math.abs(mx)>=Math.abs(my))p.x=nx;else p.y=ny}
-  else if(canX)p.x=nx;
-  else if(canY)p.y=ny;
+  const detour=route?findMovementDetour(p,point):null;
+  if(detour){
+   route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);
+   p.routePoints=route;
+  }else{
+   const canX=!isBlockedByStructure(nx,p.y,p),canY=!isBlockedByStructure(p.x,ny,p);
+   if(canX&&canY){if(Math.abs(mx)>=Math.abs(my))p.x=nx;else p.y=ny}
+   else if(canX)p.x=nx;
+   else if(canY)p.y=ny;
+  }
  }
 }else if(route&&(p.routeIndex||1)<route.length-1){p.routeIndex=(p.routeIndex||1)+1}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}})}for(let a=0;a<chars.length;a++){for(let b=a+1;b<chars.length;b++){const p=chars[a],q=chars[b];if(!isOutdoorResident(p)||!isOutdoorResident(q))continue;let dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy),minGap=24;if(d<minGap){if(d<.01){dx=((a+b)%2?1:-1);dy=0;d=1}const push=(minGap-d)/2,ux=dx/d,uy=dy/d;p.x-=ux*push;p.y-=uy*push;q.x+=ux*push;q.y+=uy*push}}}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）';const night=hour>=20||hour<6;document.querySelector('.sun').textContent=weatherType==='rainy'?'☂':weatherType==='cloudy'?'☁':night?'☾':hour>=17?'🌇':'☀';{const subtitle=document.getElementById('placeSubtitle');if(subtitle)subtitle.textContent='春・'+weatherLabel()}}updateClock();setInterval(updateClock,500);
