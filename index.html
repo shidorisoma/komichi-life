@@ -56,7 +56,7 @@ const homeLayoutCatalog={
  '3LDK':[{name:'広々3LDK',rooms:[{type:'bedroom',name:'寝室',x:125,y:410,w:300,h:190},{type:'bedroom',name:'洋室1',x:125,y:600,w:300,h:190},{type:'bedroom',name:'洋室2',x:125,y:790,w:300,h:190},{type:'living',name:'LDK',x:425,y:410,w:350,h:570},{type:'kitchen',name:'キッチン',x:625,y:410,w:150,h:230}]}]
 };
 let selectedHomeLayout='2LDK',homeSubPage='menu';
-const residentialPlots=[{id:'north-west',label:'北西の住宅地',x:140,y:300},{id:'north-center',label:'北中央の住宅地',x:300,y:300},{id:'south-west',label:'西南の住宅地',x:140,y:550},{id:'south-center',label:'西中央の住宅地',x:300,y:550},{id:'south-east',label:'西北の住宅地',x:140,y:800},{id:'center-west-home',label:'中央西の住宅地',x:300,y:800}];
+const residentialPlots=[{id:'north-west',label:'北西の住宅地',x:140,y:250},{id:'north-center',label:'北中央の住宅地',x:300,y:250},{id:'south-west',label:'西南の住宅地',x:140,y:550},{id:'south-center',label:'西中央の住宅地',x:300,y:550},{id:'south-east',label:'西北の住宅地',x:140,y:850},{id:'center-west-home',label:'中央西の住宅地',x:300,y:850}];
 function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
 function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();saveGame(true);drawWorld();return true}
 function createHomeFromTemplate(layoutKey,residentIds){
@@ -348,8 +348,8 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   // カフェへはメインストリートから短く分岐
   {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
   // 住宅街の共用道路。南玄関の前だけに短い横道を出す。
-  {start:[65,425],curves:[[[65,510],[65,590],[65,675]],[[65,760],[65,845],[65,925]]]},
-  {start:[65,675],curves:[[[160,675],[275,675],[380,675]],[[420,690],[445,735],[465,790]]]}
+  {start:[65,453],curves:[[[65,553],[65,653],[65,753]],[[65,853],[65,953],[65,1053]]]},
+  {start:[65,753],curves:[[[160,753],[275,753],[380,753]],[[420,760],[445,775],[465,790]]]}
  ];
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
  roadRoutes.forEach(route=>{
@@ -364,8 +364,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  ctx.restore();
  // 住宅以外の施設にも入口と歩行者用アクセス路を設定。
  const facilityPaths=[
-  [[250,330],[250,330]],                         // 喫茶こもれびの入口
-  [[65,675],[105,755]],                          // こみちのベンチ
+  [[65,753],[105,805]],                          // こみちのベンチ
   [[650,900],[700,930],[780,1010]]               // 川辺のベンチ
  ];
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
@@ -376,14 +375,6 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   ctx.strokeStyle='#ead9b8';ctx.lineWidth=28;ctx.stroke();
  });
  ctx.restore();
- // 住宅街の共用道路から、各住宅の南玄関へ短い枝道を引く。
- homes&&Object.values(homes).forEach(home=>{
-  const entrance=homeEntrance(home);if(!entrance)return;
-  const approachY=entrance.y+125;
-  ctx.beginPath();ctx.moveTo(65,approachY);ctx.lineTo(entrance.x,approachY);ctx.lineTo(entrance.x,entrance.y);
-  ctx.strokeStyle='#a98d68';ctx.lineWidth=42;ctx.stroke();
-  ctx.strokeStyle='#ead5ad';ctx.lineWidth=30;ctx.stroke();
- });
  // 住宅は各列で共用の玄関前通路へ接続。家の裏や側面に道を回さない。
  homes&&Object.values(homes).forEach(home=>{
   const entrance=homeEntrance(home);if(!entrance)return;
@@ -557,9 +548,9 @@ const roadNodes=[
  {id:'main-plaza',x:445,y:1010,links:['main-lower','plaza-center']},
  {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
  // 西側住宅街の共用道路。3本の短い玄関前通路をまとめる。
- {id:'west-north',x:65,y:425,links:['west-mid']},
- {id:'west-mid',x:65,y:675,links:['west-north','west-south','west-junction','bench-path-entry']},
- {id:'west-south',x:65,y:925,links:['west-mid']},
+ {id:'west-north',x:65,y:453,links:['west-mid']},
+ {id:'west-mid',x:65,y:753,links:['west-north','west-south','west-junction','bench-path-entry']},
+ {id:'west-south',x:65,y:1053,links:['west-mid']},
  {id:'west-junction',x:380,y:675,links:['west-mid','main-lower']},
  {id:'cafe-entry',x:250,y:330,links:['main-upper'],facility:true},
  {id:'bench-path-entry',x:105,y:755,links:['west-mid'],facility:true},
