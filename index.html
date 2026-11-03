@@ -253,8 +253,12 @@ function facilityBlocksMovement(x,y,p){
  if(x>=548&&x<=692&&y>=329&&y<=444&&!shopDoor&&!atShopTarget)return true;
  return false;
 }
-function isBlockedByStructure(x,y,p){
+function isBlockedAtPoint(x,y,p){
  return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p)||natureBlocksMovement(x,y,p);
+}
+// 住人は点ではなく幅のある体として扱い、左右の肩幅ぶんも障害物から離す。
+function isBlockedByStructure(x,y,p){
+ return isBlockedAtPoint(x,y,p)||isBlockedAtPoint(x-12,y,p)||isBlockedAtPoint(x+12,y,p);
 }
 function movementSegmentClear(x1,y1,x2,y2,p){
  const distance=Math.hypot(x2-x1,y2-y1),steps=Math.max(2,Math.ceil(distance/8));
