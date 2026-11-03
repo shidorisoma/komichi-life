@@ -81,7 +81,7 @@ function syncHomePlaces(){
  Object.values(homes).forEach(home=>{
   let place=places.find(p=>p.id===home.id);
   if(!place){place={id:home.id,icon:'🏡',x:home.x||250,y:home.y||850,type:'home',description:(home.layoutKey||'住居')+'の住居',actions:['帰宅','休憩']};places.push(place)}
-  place.name=home.name||'住居';place.x=Number.isFinite(home.x)?home.x:(place.x||250);place.y=Number.isFinite(home.y)?home.y:(place.y||850);
+  place.name=home.name||'住居';place.x=Number.isFinite(home.x)?home.x:(place.x||250);place.y=Number.isFinite(home.y)?home.y:(place.y||850);const entrance=homeEntrance(home);home.entranceX=entrance.x;home.entranceY=entrance.y;
  });
 }
 function updateHomeDetails(homeId,name,memberIds){
@@ -475,6 +475,7 @@ const roadNodes=[
  {id:'north-mid',x:350,y:300,links:['s5']},
  {id:'north-east',x:635,y:320,links:['s5']}
 ];
+function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function roadRoute(fromX,fromY,toX,toY){
  const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
  const start=nearest(fromX,fromY),goal=nearest(toX,toY),queue=[[start.id]],visited=new Set([start.id]);let ids=null;
@@ -482,7 +483,7 @@ function roadRoute(fromX,fromY,toX,toY){
  const nodes=(ids||[start.id]).map(id=>roadNodes.find(n=>n.id===id)).filter(Boolean);
  return [{x:fromX,y:fromY},...nodes.map(n=>({x:n.x,y:n.y})),{x:toX,y:toY}];
 }
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;p.action=kind;p.tx=targetX;p.ty=targetY;p.routePoints=roadRoute(p.x,p.y,targetX,targetY);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;if(kind==='home'||kind==='sleep'){const home=homes[householdForResident(p).homeId];const entrance=homeEntrance(home);if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;p.routePoints=roadRoute(p.x,p.y,targetX,targetY);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
 function chooseFreshSpot(p,spots){
  const recent=Array.isArray(p.recentSpots)?p.recentSpots:[];
  const fresh=spots.filter(s=>!recent.includes(s.id));
