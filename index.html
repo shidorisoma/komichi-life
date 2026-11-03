@@ -351,7 +351,42 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // カフェと住宅
  drawCafe(240,290);
  // 登録されている住居を、それぞれの所在地に描画
- Object.values(homes).forEach((home,index)=>{const x=home.x,y=home.y;ctx.save();ctx.translate(x,y);poly([[-58,-10],[0,-42],[58,-10],[0,22]],'#b78d63','#806044',2);poly([[-58,-10],[0,22],[0,72],[-58,40]],'#ead9bd','#a98c69',1.5);poly([[0,22],[58,-10],[58,40],[0,72]],'#d7bd98','#a98c69',1.5);poly([[-64,-12],[0,-52],[65,-12],[0,29]],index%3===0?'#8c6b55':index%3===1?'#9a765c':'#7e6655','#6f5541',2);poly([[-43,1],[-20,14],[-20,39],[-43,27]],'#9bb9b1','#6f8d86',1);poly([[22,4],[43,-8],[43,18],[22,30]],'#9bb9b1','#6f8d86',1);ctx.fillStyle='#66513d';ctx.fillRect(-5,39,14,33);ctx.fillStyle='#fff3d4';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText(home.name||'住居',0,-60);if(hour>=18||hour<6){ctx.fillStyle='#f6d98c';ctx.fillRect(-38,7,10,13);ctx.fillRect(29,4,9,12)}ctx.restore()});
+ function drawHouseExterior(home,index){
+ const x=home.x,y=home.y;
+ const sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
+ const [w,h]=sizes[home.layoutKey]||[116,100];
+ const left=-w/2,right=w/2,front=h*.52,back=-h*.34,roofY=-h*.72;
+ const wallLeft='#ead9bd',wallRight='#d7bd98',trim='#a98c69';
+ const roofColors=['#8c6b55','#9a765c','#7e6655','#98765c'];
+ const roof=roofColors[index%roofColors.length];
+ ctx.save();ctx.translate(x,y);
+ // 壁面と奥行きのある側面
+ poly([[left,back],[0,back-22],[right,back],[right,front],[0,front+30],[left,front]],wallLeft,trim,1.5);
+ poly([[0,back-22],[right,back],[right,front],[0,front+30]],wallRight,trim,1.5);
+ // 間取り規模に応じた屋根。大きい住居は棟と翼屋根を追加。
+ poly([[left-7,back-5],[0,roofY],[right+7,back-5],[0,back+32]],roof,'#6f5541',2);
+ if(w>=128){
+  const ex=left+w*.22;
+  poly([[ex,-h*.08],[ex+w*.25,-h*.34],[right+w*.08,-h*.08],[ex+w*.25,h*.13]],'#a78361','#6f5541',1.5);
+  poly([[ex,-h*.08],[ex+w*.25,-h*.34],[ex+w*.25,-h*.12],[ex,h*.13]],'#e6d2b2',trim,1);
+ }
+ // 窓は左右の壁に配置
+ const winY=back+22;
+ poly([[left+14,winY],[left+34,winY+11],[left+34,winY+34],[left+14,winY+23]],'#9bb9b1','#6f8d86',1);
+ poly([[right-34,winY+4],[right-14,winY-7],[right-14,winY+16],[right-34,winY+27]],'#9bb9b1','#6f8d86',1);
+ // 玄関は正面中央。homeEntranceの座標と一致する位置に描画
+ ctx.fillStyle='#66513d';ctx.fillRect(-7,front-3,14,34);
+ ctx.fillStyle='#b9d0c2';ctx.fillRect(-4,front+1,8,12);
+ ctx.strokeStyle='#8c704f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-10,front-4);ctx.lineTo(10,front-4);ctx.stroke();
+ // 間取り表示用の小さな屋根窓
+ if(home.layoutKey==='2LDK'||home.layoutKey==='2K'){
+  ctx.fillStyle='#b9d0c2';ctx.fillRect(-8,roofY+19,16,11);
+ }
+ if(hour>=18||hour<6){ctx.fillStyle='#f6d98c';ctx.fillRect(left+19,winY+7,8,12);ctx.fillRect(right-27,winY+2,8,12)}
+ ctx.fillStyle='#fff3d4';ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillText(home.name||'住居',0,roofY-9);
+ ctx.restore();
+}
+Object.values(homes).forEach((home,index)=>drawHouseExterior(home,index));
 
  // 西側の住宅地。各住宅の庭先に小さな植栽を残す。
  poly([[55,470],[145,425],[215,465],[125,510]],'#9b7954','#a58d68');poly([[55,456],[145,411],[215,451],[125,496]],'#d2b48a');for(let i=0;i<12;i++)flower(70+(i*29)%130,440+(i*13)%45,.75);
