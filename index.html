@@ -79,14 +79,31 @@ function syncHomePlaces(){
  });
 }
 function updateHomeDetails(homeId,name,memberIds){
- const home=homes[homeId];if(!home||!Array.isArray(memberIds)||!memberIds.length)return false;
- const selectedIds=[...new Set(memberIds)].filter(id=>residentById(id));if(!selectedIds.length)return false;
- chars.forEach(p=>{if(householdForResident(p).homeId===homeId&&!selectedIds.includes(p.id)){const fallback=Object.keys(homes).find(id=>id!==homeId);if(fallback)p.homeId=fallback;else delete p.homeId}});
+ const home=homes[homeId];if(!home||!Array.isArray(memberIds))return false;
+ const selectedIds=[...new Set(memberIds)].filter(id=>residentById(id));
+ const fallback=Object.keys(homes).find(id=>id!==homeId)||null;
+ const currentIds=new Set([...(households['household:'+homeId]?.residentIds||[]),...chars.filter(p=>p.homeId===homeId).map(p=>p.id)]);
+ currentIds.forEach(id=>{if(!selectedIds.includes(id)){const p=residentById(id);if(p&&fallback)p.homeId=fallback}});
  selectedIds.forEach(id=>{const p=residentById(id);p.homeId=homeId});
- const hid='household:'+homeId;
- households[hid]={...(households[hid]||{}),id:hid,homeId,residentIds:selectedIds};
- home.name=String(name||'').trim()||home.name||'住居';
- syncHomePlaces();saveGame();return true;
+ const hid='household:'+homeId;households[hid]={...(households[hid]||{}),id:hid,homeId,residentIds:selectedIds};
+ home.name=String(name||'').trim()||home.name||'住居';syncHomePlaces();saveGame();return true;
+}
+function deleteHome(homeId){
+ const home=homes[homeId];if(!home||Object.keys(homes).length<=1)return false;
+ const fallback=Object.keys(homes).find(id=>id!==homeId),memberIds=new Set(households['household:'+homeId]?.residentIds||[]);
+ chars.filter(p=>p.homeId===homeId||memberIds.has(p.id)).forEach(p=>{p.homeId=fallback});
+ const fallbackRooms=homes[fallback]?.rooms||[];
+ furniture=furniture.filter(item=>{
+  if(item.homeId!==homeId)return true;
+  if(item.ownershipType==='individual'){
+   const room=fallbackRooms.find(r=>r.type===rooms[item.roomId]?.type)||fallbackRooms[0];
+   if(room){item.homeId=fallback;item.roomId=room.id;item.placed=false;return true}
+  }
+  return false;
+ });
+ (home.roomIds||home.rooms?.map(r=>r.id)||[]).forEach(id=>delete rooms[id]);
+ delete households['household:'+homeId];delete homes[homeId];places=places.filter(p=>p.id!==homeId);
+ syncHomePlaces();if(interiorHomeId===homeId)interiorHomeId='';saveGame();return true;
 }
 function renderHomeMenu(){
  const body=document.getElementById('panelBody');
@@ -108,8 +125,9 @@ function renderHomeSearch(){
 }
 function renderHomeManage(){
  const body=renderHomeHeader('家の管理');
- body.innerHTML=Object.values(homes).map(h=>{const members=households['household:'+h.id]?.residentIds||chars.filter(p=>p.homeId===h.id).map(p=>p.id);return '<div class="homeEditCard"><b>'+escapeHtml(h.name)+'</b><small>'+escapeHtml(h.layoutKey||'既存の住居')+' ・ '+(h.roomIds?.length||4)+'部屋</small><label class="homeEditLabel">家の名前<input class="homeNameInput" data-home="'+escapeHtml(h.id)+'" value="'+escapeHtml(h.name)+'" maxlength="32"></label><div class="homeEditLabel">入居者</div><div class="homeResidentChoices">'+chars.map(p=>'<label class="homeResidentOption"><input type="checkbox" class="homeEditMember" data-home="'+escapeHtml(h.id)+'" value="'+escapeHtml(p.id)+'" '+(members.includes(p.id)?'checked':'')+'> '+escapeHtml(p.name)+'</label>').join('')+'</div><button class="actionBtn saveHomeEdit" data-home="'+escapeHtml(h.id)+'">この家の情報を保存</button></div>'}).join('')||'<div class="subtle">登録されている家はありません。</div>';
- body.querySelectorAll('.saveHomeEdit').forEach(b=>b.onclick=()=>{const id=b.dataset.home,name=body.querySelector('.homeNameInput[data-home="'+id+'"]').value,ids=[...body.querySelectorAll('.homeEditMember[data-home="'+id+'"]:checked')].map(el=>el.value);if(!ids.length){alert('入居者は1人以上必要です');return}updateHomeDetails(id,name,ids);renderHomeManage()});
+ body.innerHTML=Object.values(homes).map(h=>{const members=households['household:'+h.id]?.residentIds||chars.filter(p=>p.homeId===h.id).map(p=>p.id);return '<div class="homeEditCard"><b>'+escapeHtml(h.name)+'</b><small>'+escapeHtml(h.layoutKey||'既存の住居')+' ・ '+(h.roomIds?.length||h.rooms?.length||4)+'部屋 ・ '+(members.length?members.length+'人入居中':'空き家')+'</small><label class="homeEditLabel">家の名前<input class="homeNameInput" data-home="'+escapeHtml(h.id)+'" value="'+escapeHtml(h.name)+'" maxlength="32"></label><div class="homeEditLabel">入居者（0人でも保存できます）</div><div class="homeResidentChoices">'+chars.map(p=>'<label class="homeResidentOption"><input type="checkbox" class="homeEditMember" data-home="'+escapeHtml(h.id)+'" value="'+escapeHtml(p.id)+'" '+(members.includes(p.id)?'checked':'')+'> '+escapeHtml(p.name)+'</label>').join('')+'</div><button class="actionBtn saveHomeEdit" data-home="'+escapeHtml(h.id)+'">この家の情報を保存</button><button class="actionBtn deleteHomeButton" data-home="'+escapeHtml(h.id)+'" style="background:#a66f63">この家を削除</button></div>'}).join('')||'<div class="subtle">登録されている家はありません。</div>';
+ body.querySelectorAll('.saveHomeEdit').forEach(b=>b.onclick=()=>{const id=b.dataset.home,name=body.querySelector('.homeNameInput[data-home="'+id+'"]').value,ids=[...body.querySelectorAll('.homeEditMember[data-home="'+id+'"]:checked')].map(el=>el.value);updateHomeDetails(id,name,ids);renderHomeManage()});
+ body.querySelectorAll('.deleteHomeButton').forEach(b=>b.onclick=()=>{const id=b.dataset.home;if(Object.keys(homes).length<=1){alert('最後の1軒は削除できません');return}if(!confirm('この家を削除します。入居者は別の家へ移り、共有家具は削除されます。個人所有の家具は別の家へ移して保管します。よろしいですか？'))return;deleteHome(id);renderHomeManage()});
 }
 function ensureFurnitureWorld(saved){
  const homeIds=[...new Set(chars.map(p=>householdForResident(p).homeId))];
