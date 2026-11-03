@@ -644,6 +644,7 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
  }
  function workPlanFor(p){
   const style=p.workStyle||'none';if(style==='none'||!p.jobTitle)return null;
+  if(p.workCompletedDay===calendarDay)return null;
   const frequency=p.workFrequency||'weekdays',duration=p.workDuration||'normal',durationMinutes=duration==='short'?35:duration==='long'?115:65;
   const scheduledToday=scheduledWorkDay(p),start=String(p.workStart||'09:00').split(':').map(Number),end=String(p.workEnd||'17:00').split(':').map(Number);
   const startMinute=(start[0]||0)*60+(start[1]||0),endMinute=(end[0]||0)*60+(end[1]||0),now=hour*60+minute;
@@ -663,6 +664,7 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
  }
  function completeWork(p){
  addDiary(p.name+'は仕事が終わった。');
+ p.workCompletedDay=calendarDay;
  if(!p.pendingWorkPay)return;
  const payment=p.pendingWorkPay;p.pendingWorkPay=null;
  p.money=Math.max(0,Number(p.money)||0)+payment.amount;
