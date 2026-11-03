@@ -742,6 +742,15 @@ function applyScheduleWeights(options,p){
    if(action==='home')option.weight*=1.65;
    if(action==='cafe')option.weight*=1.35;
   }
+  // 体力・空腹・気分が落ちている住人は、回復できる場所を選びやすくする。
+  const energy=Math.max(0,Math.min(100,p.needs?.energy??100));
+  const hunger=Math.max(0,Math.min(100,p.needs?.hunger??100));
+  const mood=Math.max(0,Math.min(100,p.needs?.mood??100));
+  if(action==='bench'&&energy<65)option.weight*=1+(65-energy)/28;
+  if(action==='home'&&energy<45)option.weight*=1+(45-energy)/22;
+  if(action==='cafe'&&hunger<65)option.weight*=1+(65-hunger)/25;
+  if((action==='home'||action==='bench'||action==='cafe')&&mood<45)option.weight*=1+(45-mood)/35;
+  if((action==='walk'||action==='flowers')&&(energy<25||hunger<20))option.weight*=.25;
  });
 }
 function hobbyChoicesFor(p){
