@@ -270,7 +270,32 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // キャラクター
  chars.forEach((p,i)=>{if(p.action!=='workOutside')drawChar(p,i)});
  ctx.restore()}
-function drawHomeInterior(homeId){ctx.save();ctx.fillStyle='#e9dfc9';ctx.fillRect(0,0,W,H);const scale=Math.min(W/900,H/1400)*1.05*interiorZoom;ctx.translate(W/2+interiorPanX,H/2+interiorPanY);ctx.scale(scale,scale);ctx.translate(-450,-700);ctx.fillStyle='#b99b76';ctx.fillRect(105,390,690,620);ctx.fillStyle='#eadfc9';ctx.fillRect(125,410,650,580);ctx.strokeStyle='#a58a68';ctx.lineWidth=9;ctx.strokeRect(125,410,650,580);ctx.fillStyle='#d9c7a8';ctx.fillRect(430,410,10,580);ctx.fillRect(125,690,650,9);ctx.fillStyle='#8d7054';ctx.font='bold 23px sans-serif';ctx.fillText(homeId==='home'?'西の住宅':'東の住宅',145,365);ctx.fillStyle='#9b8064';ctx.fillRect(190,500,150,62);ctx.fillStyle='#d7c4a6';ctx.fillRect(202,508,126,42);ctx.fillStyle='#8caa9c';ctx.fillRect(205,735,110,65);ctx.fillStyle='#b78c68';ctx.fillRect(515,475,190,48);ctx.fillStyle='#e6d7bd';ctx.fillRect(525,483,170,31);ctx.fillStyle='#b59a80';ctx.fillRect(190,785,150,100);ctx.fillStyle='#f3eee4';ctx.fillRect(200,795,130,75);ctx.fillStyle='#94765a';ctx.fillRect(515,785,180,18);ctx.fillRect(530,803,12,70);ctx.fillRect(670,803,12,70);ctx.fillStyle='#d4c4a9';ctx.fillRect(555,730,105,48);const residents=chars.filter(p=>householdForResident(p).homeId===homeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'),spots={living:[{x:235,y:590},{x:295,y:590}],hobby:[{x:570,y:590},{x:630,y:590}],bedroom:[{x:235,y:900},{x:295,y:900}],kitchen:[{x:580,y:900},{x:640,y:900}]},roomCounts={};residents.forEach(p=>{const room=p.action==='sleep'?'bedroom':(p.homeHobby?.room||'living'),slots=spots[room]||spots.living,index=roomCounts[room]||0;if(index>=2)return;roomCounts[room]=index+1;const q=slots[index];drawChar({...p,x:q.x,y:q.y,pose:'sit'},chars.indexOf(p))});ctx.textAlign='left';ctx.restore();}
+function drawHomeFurniture(homeId){
+ const palette={bed:['#987b66','#e8dfd0'],fridge:['#d9ddd8','#aab5b1'],table:['#a9825e','#d8c2a3'],sofa:['#8caa9c','#d7e0d7'],bookshelf:['#9b7658','#e0c9a8'],desk:['#9b7658','#e0c9a8'],chair:['#a9825e','#d8c2a3'],lamp:['#d7bd82','#f6e6ae']};
+ furniture.filter(item=>item.homeId===homeId&&item.placed!==false).forEach(item=>{
+  const type=item.furnitureId,colors=palette[type]||palette.table,x=item.x||0,y=item.y||0;
+  ctx.save();ctx.translate(x,y);ctx.rotate((item.rotation||0)*Math.PI/180);
+  if(type==='bed'){
+   ctx.fillStyle='#765e4d';ctx.fillRect(-75,-48,150,96);ctx.fillStyle=colors[0];ctx.fillRect(-70,-44,140,84);ctx.fillStyle=colors[1];ctx.fillRect(-62,-35,124,65);ctx.fillStyle='#fff8ed';ctx.fillRect(-57,-31,47,22);ctx.fillRect(10,-31,47,22);
+  }else if(type==='fridge'){
+   ctx.fillStyle='#aeb8b4';ctx.fillRect(-28,-52,56,104);ctx.fillStyle=colors[0];ctx.fillRect(-25,-49,50,98);ctx.strokeStyle='#a0aaa6';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-25,0);ctx.lineTo(25,0);ctx.stroke();ctx.fillStyle='#87948f';ctx.fillRect(17,-32,3,20);
+  }else if(type==='table'){
+   ctx.fillStyle='#795c43';ctx.fillRect(-62,-30,124,60);ctx.fillStyle=colors[0];ctx.fillRect(-62,-36,124,58);ctx.fillStyle=colors[1];ctx.fillRect(-49,-25,98,35);
+  }else if(type==='sofa'){
+   ctx.fillStyle='#6f897d';ctx.fillRect(-68,-35,136,70);ctx.fillStyle=colors[0];ctx.fillRect(-62,-30,124,60);ctx.fillStyle=colors[1];ctx.fillRect(-48,-23,96,45);ctx.fillStyle='#789486';ctx.fillRect(-68,-34,18,68);ctx.fillRect(50,-34,18,68);
+  }else if(type==='bookshelf'){
+   ctx.fillStyle='#765b43';ctx.fillRect(-28,-50,56,100);ctx.fillStyle=colors[0];ctx.fillRect(-25,-47,50,94);ctx.fillStyle='#e6d2ae';[-25,5,30].forEach(y0=>ctx.fillRect(-22,y0,44,4));ctx.fillStyle='#c6a477';ctx.fillRect(-19,-42,10,16);ctx.fillRect(-4,-42,11,16);ctx.fillRect(11,-42,9,16);
+  }else if(type==='desk'){
+   ctx.fillStyle='#765b43';ctx.fillRect(-62,-24,124,48);ctx.fillStyle=colors[0];ctx.fillRect(-62,-29,124,43);ctx.fillStyle='#eee8dc';ctx.fillRect(-22,-20,42,28);ctx.fillStyle='#8a9a9b';ctx.fillRect(-17,-16,32,18);
+  }else if(type==='chair'){
+   ctx.fillStyle=colors[0];ctx.fillRect(-20,-18,40,36);ctx.fillStyle='#795c43';ctx.fillRect(-23,-23,46,7);
+  }else if(type==='lamp'){
+   ctx.fillStyle='#9b8064';ctx.fillRect(-3,0,6,32);ctx.fillStyle=colors[1];ctx.beginPath();ctx.moveTo(-19,0);ctx.lineTo(-13,-25);ctx.lineTo(13,-25);ctx.lineTo(19,0);ctx.closePath();ctx.fill();
+  }
+  ctx.restore();
+ });
+}
+function drawHomeInterior(homeId){ctx.save();ctx.fillStyle='#e9dfc9';ctx.fillRect(0,0,W,H);const scale=Math.min(W/900,H/1400)*1.05*interiorZoom;ctx.translate(W/2+interiorPanX,H/2+interiorPanY);ctx.scale(scale,scale);ctx.translate(-450,-700);ctx.fillStyle='#b99b76';ctx.fillRect(105,390,690,620);ctx.fillStyle='#eadfc9';ctx.fillRect(125,410,650,580);ctx.strokeStyle='#a58a68';ctx.lineWidth=9;ctx.strokeRect(125,410,650,580);ctx.fillStyle='#d9c7a8';ctx.fillRect(430,410,10,580);ctx.fillRect(125,690,650,9);ctx.fillStyle='#8d7054';ctx.font='bold 23px sans-serif';ctx.fillText(homeId==='home'?'西の住宅':'東の住宅',145,365);drawHomeFurniture(homeId);const residents=chars.filter(p=>householdForResident(p).homeId===homeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'),spots={living:[{x:235,y:590},{x:295,y:590}],hobby:[{x:570,y:590},{x:630,y:590}],bedroom:[{x:235,y:900},{x:295,y:900}],kitchen:[{x:580,y:900},{x:640,y:900}]},roomCounts={};residents.forEach(p=>{const room=p.action==='sleep'?'bedroom':(p.homeHobby?.room||'living'),slots=spots[room]||spots.living,index=roomCounts[room]||0;if(index>=2)return;roomCounts[room]=index+1;const q=slots[index];drawChar({...p,x:q.x,y:q.y,pose:'sit'},chars.indexOf(p))});ctx.textAlign='left';ctx.restore();}
 function drawChar(p,i){
  let x=p.x,y=p.y; const tall=p.scale||1; // 住人ごとの表示スケール
  ellipse(x,y+15,19*tall,7,'#776b51aa');
