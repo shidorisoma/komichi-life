@@ -1008,6 +1008,10 @@ function startSocialVisit(a,b,r,initiator){
  sameSocialPairCount=lastSocialPairId===pairId?sameSocialPairCount+1:1;
  lastSocialPairId=pairId;
  addDiary(a.name+'と'+b.name+'が待ち合わせ、'+(weatherDiary?weatherDiary+' '+scene.diary:scene.diary)+'。');
+ if(sharedHobby){
+  const memoryId='shared_hobby_'+encodeURIComponent(r.id)+'_'+encodeURIComponent(sharedHobby.kind);
+  recordMemory(memoryId,'趣味がつないだ時間',a.name+'と'+b.name+'は、共通の趣味「'+sharedHobby.name+'」の話をしながら過ごした。'+scene.diary+'。',r.id);
+ }
 }
 function scheduleSocialVisits(nowStamp){
  if(sharedGoal||chars.length<2||nowStamp%30!==0)return;
