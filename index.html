@@ -323,9 +323,24 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  for(let i=0;i<22;i++){let x=790+(i%4)*34+(i%2)*9,y=260+i*43;ellipse(x,y,5+(i%3)*2,2,'#d7e4d1')}
  // 街の広場と小道
  poly([[0,350],[480,180],[755,320],[760,1120],[430,1370],[0,1160]],'#d9c49d','#a58d68',3);
- // 道路ネットワーク。中央のこみちから住宅区画へ枝道をつなぐ。
- const roadPaths=[[[90,1080],[230,920],[350,980],[430,790],[520,610],[380,520],[480,390]],[[430,790],[390,690],[330,722]],[[380,520],[365,390],[365,322]],[[480,390],[465,330],[455,337]],[[230,920],[270,1020],[330,1088]],[[350,980],[405,1080],[455,1118]],[[430,980],[500,1040],[565,1043]]];
- ctx.save();ctx.lineCap='round';ctx.lineJoin='round';roadPaths.forEach((path,index)=>{ctx.beginPath();ctx.moveTo(path[0][0],path[0][1]);if(index===0){ctx.bezierCurveTo(path[1][0],path[1][1],path[2][0],path[2][1],path[3][0],path[3][1]);ctx.bezierCurveTo(path[4][0],path[4][1],path[5][0],path[5][1],path[6][0],path[6][1])}else path.slice(1).forEach(point=>ctx.lineTo(point[0],point[1]));ctx.strokeStyle='#b49c76';ctx.lineWidth=index===0?104:62;ctx.stroke();ctx.strokeStyle='#e8d7b5';ctx.lineWidth=index===0?88:50;ctx.stroke()});ctx.restore();
+ // 道路ネットワーク。中央を貫く幹線と、建物へ向かう短い支線。
+ const roadRoutes=[
+  {main:true,start:[145,1125],curves:[[[250,1010],[335,930],[395,830]],[[455,735],[405,650],[410,565]],[[415,485],[430,420],[455,365]]]},
+  {start:[430,520],curves:[[[390,445],[330,390],[270,330]]]},
+  {start:[445,430],curves:[[[420,360],[390,315],[365,285]]]},
+  {start:[455,390],curves:[[[500,355],[555,335],[620,340]]]},
+  {start:[395,820],curves:[[[355,835],[310,850],[260,875]]]},
+  {start:[300,955],curves:[[[340,1015],[385,1080],[430,1140]]]},
+  {start:[350,915],curves:[[[420,965],[485,1015],[555,1060]]]}
+ ];
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ roadRoutes.forEach(route=>{
+  ctx.beginPath();ctx.moveTo(route.start[0],route.start[1]);
+  route.curves.forEach(curve=>ctx.bezierCurveTo(curve[0][0],curve[0][1],curve[1][0],curve[1][1],curve[2][0],curve[2][1]));
+  ctx.strokeStyle='#b49c76';ctx.lineWidth=route.main?104:66;ctx.stroke();
+  ctx.strokeStyle='#e8d7b5';ctx.lineWidth=route.main?88:52;ctx.stroke();
+ });
+ ctx.restore();
  // 小さな石畳
  ctx.save();ctx.globalAlpha=.28;ctx.strokeStyle='#aa946e';ctx.lineWidth=1;for(let y=330;y<1350;y+=38){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(770,y-100);ctx.stroke()}for(let x=10;x<760;x+=48){ctx.beginPath();ctx.moveTo(x,300);ctx.lineTo(x+180,1320);ctx.stroke()}ctx.restore();
  // カフェと住宅
