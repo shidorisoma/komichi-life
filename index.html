@@ -939,6 +939,15 @@ function arrive(p,i){
  
  const actionLog={work:p.name+'が仕事をしている。',sleep:p.name+'が家に帰って眠っている。',home:p.name+'が家で過ごしている。',flowers:p.name+'が'+(p.flowerScene?.diary||'花壇のそばで花を眺めた')+'。',bench:p.name+'が'+(p.benchScene?.diary||'ベンチでひと休みした')+'。',cafe:p.name+'が喫茶こもれびで'+(p.cafeScene||'ひと休みしている')+'。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が'+(p.walkScene?.diary||'街を散歩した')+'。'};
  addDiary(actionLog[p.action]||p.name+'が'+p.activity+'。');
+ const firstVisitLabels={cafe:'喫茶こもれび',bench:'ベンチ',flowers:'花壇',walk:'街の散歩'};
+ const firstVisit=firstVisitLabels[p.action];
+ if(firstVisit){
+  if(!Array.isArray(p.firstVisitedActivities))p.firstVisitedActivities=[];
+  if(!p.firstVisitedActivities.includes(p.action)){
+   p.firstVisitedActivities.push(p.action);
+   addDiary(p.name+'が初めて'+firstVisit+'を訪れた。');
+  }
+ }
 
 }
 function updateRelationshipPanel(){
