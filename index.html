@@ -700,7 +700,7 @@ function startWork(p,i,plan){
   setAction(p,i,'work',place.x,place.y,travel,stay,'stand',plan.duration);
  }
  function weatherLabel(){return weatherType==='rainy'?'雨':weatherType==='cloudy'?'くもり':'晴れ'}
- function updateWeather(){if(weatherDay!==calendarDay){weatherDay=calendarDay;if(Math.random()<.42){const roll=Math.random();weatherType=roll<.48?'sunny':roll<.76?'cloudy':'rainy'}}}
+ function updateWeather(){if(weatherDay!==calendarDay){weatherDay=calendarDay;const previous=weatherType;if(Math.random()<.42){const roll=Math.random();weatherType=roll<.48?'sunny':roll<.76?'cloudy':'rainy'}if(weatherType!==previous)addDiary('天気が'+weatherLabel()+'に変わった。');}}
  function hobbyConditionMet(hobby){
   const t=hobby.timeRule||'any',h=hour;
   if(t==='morning'&&!(h>=5&&h<10))return false;
