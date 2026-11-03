@@ -56,7 +56,7 @@ const homeLayoutCatalog={
  '3LDK':[{name:'広々3LDK',rooms:[{type:'bedroom',name:'寝室',x:125,y:410,w:300,h:190},{type:'bedroom',name:'洋室1',x:125,y:600,w:300,h:190},{type:'bedroom',name:'洋室2',x:125,y:790,w:300,h:190},{type:'living',name:'LDK',x:425,y:410,w:350,h:570},{type:'kitchen',name:'キッチン',x:625,y:410,w:150,h:230}]}]
 };
 let selectedHomeLayout='2LDK',homeSubPage='menu';
-const residentialPlots=[{id:'north-west',label:'北西の住宅地',x:275,y:285},{id:'north-center',label:'北中央の住宅地',x:325,y:360},{id:'south-west',label:'西南の住宅地',x:235,y:875},{id:'south-center',label:'西中央の住宅地',x:265,y:820},{id:'south-east',label:'西北の住宅地',x:250,y:590},{id:'west-center',label:'西中の住宅地',x:185,y:700},{id:'center-east',label:'北東の住宅地',x:315,y:460},{id:'west-south',label:'西北奥の住宅地',x:205,y:475},{id:'center-west-home',label:'中央西の住宅地',x:300,y:700}];
+const residentialPlots=[{id:'north-west',label:'北西の住宅地',x:140,y:300},{id:'north-center',label:'北中央の住宅地',x:300,y:300},{id:'south-west',label:'西南の住宅地',x:140,y:550},{id:'south-center',label:'西中央の住宅地',x:300,y:550},{id:'south-east',label:'西北の住宅地',x:140,y:800},{id:'west-center',label:'西中の住宅地',x:300,y:800},{id:'center-east',label:'北東の住宅地',x:140,y:800},{id:'west-south',label:'西北奥の住宅地',x:300,y:800},{id:'center-west-home',label:'中央西の住宅地',x:300,y:800}];
 function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
 function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();saveGame(true);drawWorld();return true}
 function createHomeFromTemplate(layoutKey,residentIds){
@@ -347,8 +347,8 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   {main:true,start:[470,170],curves:[[[505,280],[525,430],[490,555]],[[455,700],[445,870],[445,1010]]]},
   // 左側の住宅街へ伸びる短い枝道。
   {start:[505,350],curves:[[[445,365],[360,405],[300,450]]]},
-  {start:[490,555],curves:[[[420,560],[345,590],[275,620]],[[235,650],[205,680],[185,700]]]},
-  {start:[465,790],curves:[[[410,805],[345,835],[275,865]],[[230,890],[205,920],[185,945]]]}
+  {start:[490,555],curves:[[[420,575],[345,650],[275,700]],[[235,715],[205,735],[185,750]]]},
+  {start:[465,790],curves:[[[410,820],[345,900],[275,950]],[[230,965],[205,985],[185,1000]]]}
  ];
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
  roadRoutes.forEach(route=>{
@@ -364,7 +364,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // 住宅以外の施設にも入口と歩行者用アクセス路を設定。
  const facilityPaths=[
   [[300,450],[250,330]],                         // 喫茶こもれび
-  [[185,700],[105,755]],                         // こみちのベンチ
+  [[185,750],[105,805]],                         // こみちのベンチ
   [[650,900],[700,930],[780,1010]]               // 川辺のベンチ
  ];
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
@@ -392,7 +392,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   // 小さな石畳
  ctx.save();ctx.globalAlpha=.28;ctx.strokeStyle='#aa946e';ctx.lineWidth=1;for(let y=330;y<1350;y+=38){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(770,y-100);ctx.stroke()}for(let x=10;x<760;x+=48){ctx.beginPath();ctx.moveTo(x,300);ctx.lineTo(x+180,1320);ctx.stroke()}ctx.restore();
  // カフェと住宅
- drawCafe(240,290);
+ drawCafe(95,190);
  // 登録されている住居を、それぞれの所在地に描画
  function drawHouseExterior(home,index){
  const x=home.x,y=home.y;
@@ -549,10 +549,10 @@ const roadNodes=[
  {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
  // 左側の住宅街。各枝道は住宅の南側へ回り込む。
  {id:'res-north',x:300,y:450,links:['main-upper','cafe-entry']},
- {id:'res-mid',x:275,y:620,links:['main-mid','res-mid-west','bench-path-entry']},
- {id:'res-mid-west',x:185,y:700,links:['res-mid']},
- {id:'res-south',x:275,y:865,links:['main-lower','res-south-west']},
- {id:'res-south-west',x:185,y:945,links:['res-south']},
+ {id:'res-mid',x:275,y:700,links:['main-mid','res-mid-west','bench-path-entry']},
+ {id:'res-mid-west',x:185,y:750,links:['res-mid']},
+ {id:'res-south',x:275,y:950,links:['main-lower','res-south-west']},
+ {id:'res-south-west',x:185,y:1000,links:['res-south']},
  {id:'cafe-entry',x:250,y:330,links:['res-north'],facility:true},
  {id:'bench-path-entry',x:105,y:755,links:['res-mid-west'],facility:true},
  // 右側は公園の曲線散歩道。公園内に住宅は置かない。
@@ -598,7 +598,7 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null){
  points.push(...nodes.map(n=>({x:n.x,y:n.y})));
  if(destinationHome){
   const e=homeEntrance(destinationHome),approachY=e.y+100;
-  points.push({x:goal.x,y:approachY},{x:e.x,y:approachY},{x:e.x,y:e.y+25});
+  points.push({x:goal.x,y:goal.y},{x:goal.x,y:approachY},{x:e.x,y:approachY},{x:e.x,y:e.y+25});
  }
  points.push({x:toX,y:toY});
  return points;
