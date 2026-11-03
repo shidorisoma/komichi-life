@@ -501,6 +501,7 @@ if(t==='memories'){
 }
 }document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 document.getElementById('mapToggle').onclick=()=>{if(interiorHomeId){interiorHomeId='';homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;showTab('walk',true);drawWorld()}else showTab('map')};
+showTab('walk',true);
 c.addEventListener('click',()=>{if(panel.classList.contains('show'))showTab('walk')});
 })();
 </script></body></html>
