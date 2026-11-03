@@ -1191,6 +1191,7 @@ function renderResidentManager(){
    '<div class="metricTitle">趣味</div><div class="residentProfileText">'+(String(viewing.hobbies||'').split(/[\\n,、，;；]+/).map(h=>h.trim()).filter(Boolean).map(h=>'<div class="residentHistoryRow">'+escapeHtml(h)+'</div>').join('')||'<span class="subtle">趣味はまだ登録されていません。</span>')+'</div>'+
    '<div class="metricTitle">職業名</div><div class="residentProfileText">'+escapeHtml(viewing.jobTitle||'未設定')+'</div>'+
    '<div class="metricTitle">現在の状態</div>'+meter('元気',viewing.needs.energy)+meter('空腹',viewing.needs.hunger)+meter('気分',viewing.needs.mood)+
+   '<div class="metricTitle">食材ストック</div><div class="residentProfileText">食材 '+Math.max(0,Number(viewing.foodIngredients)||0)+'個 ／ 釣った魚 '+Math.max(0,Number(viewing.fishIngredients)||0)+'匹</div>'+
    '<div class="metricTitle">所持金</div><div class="residentProfileText">¥'+Math.floor(Number(viewing.money)||0).toLocaleString('ja-JP')+'</div>'+
    '<button class="historyToggle" id="toggleMoneyHistory" aria-expanded="false">通帳を開く ▾</button>'+
    
