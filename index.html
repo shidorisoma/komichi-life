@@ -743,18 +743,20 @@ function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function homeSouthRoadNode(home){
  if(!home)return roadNodes[0];
  const row=home.y<520?'row1':home.y<700?'row2':'row3';
- // 玄関真下の縦道が横道にT字接続する。経路グラフ上は左右どちらにも
- // 分岐できるよう、その横道の最寄りノードを使う。
- const accessNodes=roadNodes.filter(n=>n.id==='west-'+(row==='row1'?'north':row==='row2'?'mid':'south')||n.id==='res-'+row+'-center'||n.id==='res-'+row+'-east');
  const entrance=homeEntrance(home),roadY=entrance.y+50;
- return accessNodes.reduce((best,n)=>Math.hypot(n.x-entrance.x,n.y-roadY)<Math.hypot(best.x-entrance.x,best.y-roadY)?n:best,accessNodes[0]||roadNodes[0]);
+ // 玄関直下の縦道の先端そのものを道路グラフの分岐点にする。
+ // 左右の既存道路ノードへ接続するため、どちら向きにも最短で出られる。
+ const links=['west-'+(row==='row1'?'north':row==='row2'?'mid':'south'),'res-'+row+'-center','res-'+row+'-east'];
+ return {id:'home-access-'+home.id,x:entrance.x,y:roadY,links};
 }
 function roadNodePath(start,goal){
  if(!start||!goal)return start?[start]:[];
  if(start.id===goal.id)return [start];
- // 道路接続は双方向。距離を重みとして、遠回りの少ない経路を選ぶ。
- const distance=new Map(roadNodes.map(n=>[n.id,Infinity]));
- const previous=new Map(),unvisited=new Set(roadNodes.map(n=>n.id));
+ // 住宅の玄関直下にある仮想T字分岐も含めて最短経路を計算する。
+ const graphNodes=[...roadNodes];
+ [start,goal].forEach(node=>{if(!graphNodes.some(n=>n.id===node.id))graphNodes.push(node)});
+ const distance=new Map(graphNodes.map(n=>[n.id,Infinity]));
+ const previous=new Map(),unvisited=new Set(graphNodes.map(n=>n.id));
  distance.set(start.id,0);
  while(unvisited.size){
   let currentId=null,currentDistance=Infinity;
@@ -762,8 +764,8 @@ function roadNodePath(start,goal){
   if(currentId===null||!Number.isFinite(currentDistance))break;
   if(currentId===goal.id)break;
   unvisited.delete(currentId);
-  const current=roadNodes.find(n=>n.id===currentId);
-  const neighbors=roadNodes.filter(n=>unvisited.has(n.id)&&((current?.links||[]).includes(n.id)||(n.links||[]).includes(currentId)));
+  const current=graphNodes.find(n=>n.id===currentId);
+  const neighbors=graphNodes.filter(n=>unvisited.has(n.id)&&((current?.links||[]).includes(n.id)||(n.links||[]).includes(currentId)));
   neighbors.forEach(next=>{
    const edge=Math.hypot(next.x-current.x,next.y-current.y);
    const candidate=currentDistance+edge;
@@ -774,7 +776,7 @@ function roadNodePath(start,goal){
  const ids=[goal.id];let cursor=goal.id;
  while(cursor!==start.id){cursor=previous.get(cursor);if(!cursor)return [start];ids.push(cursor)}
  ids.reverse();
- return ids.map(id=>roadNodes.find(n=>n.id===id)).filter(Boolean);
+ return ids.map(id=>graphNodes.find(n=>n.id===id)).filter(Boolean);
 }
 function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
