@@ -832,7 +832,9 @@ function benchSceneFor(p){
  const curiosity=Math.max(0,Math.min(100,p.curiosity??50));
  const sociability=Math.max(0,Math.min(100,p.sociability??50));
  if(energy<35)return {stay:'ベンチに座って、ゆっくり体を休めている',diary:'ベンチでひと息つき、体を休めた'};
+ if(weatherType==='rainy')return {stay:'雨の様子を眺めながら、ベンチで静かに過ごしている',diary:'ベンチで雨の降る街を眺めた'};
  if(weatherType==='sunny'&&curiosity>=65)return {stay:'日なたのベンチで、街の様子を眺めている',diary:'日なたのベンチで街の様子を眺めた'};
+ if(weatherType==='cloudy')return {stay:'涼しい風を感じながら、ベンチでひと休みしている',diary:'ベンチで涼しい風を感じながら休んだ'};
  if(sociability>=68)return {stay:'ベンチでひと休みしながら、通りかかる人に挨拶している',diary:'ベンチで休みながら、通りかかる人に挨拶した'};
  if(curiosity>=68)return {stay:'ベンチに座って、行き交う人や街の様子を眺めている',diary:'ベンチから行き交う人や街の様子を眺めた'};
  return {stay:'ベンチでひと休みしている',diary:'ベンチでひと休みした'};
