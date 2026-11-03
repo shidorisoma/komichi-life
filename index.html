@@ -536,9 +536,8 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  homes&&Object.values(homes).forEach(home=>{
   const entrance=homeEntrance(home);if(!entrance)return;
   const approachY=entrance.y+50;
-  // 経路計算で選ばれる最寄りの共用道路ノードと、描画する玄関道の接続位置を一致させる。
-  const laneX=homeSouthRoadNode(home).x;
-  ctx.beginPath();ctx.moveTo(laneX,approachY);ctx.lineTo(entrance.x,approachY);ctx.lineTo(entrance.x,entrance.y);
+  // 玄関の真下へ短い縦道を伸ばし、家の前の横道へT字接続する。
+  ctx.beginPath();ctx.moveTo(entrance.x,entrance.y);ctx.lineTo(entrance.x,approachY);
   ctx.strokeStyle='#a98d68';ctx.lineWidth=38;ctx.stroke();
   ctx.strokeStyle='#ead5ad';ctx.lineWidth=26;ctx.stroke();
  });
@@ -744,12 +743,11 @@ function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function homeSouthRoadNode(home){
  if(!home)return roadNodes[0];
  const row=home.y<520?'row1':home.y<700?'row2':'row3';
- // 玄関前から右方向へそのまま横道に合流できるノードを優先。
- // 西側の縦道を最寄りとして選ぶと、玄関から左へ逆走するL字経路になる。
- const rowNodes=roadNodes.filter(n=>n.id==='res-'+row+'-center'||n.id==='res-'+row+'-east');
- const rightNodes=rowNodes.filter(n=>n.x>=home.x+2);
- const candidates=rightNodes.length?rightNodes:rowNodes;
- return candidates.reduce((best,n)=>Math.hypot(n.x-(home.x+2),n.y-(home.y+128))<Math.hypot(best.x-(home.x+2),best.y-(home.y+128))?n:best,candidates[0]||roadNodes[0]);
+ // 玄関真下の縦道が横道にT字接続する。経路グラフ上は左右どちらにも
+ // 分岐できるよう、その横道の最寄りノードを使う。
+ const accessNodes=roadNodes.filter(n=>n.id==='west-'+(row==='row1'?'north':row==='row2'?'mid':'south')||n.id==='res-'+row+'-center'||n.id==='res-'+row+'-east');
+ const entrance=homeEntrance(home),roadY=entrance.y+50;
+ return accessNodes.reduce((best,n)=>Math.hypot(n.x-entrance.x,n.y-roadY)<Math.hypot(best.x-entrance.x,best.y-roadY)?n:best,accessNodes[0]||roadNodes[0]);
 }
 function roadNodePath(start,goal){
  if(!start||!goal)return start?[start]:[];
@@ -793,12 +791,9 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const points=[{x:fromX,y:fromY}];
  let routeNodes=nodes;
  if(startHome){
-  const e=homeEntrance(startHome),upperHouse=startHome.y<400,approachY=upperHouse?430:e.y+50;
-  // 上側住宅は玄関前から横道へそのまま出られる。最寄りノードまで逆走せず、
-  // 横道上の次の経路ノードへ直接つなぐ。
+  const e=homeEntrance(startHome),approachY=e.y+50;
+  // 玄関から真下の短い縦道で横道へ合流。左右の行き先は横道上で選ぶ。
   points.push({x:e.x,y:approachY});
-  if(upperHouse)routeNodes=nodes.slice(1);
-  else points.push({x:start.x,y:approachY});
  }
  points.push(...routeNodes.map(n=>({x:n.x,y:n.y})));
  if(destinationHome){
