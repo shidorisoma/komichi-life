@@ -254,8 +254,20 @@ function facilityBlocksMovement(x,y,p){
  return false;
 }
 function isBlockedByStructure(x,y,p){
- return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p);
+ return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p)||natureBlocksMovement(x,y,p);
 }
+function natureBlocksMovement(x,y,p){
+ const trees=[{x:690,y:575,r:25},{x:675,y:930,r:22},{x:575,y:710,r:20},{x:360,y:1110,r:21}];
+ for(const tree of trees)if(Math.hypot(x-tree.x,y-tree.y)<tree.r)return true;
+ for(let i=0;i<15;i++){
+  const sx=560+(i*47)%170,sy=430+(i*83)%620,sr=8+(i%3)*3;
+  if(Math.hypot(x-sx,y-sy)<sr)return true;
+ }
+ const beds=[{left:565,right:720,top:439,bottom:535},{left:585,right:725,top:794,bottom:885}];
+ if(beds.some(b=>x>b.left&&x<b.right&&y>b.top&&y<b.bottom))return true;
+ return false;
+}
+
 function relationshipLabel(ids){return ids.map(id=>residentById(id)?.name||id).join(' ＆ ')}
 function ensureRelationship(a,b,seed){
  const ids=[typeof a==='string'?a:a.id,typeof b==='string'?b:b.id].sort(),id=pairIdFor(ids[0],ids[1]);
