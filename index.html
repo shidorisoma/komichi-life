@@ -472,7 +472,8 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   // カフェへはメインストリートから短く分岐
   {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
   // こみち商店へ向かう短い枝道
-  {start:[505,350],curves:[[[535,355],[565,375],[590,390]]]},
+  // 商店へは建物の南側を回り、正面入口へ南から近づく。
+  {start:[505,350],curves:[[[505,405],[505,490],[700,490]]]},
   // 上側住宅2軒の南側に一本だけ共用横道を通す。
   {start:[190,430],curves:[[[270,430],[350,430],[430,430]]]},
   // 横道の先端から幹線の縁まで、短い直線で合流。
@@ -671,7 +672,8 @@ const roadNodes=[
  {id:'main-north',x:470,y:170,links:['main-upper']},
  {id:'main-upper',x:505,y:350,links:['main-north','main-mid','cafe-entry','north-east']},
  {id:'main-mid',x:490,y:555,links:['main-upper','main-lower','park-entry']},
- {id:'shop-entry',x:590,y:390,links:['main-upper'],facility:true},
+ {id:'shop-south-turn',x:505,y:490,links:['main-upper','shop-entry']},
+ {id:'shop-entry',x:700,y:490,links:['shop-south-turn'],facility:true},
  {id:'main-lower',x:465,y:790,links:['main-mid','main-plaza','west-junction']},
  {id:'main-plaza',x:445,y:1010,links:['main-lower','plaza-center']},
  {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
