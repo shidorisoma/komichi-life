@@ -348,9 +348,9 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   // カフェへはメインストリートから短く分岐
   {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
   // 上側住宅2軒の南側に一本だけ共用横道を通す。
-  {start:[190,430],curves:[[[280,430],[380,430],[470,430]]]},
-  // 横道の東端は幹線の西側の縁で合流。幹線の中央線までは入り込ませない。
-  {start:[470,430],curves:[[[465,420],[460,410],[455,400]]]},
+  {start:[190,430],curves:[[[270,430],[350,430],[430,430]]]},
+  // 横道の先端から幹線の縁まで、短い直線で合流。
+  {start:[430,430],curves:[[[442,430],[454,430],[466,430]]]},
   // 下側住宅街の縦道。上側住宅街とは道路を混ぜない。
   {start:[90,650],curves:[[[90,715],[90,785],[90,850]],[[90,920],[90,985],[90,1050]]]},
   // 下側共用道路から幹線へは一か所だけ接続。
@@ -550,7 +550,7 @@ const roadNodes=[
  // 上側2軒は南側の共用横道へ。背面を囲む道路は作らない。
  {id:'north-west',x:190,y:430,links:['north-center']},
  {id:'north-center',x:330,y:430,links:['north-west','north-east']},
- {id:'north-east',x:470,y:430,links:['north-center','main-upper']},
+ {id:'north-east',x:466,y:430,links:['north-center','main-upper']},
  // 下側住宅街は西側の縦道と短い接続路を共有。
  {id:'west-north',x:90,y:650,links:['west-mid']},
  {id:'west-mid',x:90,y:850,links:['west-north','west-south','west-junction']},
