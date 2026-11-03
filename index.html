@@ -1084,7 +1084,7 @@ if(t==='relations'){
   title.textContent='';
   const pairMemories=memories.filter(m=>m.pairId===relation.id);
   body.innerHTML='<div class="relationPageHeader"><button class="relationBack" aria-label="戻る">‹</button><b>'+escapeHtml(relation.label)+'</b></div><div class="relationDetail"><div class="metricTitle">関係パラメーター</div>'+relationMeter('愛情',relation.affection,'affection')+relationMeter('信頼',relation.trust,'trust')+relationMeter('親密',relation.intimacy,'intimacy')+'<div class="metricTitle">ふたりの思い出</div>'+
-  (pairMemories.length?pairMemories.map(m=>'<div class="entry"><small>'+escapeHtml(Number.isFinite(m.day)?(m.day+1)+'日目・':'')+escapeHtml(m.time)+'</small><b>'+escapeHtml(m.title)+'</b><br>'+escapeHtml(m.text)+'</div>').join(''):'<div class="subtle">ふたりの思い出は、これから少しずつ増えていきます。</div>')+'</div>';
+  (pairMemories.length?pairMemories.map((m,i,arr)=>{const dayKey=Number.isFinite(m.day)?m.day:'old';const prev=i>0?(Number.isFinite(arr[i-1].day)?arr[i-1].day:'old'):null;const heading=dayKey!==prev?'<div class="metricTitle">'+(dayKey==='old'?'過去の記録':(dayKey+1)+'日目')+'</div>':'';return heading+'<div class="entry"><small>'+escapeHtml(m.time||'')+'</small><b>'+escapeHtml(m.title)+'</b><br>'+escapeHtml(m.text)+'</div>'}).join(''):'<div class="subtle">ふたりの思い出は、これから少しずつ増えていきます。</div>')+'</div>';
   body.querySelector('.relationBack').onclick=()=>{expandedRelationId='';showTab('relations',true)};
  }else{
   expandedRelationId='';
