@@ -701,7 +701,7 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const ownHome=resident?homes[householdForResident(resident).homeId]:null;
  const startHome=ownHome&&(()=>{
   const e=homeEntrance(ownHome),sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
-  const [w,h]=sizes[ownHome.layoutKey]||[116,,100];
+  const [w,h]=sizes[ownHome.layoutKey]||[116,100];
   const inside=fromX>=ownHome.x-w/2-9&&fromX<=ownHome.x+w/2+9&&fromY>=ownHome.y-h*.34-24&&fromY<=ownHome.y+h*.52+31;
   return inside||(e&&Math.hypot(fromX-e.x,fromY-e.y)<90);
  })()?ownHome:null;
