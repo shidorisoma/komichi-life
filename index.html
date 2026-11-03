@@ -347,8 +347,15 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  homes&&Object.values(homes).forEach(home=>{
   const entrance=homeEntrance(home);
   if(!entrance)return;
-  const node=roadNodes.reduce((best,n)=>Math.hypot(n.x-entrance.x,n.y-entrance.y)<Math.hypot(best.x-entrance.x,best.y-entrance.y)?n:best,roadNodes[0]);
-  ctx.beginPath();ctx.moveTo(node.x,node.y);ctx.lineTo(entrance.x,entrance.y);
+  // 玄関は家の南側。必ず建物より南にある道路接続点から近づける。
+  const candidates=roadNodes.filter(n=>n.y>entrance.y+24);
+  const node=(candidates.length?candidates:roadNodes).reduce((best,n)=>{
+   const score=Math.hypot((n.x-entrance.x)*1.15,n.y-entrance.y);
+   const bestScore=Math.hypot((best.x-entrance.x)*1.15,best.y-entrance.y);
+   return score<bestScore?n:best;
+  },(candidates.length?candidates:roadNodes)[0]);
+  const approach={x:entrance.x,y:entrance.y+38};
+  ctx.beginPath();ctx.moveTo(node.x,node.y);ctx.lineTo(approach.x,approach.y);ctx.lineTo(entrance.x,entrance.y);
   ctx.strokeStyle='#b49c76';ctx.lineWidth=48;ctx.stroke();
   ctx.strokeStyle='#ead9b8';ctx.lineWidth=36;ctx.stroke();
  });
