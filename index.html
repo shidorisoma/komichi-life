@@ -91,7 +91,7 @@ function buyFurniture(residentId,furnitureId,ownerType,ownerId,roomId){
  buyer.money-=def.price;
  const item={instanceId:'furniture-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),furnitureId,purchaserId:residentId,ownershipType,ownerId:actualOwner,homeId,roomId:validRoom,x:0,y:0,rotation:0,allowedResidentIds:null,placed:true};
  furniture.push(item);rooms[validRoom].furnitureIds.push(item.instanceId);
- buyer.moneyHistory=Array.isArray(buyer.moneyHistory)?buyer.moneyHistory:[];buyer.moneyHistory.unshift({time:timeLabel(),type:'expense',amount:def.price,reason:def.name+'を購入'});buyer.moneyHistory=buyer.moneyHistory.slice(0,100);
+ recordMoney(buyer,'expense',def.price,def.name+'を購入');
  saveGame();return item;
 }
 function giftFurniture(instanceId,ownerId){
