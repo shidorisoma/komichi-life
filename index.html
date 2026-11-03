@@ -723,6 +723,12 @@ function applyScheduleWeights(options,p){
   if(action==='flowers')option.weight*=.35+curious/100*1.25;
   if(action==='cafe')option.weight*=.65+social/100*.7;
   if(action==='home')option.weight*=1+(100-social)/100*.8+(100-active)/100*.9+(100-curious)/100*.5;
+  // 雨の日は屋外行動を控え、家や喫茶店など屋内で過ごす選択を増やす。
+  if(weatherType==='rainy'){
+   if(action==='walk'||action==='flowers')option.weight*=.38;
+   if(action==='home')option.weight*=1.65;
+   if(action==='cafe')option.weight*=1.35;
+  }
  });
 }
 function hobbyChoicesFor(p){
