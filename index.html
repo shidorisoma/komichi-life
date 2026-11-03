@@ -54,12 +54,15 @@ const homeLayoutCatalog={
  '3LDK':[{name:'広々3LDK',rooms:[{type:'bedroom',name:'寝室',x:125,y:410,w:300,h:190},{type:'bedroom',name:'洋室1',x:125,y:600,w:300,h:190},{type:'bedroom',name:'洋室2',x:125,y:790,w:300,h:190},{type:'living',name:'LDK',x:425,y:410,w:350,h:570},{type:'kitchen',name:'キッチン',x:625,y:410,w:150,h:230}]}]
 };
 let selectedHomeLayout='2LDK',homeSubPage='menu';
+const residentialPlots=[{id:'north-west',x:365,y:250},{id:'north-center',x:455,y:265},{id:'south-west',x:330,y:1160},{id:'south-center',x:455,y:1190},{id:'south-east',x:565,y:1115},{id:'west-center',x:330,y:650},{id:'center-east',x:560,y:620},{id:'west-south',x:270,y:1080}];
+function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
 function createHomeFromTemplate(layoutKey,residentIds){
  const variants=homeLayoutCatalog[layoutKey],memberIds=[...new Set((Array.isArray(residentIds)?residentIds:[residentIds]).filter(Boolean))];
  if(!variants?.length||!memberIds.length||memberIds.some(id=>!residentById(id)))return null;
+ const plot=availableResidentialPlot();if(!plot){alert('街の住宅用地がいっぱいです');return null}
  const template=variants[Math.floor(Math.random()*variants.length)];
  const homeId='home-'+Date.now().toString(36),hid='household:'+homeId;
- const home={id:homeId,name:layoutKey+'の新居',layoutKey,templateName:template.name,roomIds:[],x:130+(Object.keys(homes).length%4)*145,y:380+(Object.keys(homes).length%3)*145,rooms:template.rooms.map((r,i)=>({...r,id:homeId+':room'+i,homeId,furnitureIds:[]}))};
+ const home={id:homeId,name:layoutKey+'の新居',layoutKey,templateName:template.name,roomIds:[],mapPlotId:plot.id,x:plot.x,y:plot.y,rooms:template.rooms.map((r,i)=>({...r,id:homeId+':room'+i,homeId,furnitureIds:[]}))};
  homes[homeId]=home;
  home.rooms.forEach(room=>{rooms[room.id]=room;home.roomIds.push(room.id)});
  households[hid]={id:hid,homeId,residentIds:memberIds.slice()};
@@ -75,7 +78,7 @@ function syncHomePlaces(){
  Object.values(homes).forEach(home=>{
   let place=places.find(p=>p.id===home.id);
   if(!place){place={id:home.id,icon:'🏡',x:home.x||250,y:home.y||850,type:'home',description:(home.layoutKey||'住居')+'の住居',actions:['帰宅','休憩']};places.push(place)}
-  place.name=home.name||'住居';place.x=home.x||place.x;place.y=home.y||place.y;
+  place.name=home.name||'住居';place.x=Number.isFinite(home.x)?home.x:(place.x||250);place.y=Number.isFinite(home.y)?home.y:(place.y||850);
  });
 }
 function updateHomeDetails(homeId,name,memberIds){
@@ -321,6 +324,8 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // 住宅
  poly([[555,300],[635,260],[725,300],[645,340]],'#a77d58','#806044',2);poly([[555,300],[645,340],[645,420],[555,380]],'#e7d6b6');poly([[645,340],[725,300],[725,380],[645,420]],'#d4b994');poly([[545,298],[635,248],[738,294],[646,349]],'#916b4c','#75563d',2);poly([[583,310],[620,330],[620,365],[583,347]],'#9ab6ad');poly([[674,326],[706,310],[706,350],[674,366]],'#9ab6ad');ctx.fillStyle='#66513d';ctx.fillRect(628,365,24,55);ctx.fillStyle='#fff1cf';ctx.font='bold 12px sans-serif';ctx.fillText('HOME A',610,287);
  poly([[150,808],[240,758],[343,804],[251,859]],'#916b4c','#75563d',2);poly([[188,820],[225,840],[225,875],[188,855]],'#9ab6ad');poly([[279,836],[311,820],[311,860],[279,876]],'#9ab6ad');ctx.fillStyle='#66513d';ctx.fillRect(248,859,24,55);ctx.fillStyle='#fff1cf';ctx.font='bold 12px sans-serif';ctx.fillText('HOME B',225,797);
+ // 新しく作られた住居。住宅用地に建物そのものを描画する。
+ Object.values(homes).filter(home=>home.mapPlotId).forEach((home,index)=>{const x=home.x,y=home.y;ctx.save();ctx.translate(x,y);poly([[-58,-10],[0,-42],[58,-10],[0,22]],'#b78d63','#806044',2);poly([[-58,-10],[0,22],[0,72],[-58,40]],'#ead9bd','#a98c69',1.5);poly([[0,22],[58,-10],[58,40],[0,72]],'#d7bd98','#a98c69',1.5);poly([[-64,-12],[0,-52],[65,-12],[0,29]],index%3===0?'#8c6b55':index%3===1?'#9a765c':'#7e6655','#6f5541',2);poly([[-43,1],[-20,14],[-20,39],[-43,27]],'#9bb9b1','#6f8d86',1);poly([[22,4],[43,-8],[43,18],[22,30]],'#9bb9b1','#6f8d86',1);ctx.fillStyle='#66513d';ctx.fillRect(-5,39,14,33);ctx.fillStyle='#fff3d4';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.fillText(home.name||'住居',0,-60);if(hour>=18||hour<6){ctx.fillStyle='#f6d98c';ctx.fillRect(-38,7,10,13);ctx.fillRect(29,4,9,12)}ctx.restore()});
  // 花壇と小さな庭
  poly([[35,430],[170,375],[245,415],[110,478]],'#9b7954');poly([[35,416],[170,360],[245,400],[110,462]],'#d2b48a');for(let i=0;i<20;i++)flower(55+(i*29)%175,397+(i*13)%56,.9);
  poly([[535,520],[630,475],[690,510],[595,558]],'#a88a62');poly([[535,504],[630,459],[690,494],[595,542]],'#dfc59b');for(let i=0;i<18;i++)flower(550+(i*23)%125,490+(i*11)%52,.95);
