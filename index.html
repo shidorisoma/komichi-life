@@ -323,8 +323,20 @@ function riverBlocksMovement(x,y){
  if(pointInPolygon(x,y,bridgeWalkway))return false;
  return x>riverEdgeX(y)-10;
 }
+function streetFurnitureBlocksMovement(x,y,p){
+ const benches=[{x:110,y:365},{x:175,y:365},{x:240,y:365},{x:760,y:800},{x:360,y:1180}];
+ for(const bench of benches){
+  const atSeat=p.action==='bench'&&Math.hypot(x-p.tx,y-p.ty)<24;
+  if(!atSeat&&x>=bench.x-32&&x<=bench.x+32&&y>=bench.y-19&&y<=bench.y+13)return true;
+ }
+ const lamps=[{x:650,y:730},{x:310,y:520},{x:860,y:1000}];
+ if(lamps.some(l=>Math.hypot(x-l.x,y-l.y)<10))return true;
+ // 案内板の支柱と板面は歩行者が通り抜けないようにする。
+ if(pointInPolygon(x,y,[{x:420,y:450},{x:456,y:432},{x:456,y:475},{x:420,y:493}]))return true;
+ return false;
+}
 function isBlockedAtPoint(x,y,p){
- return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p)||natureBlocksMovement(x,y,p)||riverBlocksMovement(x,y);
+ return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p)||natureBlocksMovement(x,y,p)||riverBlocksMovement(x,y)||streetFurnitureBlocksMovement(x,y,p);
 }
 // 住人は点ではなく幅のある体として扱い、左右の肩幅ぶんも障害物から離す。
 function isBlockedByStructure(x,y,p){
