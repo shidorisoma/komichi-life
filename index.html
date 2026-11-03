@@ -905,7 +905,7 @@ function chooseRoutine(p,i){
   variants.forEach(variant=>{const action=(variant==='outdoor'||hobby.mode==='walk')?'walk':hobby.mode==='flowers'?'flowers':hobby.mode==='cafe'?'cafe':'home';options.push({action,weight:baseWeight,isHobby:true,run:()=>{
    if(hobby.mode==='home'&&variant!=='outdoor'){
     const home=getPlace(householdForResident(p).homeId);const room=variant==='living'?'living':hobby.room;
-    const stock=householdFoodStore(p);const fishMeal=hobby.kind==='cooking'&&stock.fishIngredients>0;const foodMeal=hobby.kind==='cooking'&&!fishMeal&&stock.foodIngredients>0;if(fishMeal)stock.fishIngredients=Math.max(0,stock.fishIngredients-1);else if(foodMeal)stock.foodIngredients=Math.max(0,stock.foodIngredients-1);p.homeHobby={kind:hobby.kind,room,name:hobby.name,fishMeal,foodMeal};const hobbyLabel=fishMeal?'釣った魚を使って料理をしている':foodMeal?'買ってきた食材で料理をしている':hobby.label;setAction(p,i,'home',home.x,home.y+28,'家へ戻っている',hobbyLabel,'sit',16+Math.random()*24);return
+    const stock=householdFoodStore(p);const fishMeal=hobby.kind==='cooking'&&stock.fishIngredients>0;const foodMeal=hobby.kind==='cooking'&&!fishMeal&&stock.foodIngredients>0;if(fishMeal)stock.fishIngredients=Math.max(0,stock.fishIngredients-1);else if(foodMeal)stock.foodIngredients=Math.max(0,stock.foodIngredients-1);const mealName=fishMeal?['焼き魚定食','魚の煮付け','魚入りの炊き込みご飯'][(Math.random()*3)|0]:foodMeal?['具だくさんの野菜炒め','季節の食材を使ったパスタ','温かい煮込み料理'][(Math.random()*3)|0]:'';p.homeHobby={kind:hobby.kind,room,name:hobby.name,fishMeal,foodMeal,mealName};const hobbyLabel=fishMeal?mealName+'を作っている':foodMeal?mealName+'を作っている':hobby.label;setAction(p,i,'home',home.x,home.y+28,'家へ戻っている',hobbyLabel,'sit',16+Math.random()*24);return
    }
    p.homeHobby=null;
    if(variant==='outdoor'){
@@ -1093,7 +1093,7 @@ function recoverMoodFromRoutine(p,nowStamp){
   change=(hobbyBonus[kind]??.7)+curiosity/500;
   if(kind==='reading'||kind==='craft'||kind==='music')change+=curiosity/250;
   if(kind==='game')change+=sociability/500;
-  if(kind==='cooking'&&p.homeHobby.fishMeal){change+=5;p.needs.hunger=Math.min(100,p.needs.hunger+18);p.homeHobby.fishMeal=false;addDiary(p.name+'が釣った魚を料理して食べ、いつもより満足そうにしている。');}else if(kind==='cooking'&&p.homeHobby.foodMeal){change+=2;p.needs.hunger=Math.min(100,p.needs.hunger+12);p.homeHobby.foodMeal=false;addDiary(p.name+'が買ってきた食材で料理をして食べた。');}
+  if(kind==='cooking'&&p.homeHobby.fishMeal){change+=5;p.needs.hunger=Math.min(100,p.needs.hunger+18);p.homeHobby.fishMeal=false;addDiary(p.name+'が'+(p.homeHobby.mealName||'釣った魚の料理')+'を作って食べ、いつもより満足そうにしている。');}else if(kind==='cooking'&&p.homeHobby.foodMeal){change+=2;p.needs.hunger=Math.min(100,p.needs.hunger+12);p.homeHobby.foodMeal=false;addDiary(p.name+'が'+(p.homeHobby.mealName||'買ってきた食材の料理')+'を作って食べた。');}
  }
  else if(p.phaseState==='moving')change=-.05;
  if(change>0)p.needs.mood=Math.min(100,p.needs.mood+change);
