@@ -161,13 +161,14 @@ function ensureFurnitureWorld(saved){
   if(!plot){plot=residentialPlots.find(p=>!Object.values(homes).some(other=>other!==home&&other.mapPlotId===p.id))||residentialPlots[index%residentialPlots.length];home.mapPlotId=plot.id;}
   home.x=plot.x;home.y=plot.y;
  });
- // 既存の東の住宅は広場から離れた中央西の住宅区画へ一度だけ移す。
- const secondHome=homes.home2;
- if(secondHome&&secondHome.southAccessLayoutVersion!==1){
+ // 広場に最も近い既存住宅を、広場から離れた中央西の住宅区画へ一度だけ移す。
+ const plazaSideHome=Object.values(homes).sort((a,b)=>Math.hypot(a.x-430,a.y-1100)-Math.hypot(b.x-430,b.y-1100))[0];
+ let movedPlazaHome=false;
+ if(plazaSideHome&&Object.keys(homes).length>1&&plazaSideHome.southAccessLayoutVersion!==1){
   const target=residentialPlots.find(p=>p.id==='center-west-home');
-  const occupied=Object.values(homes).some(h=>h!==secondHome&&h.mapPlotId===target?.id);
-  if(target&&!occupied){secondHome.mapPlotId=target.id;secondHome.x=target.x;secondHome.y=target.y;}
-  secondHome.southAccessLayoutVersion=1;
+  const occupied=Object.values(homes).some(h=>h!==plazaSideHome&&h.mapPlotId===target?.id);
+  if(target&&!occupied){plazaSideHome.mapPlotId=target.id;plazaSideHome.x=target.x;plazaSideHome.y=target.y;movedPlazaHome=true;}
+  plazaSideHome.southAccessLayoutVersion=1;
  }
  Object.values(rooms).forEach(room=>room.furnitureIds=[]);
  furniture.forEach(item=>{const room=rooms[item.roomId];if(room&&item.homeId===room.homeId)room.furnitureIds.push(item.instanceId)});
@@ -182,6 +183,7 @@ function ensureFurnitureWorld(saved){
    });
   });
  }
+ if(movedPlazaHome)saveGame();
 }
 function membersForHome(homeId){return chars.filter(p=>householdForResident(p).homeId===homeId).map(p=>p.id)}
 function furnitureOwnerCanUse(item,residentId){
