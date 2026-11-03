@@ -21,7 +21,7 @@ const places=[
  {id:'home',name:'西の住宅',icon:'🏡',x:645,y:340,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'home2',name:'東の住宅',icon:'🏠',x:250,y:850,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'cafe',name:'喫茶こもれび',icon:'☕',x:240,y:290,type:'cafe',description:'飲み物を楽しめる喫茶店',actions:['食事','休憩','デート']},
- {id:'shop',name:'こみち商店',icon:'🛒',x:330,y:600,type:'shop',description:'日用品や食材を買える小さな商店',actions:['買い物','食材を買う']},
+ {id:'shop',name:'こみち商店',icon:'🛒',x:620,y:390,type:'shop',description:'日用品や食材を買える小さな商店',actions:['買い物','食材を買う']},
  {id:'plaza',name:'川辺の広場',icon:'🌳',x:600,y:760,type:'outdoor',description:'川辺の散歩や休憩を楽しめる広場',actions:['散歩','休憩']},
  {id:'bench-river',name:'川辺のベンチ',icon:'🪑',x:795,y:800,type:'bench',description:'水の流れを眺めながら休めるベンチ',actions:['休憩']},
  {id:'bench-path',name:'こみちのベンチ',icon:'🪑',x:90,y:760,type:'bench',description:'木陰のそばでひと休みできるベンチ',actions:['休憩']},
@@ -350,7 +350,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   // カフェへはメインストリートから短く分岐
   {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
   // こみち商店へ向かう短い枝道
-  {start:[490,555],curves:[[[440,560],[390,580],[350,590]]]},
+  {start:[505,350],curves:[[[535,355],[565,375],[590,390]]]},
   // 上側住宅2軒の南側に一本だけ共用横道を通す。
   {start:[190,430],curves:[[[270,430],[350,430],[430,430]]]},
   // 横道の先端から幹線の縁まで、短い直線で合流。
@@ -399,7 +399,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  ctx.save();ctx.globalAlpha=.28;ctx.strokeStyle='#aa946e';ctx.lineWidth=1;for(let y=330;y<1350;y+=38){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(770,y-100);ctx.stroke()}for(let x=10;x<760;x+=48){ctx.beginPath();ctx.moveTo(x,300);ctx.lineTo(x+180,1320);ctx.stroke()}ctx.restore();
  // カフェと住宅
  drawCafe(95,190);
- drawShop(330,600);
+ drawShop(620,390);
  // 登録されている住居を、それぞれの所在地に描画
  function drawHouseExterior(home,index){
  const x=home.x,y=home.y;
@@ -548,8 +548,8 @@ const roadNodes=[
  // 中央メインストリート
  {id:'main-north',x:470,y:170,links:['main-upper']},
  {id:'main-upper',x:505,y:350,links:['main-north','main-mid','cafe-entry','north-east']},
- {id:'main-mid',x:490,y:555,links:['main-upper','main-lower','park-entry','shop-entry']},
- {id:'shop-entry',x:350,y:590,links:['main-mid'],facility:true},
+ {id:'main-mid',x:490,y:555,links:['main-upper','main-lower','park-entry']},
+ {id:'shop-entry',x:590,y:390,links:['main-upper'],facility:true},
  {id:'main-lower',x:465,y:790,links:['main-mid','main-plaza','west-junction']},
  {id:'main-plaza',x:445,y:1010,links:['main-lower','plaza-center']},
  {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
