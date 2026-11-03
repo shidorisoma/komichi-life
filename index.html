@@ -719,6 +719,19 @@ function applyScheduleWeights(options,p){
   const action=option.action;
   if(action&&Number.isFinite(schedule.weights[action]))option.weight*=schedule.weights[action];
   const social=Math.max(0,Math.min(100,p.sociability??50)),active=Math.max(0,Math.min(100,p.activityLevel??50)),curious=Math.max(0,Math.min(100,p.curiosity??50));
+  // 親しい相手が同じ場所・行動にいると、自然に合流しやすくする。
+  if(['walk','flowers','cafe','bench','home'].includes(action)){
+   const companions=chars.filter(other=>other.id!==p.id&&other.action===action&&(other.phaseState==='moving'||other.phaseState==='staying'));
+   let companionBoost=1;
+   companions.forEach(other=>{
+    const relation=relationshipFor(p,other);if(!relation)return;
+    const bond=Math.max(0,Math.min(100,((relation.affection||0)+(relation.trust||0)+(relation.intimacy||0))/3))/100;
+    const status=String(relation.status||'');
+    const statusFactor=status.includes('恋人')?1:status.includes('親友')?.9:status.includes('友人')?.75:.5;
+    companionBoost=Math.max(companionBoost,1+bond*.65*statusFactor);
+   });
+   option.weight*=companionBoost;
+  }
   if(action==='walk')option.weight*=.25+active/100*.8+curious/100*.65;
   if(action==='flowers')option.weight*=.35+curious/100*1.25;
   if(action==='cafe')option.weight*=.65+social/100*.7;
