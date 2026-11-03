@@ -239,7 +239,9 @@ function homeBlocksMovement(home,x,y,p){
  const householdId=householdForResident(p).homeId;
  const entering=(p.action==='home'||p.action==='sleep')&&householdId===home.id;
  const nearDoor=Math.hypot(p.x-entrance.x,p.y-entrance.y)<40;
- return !(doorLane&&(entering||nearDoor));
+ // 自宅から外出する住人は、家の内側にいる間も玄関レーンを通行できる。
+ const insideOwnHome=householdId===home.id&&p.phaseState==='moving'&&!entering&&p.x>=left&&p.x<=right&&p.y>=top&&p.y<=bottom;
+ return !(doorLane&&(entering||nearDoor||insideOwnHome));
 }
 function isBlockedByHome(x,y,p){
  return Object.values(homes||{}).some(home=>homeBlocksMovement(home,x,y,p));
