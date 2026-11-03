@@ -981,6 +981,13 @@ function recoverMoodFromRoutine(p,nowStamp){
  else if(p.action==='bench'&&p.phaseState==='staying')change=.55;
  else if(p.action==='flowers'&&p.phaseState==='staying')change=.35+curiosity/300;
  else if(p.action==='walk'&&p.phaseState==='staying')change=.2+activityLevel/400;
+ else if(p.action==='home'&&p.phaseState==='staying'&&p.homeHobby){
+  const kind=p.homeHobby.kind;
+  const hobbyBonus={reading:.95,craft:1.05,game:.85,music:1.1,cooking:.7,chores:.15,relax:.65};
+  change=(hobbyBonus[kind]??.7)+curiosity/500;
+  if(kind==='reading'||kind==='craft'||kind==='music')change+=curiosity/250;
+  if(kind==='game')change+=sociability/500;
+ }
  else if(p.phaseState==='moving')change=-.05;
  if(change>0)p.needs.mood=Math.min(100,p.needs.mood+change);
  else if(change<0)p.needs.mood=Math.max(20,p.needs.mood+change);
