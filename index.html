@@ -16,7 +16,7 @@
 <div class="panel" id="panel"><h3 id="panelTitle">街の地図</h3><div id="panelBody"></div></div>
 <div class="status" id="residentStatus"></div><nav class="nav"><button class="active" data-tab="walk"><span class="ico">⌁</span>さんぽ</button><button data-tab="residents"><span class="ico">♙</span>住人</button><button data-tab="relations"><span class="ico">♡</span>関係</button><button data-tab="homes"><span class="ico">⌂</span>家</button><button data-tab="memories"><span class="ico">▤</span>ログ</button></nav></div>
 <script>
-(()=>{const c=document.getElementById('world'),ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
+(()=>{const c=document.getElementById('world'),ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,residentDiagnosticTimer=null,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
 const places=[
  {id:'home',name:'西の住宅',icon:'🏡',x:645,y:340,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'home2',name:'東の住宅',icon:'🏠',x:250,y:850,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
@@ -415,21 +415,30 @@ function resetResidentPosition(p,i){
  chooseRoutine(p,i);
  selected=i;renderResidentStatus();drawWorld();saveGame(true);
 }
+function updateResidentDiagnostics(){
+ const body=document.getElementById('panelBody');if(!body||!body.querySelector('.residentDiagnosticRow'))return;
+ chars.forEach((p,i)=>{
+  const node=body.querySelector('[data-diagnostic-index="'+i+'"]');if(!node)return;
+  const route=Array.isArray(p.routePoints)?p.routePoints:[];
+  const index=Math.min(p.routeIndex||1,Math.max(0,route.length-1));
+  const point=route[index]||{x:p.tx,y:p.ty};
+  const distance=Math.hypot(point.x-p.x,point.y-p.y);
+  const blocked=isBlockedByStructure(point.x,point.y,p);
+  const currentBlocked=isBlockedByStructure(p.x,p.y,p);
+  node.textContent='状態 '+(p.action||'?')+' / '+(p.phaseState||'?')+'・位置 '+p.x.toFixed(1)+','+p.y.toFixed(1)+' → 目的地 '+Math.round(p.tx)+','+Math.round(p.ty)+'・次地点 '+Math.round(point.x)+','+Math.round(point.y)+' ('+distance.toFixed(1)+'px)・経路 '+(route.length?index+1:0)+'/'+route.length+'・停滞 '+(Number(p.stuckTime)||0).toFixed(1)+'秒・次地点障害物 '+(blocked?'あり':'なし')+'・現在地障害物 '+(currentBlocked?'あり':'なし');
+ });
+ const runtime=document.getElementById('runtimeDiagnostic');
+ if(runtime)runtime.textContent='ゲーム稼働 '+(paused?'停止中':'動作中')+' / 最終フレーム '+(typeof last==='number'?last.toFixed(0):'不明')+' / 時刻 '+hour+':'+String(minute).padStart(2,'0');
+}
 function openPlaceResidents(){
- const here=interiorHomeId?chars.filter(p=>householdForResident(p).homeId===interiorHomeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'):chars.filter(p=>p.action!=='home'&&p.action!=='sleep'&&p.action!=='workOutside');
  const panel=document.getElementById('panel'),title=document.getElementById('panelTitle'),body=document.getElementById('panelBody');
- panel.classList.remove('mapPanel','homePanel');panel.classList.add('show');title.textContent='この場所にいる住人';
- body.innerHTML=(here.length?here.map(p=>{
- const route=Array.isArray(p.routePoints)?p.routePoints:[];
- const state=p.phaseState||'未設定',action=p.action||'未設定';
- const diagnostic='状態 '+action+' / '+state+'<br>位置 '+Math.round(p.x)+','+Math.round(p.y)+' → 目的地 '+Math.round(p.tx)+','+Math.round(p.ty)+'<br>経路 '+Math.min((p.routeIndex||0)+1,route.length)+' / '+route.length+'・停滞 '+(Number(p.stuckTime)||0).toFixed(1)+'秒';
- return '<div class="residentRow">'+residentAvatar(p)+'<div class="residentInfo"><b>'+escapeHtml(p.name)+'</b><div class="activity">'+escapeHtml(p.activity||'過ごしている')+'</div><div class="subtle" style="font-size:10px;line-height:1.5;margin-top:3px">'+diagnostic+'</div></div><button type="button" class="residentResetBtn" data-resident-index="'+chars.indexOf(p)+'">リセット</button></div>';
- }).join(''):'<div class="subtle">この場所にいる住人はいません。</div>')+'<div class="subtle" id="runtimeDiagnostic" style="margin:8px 0"></div><button class="actionBtn" id="closePlaceResidents">閉じる</button>';
- const runtimeDiagnostic=document.getElementById('runtimeDiagnostic');
- runtimeDiagnostic.textContent='ゲーム稼働 '+(paused?'停止中':'動作中')+' / 最終フレーム '+(typeof last==='number'?last.toFixed(0):'不明');
-
+ panel.classList.remove('mapPanel','homePanel');panel.classList.add('show');title.textContent='住人の移動診断';
+ body.innerHTML=chars.map((p,i)=>'<div class="residentRow residentDiagnosticRow">'+residentAvatar(p)+'<div class="residentInfo"><b>'+escapeHtml(p.name)+(p.action==='home'||p.action==='sleep'?'（自宅）':'（街）')+'</b><div class="activity">'+escapeHtml(p.activity||'過ごしている')+'</div><div class="subtle" data-diagnostic-index="'+i+'" style="font-size:10px;line-height:1.55;margin-top:3px"></div></div><button type="button" class="residentResetBtn" data-resident-index="'+i+'">リセット</button></div>').join('')+'<div class="subtle" id="runtimeDiagnostic" style="margin:8px 0"></div><button class="actionBtn" id="closePlaceResidents">閉じる</button>';
+ updateResidentDiagnostics();
+ if(residentDiagnosticTimer)clearInterval(residentDiagnosticTimer);
+ residentDiagnosticTimer=setInterval(updateResidentDiagnostics,500);
  body.querySelectorAll('.residentResetBtn').forEach(button=>button.onclick=()=>resetResidentPosition(chars[Number(button.dataset.residentIndex)],Number(button.dataset.residentIndex)));
- document.getElementById('closePlaceResidents').onclick=()=>{panel.classList.remove('show');showTab(interiorHomeId?'home':'walk',true)};
+ document.getElementById('closePlaceResidents').onclick=()=>{if(residentDiagnosticTimer)clearInterval(residentDiagnosticTimer);residentDiagnosticTimer=null;panel.classList.remove('show');showTab(interiorHomeId?'home':'walk',true)};
 }
 renderResidentStatus();
 function addResident(definition){const id=definition.id||'resident-'+Date.now();if(chars.some(p=>p.id===id))return null;const offset=chars.length%5;const resident={id,name:definition.name||'新しい住人',money:Number.isFinite(definition.money)?Math.max(0,definition.money):5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},sociability:Number.isFinite(definition.sociability)?Math.max(0,Math.min(100,definition.sociability)):50,curiosity:Number.isFinite(definition.curiosity)?Math.max(0,Math.min(100,definition.curiosity)):50,activityLevel:Number.isFinite(definition.activityLevel)?Math.max(0,Math.min(100,definition.activityLevel)):50,walkPreference:Number.isFinite(definition.walkPreference)?Math.max(0,Math.min(100,definition.walkPreference)):50,naturePreference:Number.isFinite(definition.naturePreference)?Math.max(0,Math.min(100,definition.naturePreference)):50,cafePreference:Number.isFinite(definition.cafePreference)?Math.max(0,Math.min(100,definition.cafePreference)):50,lastInitiatedSocialStamp:-1,lastSocialStamp:-1,x:420+offset*28,y:700+offset*32,tx:420+offset*28,ty:700+offset*32,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame(true);return resident;}
