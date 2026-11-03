@@ -59,9 +59,7 @@ const homeLayoutCatalog={
 let selectedHomeLayout='2LDK',homeSubPage='menu';
 const residentialPlots=[{id:'north-west',label:'北西の住宅地',x:220,y:260},{id:'north-center',label:'北中央の住宅地',x:390,y:260},{id:'south-west',label:'西南の住宅地',x:220,y:550},{id:'south-center',label:'西中央の住宅地',x:390,y:550},{id:'south-east',label:'西北の住宅地',x:220,y:700},{id:'center-west-home',label:'中央西の住宅地',x:390,y:850}];
 function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
-function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();
-// 保存済みの古い経路を現在の道路・玄関ルールで再構築する。
-chars.forEach(p=>{if(p.phaseState==='moving'){p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,null,p);p.routeIndex=1;p.stuckTime=0}});saveGame(true);drawWorld();return true}
+function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();saveGame(true);drawWorld();return true}
 function createHomeFromTemplate(layoutKey,residentIds){
  const variants=homeLayoutCatalog[layoutKey],memberIds=[...new Set((Array.isArray(residentIds)?residentIds:[residentIds]).filter(Boolean))];
  if(!variants?.length||!memberIds.length||memberIds.some(id=>!residentById(id)))return null;
@@ -375,6 +373,15 @@ function loadGame(){
 const hasSave=loadGame();
 ensureFurnitureWorld((()=>{try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'{}').furnitureWorld||null}catch(e){return null}})());
 syncHomePlaces();
+// 保存済みの移動状態は古い道路ルートを含む可能性があるため、起動時に全員分を再構築。
+chars.forEach(p=>{
+ if(p.phaseState==='moving'&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.tx)&&Number.isFinite(p.ty)){
+  const destinationHome=(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null;
+  p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,destinationHome,p);
+  p.routeIndex=1;p.stuckTime=0;p.routeRetries=0;
+ }
+});
+saveGame();
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function safeColor(value,fallback){return /^#[0-9a-f]{3,8}$/i.test(String(value||''))?value:fallback}
 function residentAvatar(p){
