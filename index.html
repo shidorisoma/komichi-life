@@ -59,7 +59,7 @@ function createHomeFromTemplate(layoutKey,residentId){
  const resident=residentById(residentId);if(!resident)return null;
  const template=variants[Math.floor(Math.random()*variants.length)];
  const homeId='home-'+Date.now().toString(36),hid='household:'+homeId;
- const home={id:homeId,name:'新しい '+layoutKey+' の家',layoutKey,templateName:template.name,roomIds:[],x:130+(Object.keys(homes).length%4)*145,y:380+(Object.keys(homes).length%3)*145,rooms:template.rooms.map((r,i)=>({...r,id:homeId+':room'+i,furnitureIds:[]}))};
+ const home={id:homeId,name:'新しい '+layoutKey+' の家',layoutKey,templateName:template.name,roomIds:[],x:130+(Object.keys(homes).length%4)*145,y:380+(Object.keys(homes).length%3)*145,rooms:template.rooms.map((r,i)=>({...r,id:homeId+':room'+i,homeId,furnitureIds:[]}))};
  homes[homeId]=home;
  home.rooms.forEach(room=>{rooms[room.id]=room;home.roomIds.push(room.id)});
  const memberIds=[resident.id];
