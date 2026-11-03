@@ -1075,7 +1075,7 @@ if(t==='relations'){
 }
 if(t==='memories'){
  title.textContent='住人の行動ログ';
- const visibleDiary=diary.filter(d=>!/(?:受け取った|使った)。?$/.test(d.text||''));body.innerHTML=visibleDiary.length?visibleDiary.map(d=>'<div class="entry"><small>'+(Number.isFinite(Number(d.day))?(Number(d.day)+1)+'日目・':'')+escapeHtml(d.time||'')+'</small>'+escapeHtml(d.text||'')+'</div>').join(''):'<div class="subtle">住人たちの行動がここに記録されます。</div>';
+ const visibleDiary=diary.filter(d=>!/(?:受け取った|使った)。?$/.test(d.text||''));let lastDiaryDay=null;body.innerHTML=visibleDiary.length?visibleDiary.map(d=>{const dayKey=Number.isFinite(Number(d.day))?Number(d.day):'old';const heading=dayKey!==lastDiaryDay?'<div class="metricTitle">'+(dayKey==='old'?'過去の記録':(dayKey+1)+'日目')+'</div>':'';lastDiaryDay=dayKey;return heading+'<div class="entry"><small>'+escapeHtml(d.time||'')+'</small>'+escapeHtml(d.text||'')+'</div>'}).join(''):'<div class="subtle">住人たちの行動がここに記録されます。</div>';
 }
 }document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{const target=b.dataset.tab;if(target==='walk'&&interiorHomeId){interiorHomeId='';homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;showTab('walk',true);drawWorld();return}showTab(target)});
 document.getElementById('mapToggle').onclick=()=>{if(interiorHomeId){interiorHomeId='';homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;showTab('walk',true);drawWorld()}else showTab('map')};
