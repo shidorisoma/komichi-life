@@ -236,22 +236,40 @@ function pairIdFor(a,b){const ids=[typeof a==='string'?a:a.id,typeof b==='string
 function residentById(id){return chars.find(p=>p.id===id)||null}
 // 屋外にいる住人だけを街の描画・物理判定・屋外での交流対象にする。
 function isOutdoorResident(p){return !!p&&p.action!=='workOutside'&&!((p.action==='home'||p.action==='sleep')&&p.phaseState==='staying')}
+function pointInHouseFootprint(home,x,y,w,h){
+ const left=-w/2,right=w/2,back=-h*.34,front=h*.52;
+ // 壁の接地面だけを障害物にする。屋根の張り出しや裏側の空間は塞がない。
+ const polygon=[
+  {x:home.x+left,y:home.y+back},
+  {x:home.x,y:home.y+back-22},
+  {x:home.x+right,y:home.y+back},
+  {x:home.x+right,y:home.y+front},
+  {x:home.x,y:home.y+front+30},
+  {x:home.x+left,y:home.y+front}
+ ];
+ let inside=false;
+ for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
+  const a=polygon[i],b=polygon[j];
+  if(((a.y>y)!==(b.y>y))&&(x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x))inside=!inside;
+ }
+ return inside;
+}
 function homeBlocksMovement(home,x,y,p){
  if(!home)return false;
  const sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
  const [w,h]=sizes[home.layoutKey]||[116,100];
  const left=home.x-w/2-9,right=home.x+w/2+9,top=home.y-h*.34-24,bottom=home.y+h*.52+31;
- if(x<left||x>right||y<top||y>bottom)return false;
  const entrance=homeEntrance(home),front=home.y+h*.52;
  const doorLane=Math.abs(x-entrance.x)<18&&y>=front-18&&y<=entrance.y+27;
  const householdId=householdForResident(p).homeId;
  const entering=(p.action==='home'||p.action==='sleep')&&householdId===home.id;
  const nearDoor=Math.hypot(p.x-entrance.x,p.y-entrance.y)<40;
- // 自宅から外出する本人は、部屋から玄関まで家の内側を歩ける。
+ // 自宅から外出する本人は、家の内側から玄関まで歩ける。
  const exitingOwnHome=householdId===home.id&&p.phaseState==='moving'&&!entering&&p.x>=left&&p.x<=right&&p.y>=top&&p.y<=bottom;
  const candidateInsideOwnHome=exitingOwnHome&&x>=left&&x<=right&&y>=top&&y<=bottom;
  if(candidateInsideOwnHome)return false;
- // 家の外壁を越える箇所だけ玄関レーンに限定する。
+ // 建物の接地面だけを塞ぎ、裏側・屋根の張り出し部分は通行可能にする。
+ if(!pointInHouseFootprint(home,x,y,w,h))return false;
  return !(doorLane&&(entering||nearDoor||exitingOwnHome));
 }
 function isBlockedByHome(x,y,p){
