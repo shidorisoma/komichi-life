@@ -29,6 +29,85 @@ const places=[
 ];
 function getPlace(id){return places.find(place=>place.id===id)||null}
 const SAVE_KEY='komichi-life-save-v1';
+// 家具・住居データ。購入者、所有者、利用者、設置場所を独立して管理する。
+const furnitureCatalog={
+ bed:{id:'bed',name:'ベッド',price:1800,rooms:['bedroom'],actions:['sleep','rest'],capacity:2,ownership:'household',unique:'household',size:{w:2,h:2}},
+ fridge:{id:'fridge',name:'冷蔵庫',price:1200,rooms:['kitchen'],actions:['prepareFood'],capacity:1,ownership:'household',unique:'household',size:{w:1,h:2}},
+ table:{id:'table',name:'テーブル',price:900,rooms:['living','kitchen'],actions:['eat','socialize'],capacity:4,ownership:'household',unique:'none',size:{w:2,h:1}},
+ sofa:{id:'sofa',name:'ソファ',price:1100,rooms:['living'],actions:['rest','socialize'],capacity:2,ownership:'household',unique:'none',size:{w:2,h:1}},
+ bookshelf:{id:'bookshelf',name:'本棚',price:700,rooms:['living','study','bedroom'],actions:['read'],capacity:1,ownership:'individual',unique:'none',size:{w:1,h:2}},
+ desk:{id:'desk',name:'デスク',price:850,rooms:['living','study','bedroom'],actions:['study','work'],capacity:1,ownership:'individual',unique:'none',size:{w:2,h:1}},
+ chair:{id:'chair',name:'椅子',price:300,rooms:['living','kitchen','study','bedroom'],actions:['sit','read','study'],capacity:1,ownership:'individual',unique:'none',size:{w:1,h:1}},
+ lamp:{id:'lamp',name:'照明',price:400,rooms:['living','kitchen','study','bedroom'],actions:['relax'],capacity:0,ownership:'household',unique:'none',size:{w:1,h:1}}
+};
+let homes={},households={},rooms={},furniture=[];
+function ensureFurnitureWorld(saved){
+ const homeIds=[...new Set(chars.map(p=>householdForResident(p).homeId))];
+ homes=saved?.homes&&typeof saved.homes==='object'?saved.homes:{};
+ households=saved?.households&&typeof saved.households==='object'?saved.households:{};
+ rooms=saved?.rooms&&typeof saved.rooms==='object'?saved.rooms:{};
+ furniture=Array.isArray(saved?.furniture)?saved.furniture:[];
+ homeIds.forEach(homeId=>{
+  if(!homes[homeId])homes[homeId]={id:homeId,name:homeId==='home'?'西の住宅':'東の住宅',roomIds:['living','kitchen','bedroom','study'].map(type=>homeId+':'+type)};
+  const hid='household:'+homeId;
+  const members=chars.filter(p=>householdForResident(p).homeId===homeId).map(p=>p.id);
+  households[hid]={...(households[hid]||{}),id:hid,homeId,residentIds:members};
+  ['living','kitchen','bedroom','study'].forEach(type=>{
+   const id=homeId+':'+type;
+   if(!rooms[id])rooms[id]={id,homeId,name:{living:'居間',kitchen:'台所',bedroom:'寝室',study:'書斎'}[type],type,furnitureIds:[]};
+  });
+ });
+ Object.values(rooms).forEach(room=>room.furnitureIds=[]);
+ furniture.forEach(item=>{const room=rooms[item.roomId];if(room&&item.homeId===room.homeId)room.furnitureIds.push(item.instanceId)});
+ if(!furniture.length){
+  homeIds.forEach(homeId=>{
+   const hid='household:'+homeId;
+   const starter=[['bed','bedroom',180,790],['fridge','kitchen',555,730],['table','living',190,500],['sofa','living',190,785],['desk','study',515,475]];
+   starter.forEach(([type,roomType,x,y],i)=>{
+    const def=furnitureCatalog[type],instanceId=homeId+'-'+type+'-starter';
+    furniture.push({instanceId,furnitureId:type,purchaserId:'system',ownershipType:def.ownership,ownerId:def.ownership==='household'?hid:membersForHome(homeId)[0]||'',homeId,roomId:homeId+':'+roomType,x,y,rotation:0,allowedResidentIds:null,placed:true});
+    rooms[homeId+':'+roomType].furnitureIds.push(instanceId);
+   });
+  });
+ }
+}
+function membersForHome(homeId){return chars.filter(p=>householdForResident(p).homeId===homeId).map(p=>p.id)}
+function furnitureOwnerCanUse(item,residentId){
+ if(!item||!residentById(residentId))return false;
+ if(Array.isArray(item.allowedResidentIds))return item.allowedResidentIds.includes(residentId);
+ return item.ownershipType==='household'?!!households[item.ownerId]?.residentIds.includes(residentId):item.ownerId===residentId;
+}
+function canResidentUseFurniture(residentId,action,roomId){
+ return furniture.some(item=>item.placed!==false&&(!roomId||item.roomId===roomId)&&item.homeId===householdForResident(residentById(residentId)||{id:residentId}).homeId&&furnitureOwnerCanUse(item,residentId)&&(furnitureCatalog[item.furnitureId]?.actions||[]).includes(action));
+}
+function buyFurniture(residentId,furnitureId,ownerType,ownerId,roomId){
+ const buyer=residentById(residentId),def=furnitureCatalog[furnitureId];if(!buyer||!def||buyer.money<def.price)return null;
+ const homeId=householdForResident(buyer).homeId,hid='household:'+homeId;
+ const ownershipType=ownerType||def.ownership,actualOwner=ownerId||(ownershipType==='household'?hid:residentId);
+ if(ownershipType==='household'&&actualOwner!==hid)return null;
+ if(ownershipType==='individual'&&!residentById(actualOwner))return null;
+ if(def.unique==='household'&&furniture.some(f=>f.homeId===homeId&&f.furnitureId===furnitureId&&f.ownershipType==='household'))return null;
+ const validRoom=roomId&&rooms[roomId]?.homeId===homeId&&def.rooms.includes(rooms[roomId].type)?roomId:homeId+':'+def.rooms[0];
+ buyer.money-=def.price;
+ const item={instanceId:'furniture-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),furnitureId,purchaserId:residentId,ownershipType,ownerId:actualOwner,homeId,roomId:validRoom,x:0,y:0,rotation:0,allowedResidentIds:null,placed:true};
+ furniture.push(item);rooms[validRoom].furnitureIds.push(item.instanceId);
+ buyer.moneyHistory=Array.isArray(buyer.moneyHistory)?buyer.moneyHistory:[];buyer.moneyHistory.unshift({time:timeLabel(),type:'expense',amount:def.price,reason:def.name+'を購入'});buyer.moneyHistory=buyer.moneyHistory.slice(0,100);
+ saveGame();return item;
+}
+function giftFurniture(instanceId,ownerId){
+ const item=furniture.find(f=>f.instanceId===instanceId);if(!item||!residentById(ownerId))return false;
+ if(item.ownershipType==='household')return false;
+ if(householdForResident(residentById(ownerId)).homeId!==item.homeId)return false;
+ item.ownerId=ownerId;item.ownershipType='individual';item.allowedResidentIds=null;saveGame();return true;
+}
+function moveFurniture(instanceId,roomId,x,y,rotation){
+ const item=furniture.find(f=>f.instanceId===instanceId),room=rooms[roomId],def=item&&furnitureCatalog[item.furnitureId];
+ if(!item||!room||room.homeId!==item.homeId||!def.rooms.includes(room.type))return false;
+ const old=rooms[item.roomId];if(old)old.furnitureIds=old.furnitureIds.filter(id=>id!==instanceId);
+ item.roomId=roomId;item.x=Number.isFinite(x)?x:0;item.y=Number.isFinite(y)?y:0;item.rotation=Number.isFinite(rotation)?rotation:0;room.furnitureIds.push(instanceId);saveGame();return true;
+}
+window.furnitureCatalog=furnitureCatalog;window.buyFurniture=buyFurniture;window.giftFurniture=giftFurniture;window.moveFurniture=moveFurniture;window.canResidentUseFurniture=canResidentUseFurniture;
+
 let saveElapsed=0;
 function pairIdFor(a,b){const ids=[typeof a==='string'?a:a.id,typeof b==='string'?b:b.id].sort();return ids[0]==='nagisumi'&&ids[1]==='yaku'?'nagisumi-yaku':'pair:'+encodeURIComponent(JSON.stringify(ids))}
 function residentById(id){return chars.find(p=>p.id===id)||null}
@@ -67,14 +146,14 @@ function restoreRelationships(saved,legacyBond){
 function relationMeter(label,value,key){return '<div class="meter" data-relation-stat="'+key+'"><span>'+label+'</span><div class="track"><div class="fill" style="width:'+Math.round(value)+'%"></div></div><b>'+Math.round(value)+'</b></div>'}
 function saveGame(){
  try{
-  const data={version:3,savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},residents:chars.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}))};
+  const data={version:4,furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},residents:chars.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}))};
   localStorage.setItem(SAVE_KEY,JSON.stringify(data));
  }catch(e){console.warn('セーブに失敗しました',e)}
 }
 function loadGame(){
  try{
   const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;
-  const data=JSON.parse(raw);if(!data||![1,2,3].includes(data.version))return false;lastSocialPairId=typeof data.lastSocialPairId==='string'?data.lastSocialPairId:'';sameSocialPairCount=Number.isFinite(data.sameSocialPairCount)?Math.max(0,data.sameSocialPairCount):0;
+  const data=JSON.parse(raw);if(!data||![1,2,3,4].includes(data.version))return false;lastSocialPairId=typeof data.lastSocialPairId==='string'?data.lastSocialPairId:'';sameSocialPairCount=Number.isFinite(data.sameSocialPairCount)?Math.max(0,data.sameSocialPairCount):0;
   if(data.clock){hour=Number.isFinite(data.clock.hour)?data.clock.hour:hour;minute=Number.isFinite(data.clock.minute)?data.clock.minute:minute;day=Number.isFinite(data.clock.day)?data.clock.day:day;calendarDay=Number.isFinite(data.clock.calendarDay)?data.clock.calendarDay:calendarDay}if(data.weather&&['sunny','cloudy','rainy'].includes(data.weather.type)){weatherType=data.weather.type;weatherDay=Number.isFinite(data.weather.day)?data.weather.day:calendarDay}
   
   if(data.bond)Object.keys(bond).forEach(k=>{if(Number.isFinite(data.bond[k]))bond[k]=Math.max(0,Math.min(100,data.bond[k]))});
@@ -97,6 +176,7 @@ function loadGame(){
  }catch(e){console.warn('セーブデータを読み込めませんでした',e);return false}
 }
 const hasSave=loadGame();
+ensureFurnitureWorld((()=>{try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'{}').furnitureWorld||null}catch(e){return null}})());
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function safeColor(value,fallback){return /^#[0-9a-f]{3,8}$/i.test(String(value||''))?value:fallback}
 function residentAvatar(p){
