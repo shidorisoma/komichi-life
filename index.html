@@ -229,7 +229,7 @@ function recordMemory(id,title,text,pairId=null){
  return true;
 }
 
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;p.action=kind;p.tx=targetX;p.ty=targetY;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;p.action=kind;p.tx=targetX;p.ty=targetY;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
 function chooseFreshSpot(p,spots){
  const recent=Array.isArray(p.recentSpots)?p.recentSpots:[];
  const fresh=spots.filter(s=>!recent.includes(s.id));
@@ -303,7 +303,7 @@ function hobbyChoicesFor(p){
  if(p.needs.hunger<42&&previous!=='cafe')options.push({action:'cafe',weight:5,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+25+Math.random()*45,cafe.y+35+Math.random()*35,'喫茶店へ向かっている','喫茶店でひと休み','sit',18+Math.random()*14)}});
  if(p.needs.energy<38&&previous!=='bench')options.push({action:'bench',weight:5,run:()=>{const seats=[{bench:0,slot:0,x:783,y:780},{bench:0,slot:1,x:807,y:780},{bench:1,slot:0,x:78,y:740},{bench:1,slot:1,x:102,y:740}];const occupied=chars.filter((q,j)=>j!==i&&q.action==='bench'&&q.benchSeat).map(q=>q.benchSeat.bench+':'+q.benchSeat.slot);const free=seats.filter(q=>!occupied.includes(q.bench+':'+q.slot));const seat=free.length?free[(Math.random()*free.length)|0]:seats[(i+Math.floor(Math.random()*seats.length))%seats.length];setAction(p,i,'bench',seat.x,seat.y,'ベンチへ向かっている','ベンチで休憩中','sit',18+Math.random()*18);p.benchSeat={bench:seat.bench,slot:seat.slot}}});
  const homebody=(Math.max(0,Math.min(100,p.sociability??50))*.35+Math.max(0,Math.min(100,p.activityLevel??50))*.4+Math.max(0,Math.min(100,p.curiosity??50))*.25)<32;
- if(previous!=='home')options.push({action:'home',weight:homebody?5.5:1.1,run:()=>{const home=getPlace(householdForResident(p).homeId);const stay=(p.activityLevel??50)<35?'家でのんびり過ごしている':(p.curiosity??50)>65?'家で好きなことをしている':'家でひと休みしている';setAction(p,i,'home',home.x,home.y+28,'家へ戻っている',stay,'sit',14+Math.random()*22)}});
+ if(previous!=='home')options.push({action:'home',weight:homebody?5.5:1.1,run:()=>{const home=getPlace(householdForResident(p).homeId);p.homeHobby=null;const stay=(p.activityLevel??50)<35?'家でのんびり過ごしている':(p.curiosity??50)>65?'家で好きなことをしている':'家でひと休みしている';setAction(p,i,'home',home.x,home.y+28,'家へ戻っている',stay,'sit',14+Math.random()*22)}});
   const hobbies=hobbyChoicesFor(p);hobbies.forEach(hobby=>{const action=hobby.mode==='walk'?'walk':hobby.mode==='flowers'?'flowers':hobby.mode==='cafe'?'cafe':'home';options.push({action,weight:Math.max(.45,3.2-hobby.priority*.6),run:()=>{
   if(hobby.mode==='home'){const home=getPlace(householdForResident(p).homeId);p.homeHobby={kind:hobby.kind,room:hobby.room,name:hobby.name};setAction(p,i,'home',home.x,home.y+28,'家へ戻っている',hobby.label,'sit',16+Math.random()*24);return}
   p.homeHobby=null;
