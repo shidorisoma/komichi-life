@@ -347,10 +347,14 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   {main:true,start:[470,170],curves:[[[505,280],[525,430],[490,555]],[[455,700],[445,870],[445,1010]]]},
   // カフェへはメインストリートから短く分岐
   {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
-  // 西側住宅街の共用道路は一本に集約。
-  {start:[90,463],curves:[[[90,560],[90,656],[90,753]],[[90,800],[90,850],[90,900]]]},
-  // メインストリートとの接続は北側の一か所だけ。
-  {start:[90,463],curves:[[[190,450],[340,490],[490,555]]]}
+  // 上側住宅2軒の南側に一本だけ共用横道を通す。
+  {start:[190,430],curves:[[[280,430],[380,430],[470,430]]]},
+  // 横道の東端から幹線へ短く接続。
+  {start:[470,430],curves:[[[485,465],[490,510],[490,555]]]},
+  // 下側住宅街の縦道。上側住宅街とは道路を混ぜない。
+  {start:[90,650],curves:[[[90,715],[90,785],[90,850]],[[90,920],[90,985],[90,1050]]]},
+  // 下側共用道路から幹線へは一か所だけ接続。
+  {start:[90,850],curves:[[[175,850],[265,850],[350,850]],[[405,850],[445,825],[465,790]]]}
  ];
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
  roadRoutes.forEach(route=>{
@@ -371,13 +375,15 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   ctx.strokeStyle='#ead9b8';ctx.lineWidth=28;ctx.stroke();
  });
  ctx.restore();
- // 住宅の南玄関だけを、近い方の共用道路へ短い枝道で接続する。
+ // 住宅の南玄関から最寄りの共用道路へ短く接続。上側2軒は南側の横道、下側は西側縦道。
  homes&&Object.values(homes).forEach(home=>{
   const entrance=homeEntrance(home);if(!entrance)return;
-  const approachY=entrance.y+50,laneX=90;
+  const isNorth=home.y<400;
+  const approachY=isNorth?430:entrance.y+50;
+  const laneX=isNorth?entrance.x:90;
   ctx.beginPath();ctx.moveTo(laneX,approachY);ctx.lineTo(entrance.x,approachY);ctx.lineTo(entrance.x,entrance.y);
-  ctx.strokeStyle='#a98d68';ctx.lineWidth=38;ctx.stroke();
-  ctx.strokeStyle='#ead5ad';ctx.lineWidth=26;ctx.stroke();
+  ctx.strokeStyle='#a98d68';ctx.lineWidth:38;ctx.stroke();
+  ctx.strokeStyle='#ead5ad';ctx.lineWidth:26;ctx.stroke();
  });
  // 南側は枝道を設けず、幹線の先をレンガ敷きの広場にする。
  ellipse(430,1110,235,175,'#a98d68');ellipse(430,1100,222,162,'#ead5ad');
@@ -537,14 +543,19 @@ const roadNodes=[
  // 中央メインストリート
  {id:'main-north',x:470,y:170,links:['main-upper']},
  {id:'main-upper',x:505,y:350,links:['main-north','main-mid','cafe-entry']},
- {id:'main-mid',x:490,y:555,links:['main-upper','main-lower','park-entry','west-north']},
+ {id:'main-mid',x:490,y:555,links:['main-upper','main-lower','park-entry','north-east']},
  {id:'main-lower',x:465,y:790,links:['main-mid','main-plaza','west-junction']},
  {id:'main-plaza',x:445,y:1010,links:['main-lower','plaza-center']},
  {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
- // 西側住宅街は一本の共用道路に集約。
- {id:'west-north',x:90,y:463,links:['west-mid','main-mid']},
- {id:'west-mid',x:90,y:753,links:['west-north','west-south','bench-path-entry']},
- {id:'west-south',x:90,y:900,links:['west-mid']},
+ // 上側2軒は南側の共用横道へ。背面を囲む道路は作らない。
+ {id:'north-west',x:190,y:430,links:['north-center']},
+ {id:'north-center',x:330,y:430,links:['north-west','north-east']},
+ {id:'north-east',x:470,y:430,links:['north-center','main-mid']},
+ // 下側住宅街は西側の縦道と短い接続路を共有。
+ {id:'west-north',x:90,y:650,links:['west-mid']},
+ {id:'west-mid',x:90,y:850,links:['west-north','west-south','west-junction']},
+ {id:'west-south',x:90,y:1050,links:['west-mid']},
+ {id:'west-junction',x:350,y:850,links:['west-mid','main-lower']},
  {id:'cafe-entry',x:250,y:330,links:['main-upper'],facility:true},
  {id:'bench-path-entry',x:105,y:755,links:['west-mid'],facility:true},
  // 公園への接続は中央メインストリートの一点のみ。
@@ -555,9 +566,13 @@ const roadNodes=[
 function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function homeSouthRoadNode(home){
  if(!home)return roadNodes[0];
- // 住宅の南玄関から真南へ出た共用道路の接続点だけを使う。
- const approachY=home.y+78+50,laneX=90;
- const accessNodes=roadNodes.filter(n=>Math.abs(n.x-laneX)<1);
+ // 上側2軒は南側の共用横道、下側住宅は西側の縦道へ接続。
+ if(home.y<400){
+  const accessNodes=roadNodes.filter(n=>['north-west','north-center','north-east'].includes(n.id));
+  return accessNodes.reduce((best,n)=>Math.abs(n.x-home.x)<Math.abs(best.x-home.x)?n:best,accessNodes[0]);
+ }
+ const approachY=home.y+78+50;
+ const accessNodes=roadNodes.filter(n=>['west-north','west-mid','west-south'].includes(n.id));
  return accessNodes.reduce((best,n)=>Math.abs(n.y-approachY)<Math.abs(best.y-approachY)?n:best,accessNodes[0]);
 }
 function roadNodePath(start,goal){
@@ -578,12 +593,12 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null){
  const nodes=roadNodePath(start,goal);
  const points=[{x:fromX,y:fromY}];
  if(startHome){
-  const e=homeEntrance(startHome),approachY=e.y+50;
+  const e=homeEntrance(startHome),approachY=startHome.y<400?430:e.y+50;
   points.push({x:e.x,y:approachY},{x:start.x,y:approachY});
  }
  points.push(...nodes.map(n=>({x:n.x,y:n.y})));
  if(destinationHome){
-  const e=homeEntrance(destinationHome),approachY=e.y+50;
+  const e=homeEntrance(destinationHome),approachY=destinationHome.y<400?430:e.y+50;
   points.push({x:goal.x,y:goal.y},{x:e.x,y:approachY},{x:e.x,y:e.y+25});
  }
  points.push({x:toX,y:toY});
