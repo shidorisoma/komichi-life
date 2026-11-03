@@ -228,6 +228,22 @@ function pairIdFor(a,b){const ids=[typeof a==='string'?a:a.id,typeof b==='string
 function residentById(id){return chars.find(p=>p.id===id)||null}
 // 屋外にいる住人だけを街の描画・物理判定・屋外での交流対象にする。
 function isOutdoorResident(p){return !!p&&p.action!=='workOutside'&&!((p.action==='home'||p.action==='sleep')&&p.phaseState==='staying')}
+function homeBlocksMovement(home,x,y,p){
+ if(!home)return false;
+ const sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
+ const [w,h]=sizes[home.layoutKey]||[116,100];
+ const left=home.x-w/2-9,right=home.x+w/2+9,top=home.y-h*.34-24,bottom=home.y+h*.52+31;
+ if(x<left||x>right||y<top||y>bottom)return false;
+ const entrance=homeEntrance(home),front=home.y+h*.52;
+ const doorLane=Math.abs(x-entrance.x)<18&&y>=front-18&&y<=entrance.y+27;
+ const householdId=householdForResident(p).homeId;
+ const entering=(p.action==='home'||p.action==='sleep')&&householdId===home.id;
+ const nearDoor=Math.hypot(p.x-entrance.x,p.y-entrance.y)<40;
+ return !(doorLane&&(entering||nearDoor));
+}
+function isBlockedByHome(x,y,p){
+ return Object.values(homes||{}).some(home=>homeBlocksMovement(home,x,y,p));
+}
 function relationshipLabel(ids){return ids.map(id=>residentById(id)?.name||id).join(' ＆ ')}
 function ensureRelationship(a,b,seed){
  const ids=[typeof a==='string'?a:a.id,typeof b==='string'?b:b.id].sort(),id=pairIdFor(ids[0],ids[1]);
@@ -1149,7 +1165,16 @@ function tickLife(){
  }
  updateRelationshipPanel();
 }
-function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;calendarDay++;updateWeather();addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);if(d>2){let step=Math.min(d,dt*42);p.x+=dx/d*step;p.y+=dy/d*step}else if(route&&(p.routeIndex||1)<route.length-1){p.routeIndex=(p.routeIndex||1)+1}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}})}for(let a=0;a<chars.length;a++){for(let b=a+1;b<chars.length;b++){const p=chars[a],q=chars[b];if(!isOutdoorResident(p)||!isOutdoorResident(q))continue;let dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy),minGap=24;if(d<minGap){if(d<.01){dx=((a+b)%2?1:-1);dy=0;d=1}const push=(minGap-d)/2,ux=dx/d,uy=dy/d;p.x-=ux*push;p.y-=uy*push;q.x+=ux*push;q.y+=uy*push}}}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;calendarDay++;updateWeather();addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);if(d>2){
+ let step=Math.min(d,dt*42),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
+ if(!isBlockedByHome(nx,ny,p)){p.x=nx;p.y=ny}
+ else{
+  const canX=!isBlockedByHome(nx,p.y,p),canY=!isBlockedByHome(p.x,ny,p);
+  if(canX&&canY){if(Math.abs(mx)>=Math.abs(my))p.x=nx;else p.y=ny}
+  else if(canX)p.x=nx;
+  else if(canY)p.y=ny;
+ }
+}else if(route&&(p.routeIndex||1)<route.length-1){p.routeIndex=(p.routeIndex||1)+1}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}})}for(let a=0;a<chars.length;a++){for(let b=a+1;b<chars.length;b++){const p=chars[a],q=chars[b];if(!isOutdoorResident(p)||!isOutdoorResident(q))continue;let dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy),minGap=24;if(d<minGap){if(d<.01){dx=((a+b)%2?1:-1);dy=0;d=1}const push=(minGap-d)/2,ux=dx/d,uy=dy/d;p.x-=ux*push;p.y-=uy*push;q.x+=ux*push;q.y+=uy*push}}}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）';const night=hour>=20||hour<6;document.querySelector('.sun').textContent=weatherType==='rainy'?'☂':weatherType==='cloudy'?'☁':night?'☾':hour>=17?'🌇':'☀';{const subtitle=document.getElementById('placeSubtitle');if(subtitle)subtitle.textContent='春・'+weatherLabel()}}updateClock();setInterval(updateClock,500);
 function select(i){if(!chars[i])return;selected=i;if(!interiorHomeId){panX=450-chars[i].x;panY=720-chars[i].y}renderResidentStatus();drawWorld()};document.getElementById('residentStatus').addEventListener('click',e=>{
  const person=e.target.closest('.person');if(!person)return;
