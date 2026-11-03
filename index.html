@@ -930,6 +930,16 @@ function startSocialVisit(a,b,r,initiator){
  const sharedScene=sharedHobby?scenes.find(x=>x.match.test(sharedHobby.kind)):null;
  const sociability=((Number(a.sociability)||50)+(Number(b.sociability)||50))/2;
  const curiosity=((Number(a.curiosity)||50)+(Number(b.curiosity)||50))/2;
+ const status=String(r.status||'');
+ const relationshipScene=status.includes('恋人')
+  ?{text:'ふたりだけの時間を楽しみながら、親しげに話している',diary:'ふたりだけの時間を楽しみ、親しげに話した'}
+  :status.includes('親友')
+   ?{text:'気兼ねなく冗談を交えながら話している',diary:'気兼ねなく冗談を交えて話した'}
+   :status.includes('友人')
+    ?{text:'最近の出来事を気軽に話している',diary:'最近の出来事を気軽に話した'}
+    :status.includes('家族')
+     ?{text:'家族らしい気安さで、のんびり話している',diary:'家族らしく気兼ねなく話した'}
+     :null;
  const personalityScene=curiosity>=68
   ?{text:'最近見つけたものや気になっていることを話している',diary:'最近の発見や気になることを話した'}
   :sociability>=68
@@ -937,7 +947,7 @@ function startSocialVisit(a,b,r,initiator){
    :sociability<=32
     ?{text:'静かな時間を一緒に過ごし、ゆっくり言葉を交わしている',diary:'静かな時間を一緒に過ごした'}
     :{text:'近況を話しながら一緒に過ごしている',diary:'近況を話しながら一緒に過ごした'};
- const scene=sharedScene||personalityScene;
+ const scene=sharedScene||relationshipScene||personalityScene;
  const stayText=scene.text;
  setAction(a,chars.indexOf(a),'social',Math.max(90,Math.min(810,mx+Math.cos(angle)*dist)),ax,
   b.name+'のところへ向かっている',stayText,'stand',duration);
