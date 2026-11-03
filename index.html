@@ -467,6 +467,7 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
   return getPlace('plaza');
  }
  function completeWork(p){
+ addDiary(p.name+'は仕事が終わった。');
  if(!p.pendingWorkPay)return;
  const payment=p.pendingWorkPay;p.pendingWorkPay=null;
  p.money=Math.max(0,Number(p.money)||0)+payment.amount;
@@ -474,6 +475,7 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
  recordMoney(p,'income',payment.amount,payment.description);
 }
 function startWork(p,i,plan){
+ addDiary(plan.urgent?p.name+'は呼び出されて仕事に行った。':p.name+'は仕事に行った。');
  const mode=p.incomeMode||'fixed',fixed=Math.max(0,Math.floor(Number(p.fixedIncome??1500)||0)),min=Math.max(0,Math.floor(Number(p.randomIncomeMin)||0)),max=Math.max(min,Math.floor(Number(p.randomIncomeMax)||0));
  const random=min+Math.floor(Math.random()*(max-min+1)),baseWage=mode==='random'?random:fixed+(mode==='mixed'?random:0);
  const wage=plan.urgent?Math.round(baseWage*1.25):baseWage;
