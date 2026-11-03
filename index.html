@@ -608,8 +608,22 @@ Object.values(homes).forEach((home,index)=>drawHouseExterior(home,index));
   ctx.fillRect(201,826,12,18);ctx.fillRect(293,842,12,18);
   ctx.restore();
  }
- // キャラクター
- chars.forEach((p,i)=>{if(isOutdoorResident(p))drawChar(p,i)});
+ // キャラクターと住宅の前後関係を2.5Dで描画する。
+ // 住宅より奥側にいる住人は先に描き、住宅を重ねて手前の壁・屋根で隠す。
+ const outdoorResidents=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
+ const houseSizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
+ const isBehindHouse=({p},home)=>{
+  const [w,h]=houseSizes[home.layoutKey]||[116,100];
+  const withinDepth=p.x>=home.x-w/2-20&&p.x<=home.x+w/2+20&&p.y>=home.y-h*.78-18&&p.y<home.y+h*.52;
+  return withinDepth;
+ };
+ const behindResidents=outdoorResidents.filter(entry=>Object.values(homes||{}).some(home=>isBehindHouse(entry,home)));
+ const frontResidents=outdoorResidents.filter(entry=>!behindResidents.includes(entry));
+ behindResidents.forEach(({p,i})=>drawChar(p,i));
+ Object.values(homes||{}).forEach((home,index)=>{
+  if(behindResidents.some(entry=>isBehindHouse(entry,home)))drawHouseExterior(home,index);
+ });
+ frontResidents.forEach(({p,i})=>drawChar(p,i));
  ctx.restore()}
 function drawHomeFurniture(homeId){
  const palette={bed:['#987b66','#e8dfd0'],fridge:['#d9ddd8','#aab5b1'],table:['#a9825e','#d8c2a3'],sofa:['#8caa9c','#d7e0d7'],bookshelf:['#9b7658','#e0c9a8'],desk:['#9b7658','#e0c9a8'],chair:['#a9825e','#d8c2a3'],lamp:['#d7bd82','#f6e6ae']};
