@@ -59,7 +59,9 @@ const homeLayoutCatalog={
 let selectedHomeLayout='2LDK',homeSubPage='menu';
 const residentialPlots=[{id:'north-west',label:'北西の住宅地',x:220,y:260},{id:'north-center',label:'北中央の住宅地',x:390,y:260},{id:'south-west',label:'西南の住宅地',x:220,y:550},{id:'south-center',label:'西中央の住宅地',x:390,y:550},{id:'south-east',label:'西北の住宅地',x:220,y:700},{id:'center-west-home',label:'中央西の住宅地',x:390,y:850}];
 function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
-function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();saveGame(true);drawWorld();return true}
+function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();
+// 保存済みの古い経路を現在の道路・玄関ルールで再構築する。
+chars.forEach(p=>{if(p.phaseState==='moving'){p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,null,p);p.routeIndex=1;p.stuckTime=0}});saveGame(true);drawWorld();return true}
 function createHomeFromTemplate(layoutKey,residentIds){
  const variants=homeLayoutCatalog[layoutKey],memberIds=[...new Set((Array.isArray(residentIds)?residentIds:[residentIds]).filter(Boolean))];
  if(!variants?.length||!memberIds.length||memberIds.some(id=>!residentById(id)))return null;
@@ -694,9 +696,15 @@ function roadNodePath(start,goal){
  }
  return (ids||[start.id]).map(id=>roadNodes.find(n=>n.id===id)).filter(Boolean);
 }
-function roadRoute(fromX,fromY,toX,toY,destinationHome=null){
+function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
- const startHome=Object.values(homes).find(home=>{const e=homeEntrance(home);return e&&Math.hypot(fromX-e.x,fromY-e.y)<28});
+ const ownHome=resident?homes[householdForResident(resident).homeId]:null;
+ const startHome=ownHome&&(()=>{
+  const e=homeEntrance(ownHome),sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
+  const [w,h]=sizes[ownHome.layoutKey]||[116,,100];
+  const inside=fromX>=ownHome.x-w/2-9&&fromX<=ownHome.x+w/2+9&&fromY>=ownHome.y-h*.34-24&&fromY<=ownHome.y+h*.52+31;
+  return inside||(e&&Math.hypot(fromX-e.x,fromY-e.y)<90);
+ })()?ownHome:null;
  const start=startHome?homeSouthRoadNode(startHome):nearest(fromX,fromY);
  const goal=destinationHome?homeSouthRoadNode(destinationHome):nearest(toX,toY);
  const nodes=roadNodePath(start,goal);
@@ -713,7 +721,7 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null){
  points.push({x:toX,y:toY});
  return points;
 }
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
 function chooseFreshSpot(p,spots){
  const recent=Array.isArray(p.recentSpots)?p.recentSpots:[];
  const fresh=spots.filter(s=>!recent.includes(s.id));
@@ -1277,7 +1285,7 @@ function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(sa
    }else if(route&&(p.routeIndex||1)<route.length-1){
     p.routeIndex=(p.routeIndex||1)+1;
    }else{
-    p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty);p.routeIndex=1;
+    p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,null,p);p.routeIndex=1;
    }
   }
  }else{
