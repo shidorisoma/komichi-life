@@ -107,7 +107,7 @@ function residentAvatar(p){
 }
 function renderResidentStatus(){
  const root=document.getElementById('residentStatus');if(!root)return;
- const here=interiorHomeId?chars.filter(p=>householdForResident(p).homeId===interiorHomeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'):chars.filter(p=>p.action!=='home'&&p.action!=='sleep');
+ const here=interiorHomeId?(homeListOpen?chars.filter(p=>householdForResident(p).homeId===interiorHomeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'):[]):chars.filter(p=>p.action!=='home'&&p.action!=='sleep');
  root.innerHTML=here.map(p=>'<div class="person '+(chars.indexOf(p)===selected?'selected':'')+'" data-index="'+chars.indexOf(p)+'">'+residentAvatar(p)+'<div><div class="pname">'+escapeHtml(p.name)+'</div><div class="activity">'+escapeHtml(p.activity||'')+'</div></div></div>').join('');
  root.style.display=here.length?'flex':'none';
 }
