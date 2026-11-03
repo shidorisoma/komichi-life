@@ -1126,7 +1126,7 @@ function tickLife(){
  const recoveryStamp=day*1440+hour*60+minute;
  if(minute%10===0&&recoveryStamp!==lastRecoveryStamp){
   lastRecoveryStamp=recoveryStamp;
-  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe'||p.action==='sleep'||p.action==='home'||p.action==='work')){n.energy=Math.min(100,n.energy+(p.action==='sleep'?13:p.action==='bench'?9:p.action==='home'?5:p.action==='work'?-0.4:3));if(p.action!=='sleep')n.mood=Math.min(100,n.mood+(p.action==='home'?1.2:2));if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+22)}});
+  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe'||p.action==='sleep'||p.action==='home'||p.action==='work')){n.energy=Math.min(100,n.energy+(p.action==='sleep'?13:p.action==='bench'?9:p.action==='home'?5:p.action==='work'?-0.4:3));if(p.action!=='sleep')n.mood=Math.min(100,n.mood+(p.action==='home'?1.2:2));if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+22);if(p.action==='home'&&p.homeHobby?.kind==='cooking')n.hunger=Math.min(100,n.hunger+6)}});
   renderResidentStatus();
  }
  updateRelationshipPanel();
