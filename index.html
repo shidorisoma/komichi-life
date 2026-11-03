@@ -638,8 +638,13 @@ Object.values(homes).forEach((home,index)=>drawHouseExterior(home,index));
  for(let i=0;i<15;i++){let x=560+(i*47)%170,y=430+(i*83)%620;shrub(x,y,.38+(i%3)*.1)}
  // 河岸の小さな橋
  poly([[690,760],[810,705],[842,725],[720,785]],'#8b704f');poly([[690,747],[810,692],[842,712],[720,772]],'#c49a68');ctx.strokeStyle='#765b40';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(698,738);ctx.lineTo(817,684);ctx.moveTo(715,766);ctx.lineTo(835,711);ctx.stroke();
- // 広場から橋を渡り、川辺のベンチへ続く歩行路
- ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(610,760);ctx.lineTo(690,755);ctx.lineTo(760,740);ctx.lineTo(760,800);ctx.strokeStyle='#a98d68';ctx.lineWidth=34;ctx.stroke();ctx.strokeStyle='#ead5ad';ctx.lineWidth=23;ctx.stroke();ctx.restore();
+ // 広場から橋の陸側入口へまっすぐ接続。ベンチへは短い枝道で分岐。
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ ctx.beginPath();ctx.moveTo(610,760);ctx.quadraticCurveTo(650,760,690,760);
+ ctx.strokeStyle='#a98d68';ctx.lineWidth=34;ctx.stroke();ctx.strokeStyle='#ead5ad';ctx.lineWidth=23;ctx.stroke();
+ ctx.beginPath();ctx.moveTo(690,760);ctx.quadraticCurveTo(733,770,760,800);
+ ctx.strokeStyle='#a98d68';ctx.lineWidth=30;ctx.stroke();ctx.strokeStyle='#ead5ad';ctx.lineWidth=20;ctx.stroke();
+ ctx.restore();
  // ベンチ、街灯、案内板
  bench(760,800);bench(360,1180);lamp(650,730);lamp(310,520);lamp(860,1000);
  poly([[420,450],[456,432],[456,475],[420,493]],'#8a6d4b');ctx.fillStyle='#fff3d4';ctx.font='bold 11px sans-serif';ctx.fillText('こみち',419,460);
@@ -775,7 +780,7 @@ const roadNodes=[
  {id:'bench-path-entry',x:105,y:755,links:['west-mid'],facility:true},
  // 公園への接続は中央メインストリートの一点のみ。
  {id:'park-entry',x:610,y:760,links:['main-lower','bridge-entry']},
- {id:'bridge-entry',x:760,y:740,links:['park-entry','river-bench'],facility:true},
+ {id:'bridge-entry',x:690,y:760,links:['park-entry','river-bench'],facility:true},
  {id:'river-bench',x:760,y:800,links:['bridge-entry'],facility:true}
 ];
 function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
