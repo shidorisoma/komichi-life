@@ -383,7 +383,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   const laneX=isNorth?entrance.x:90;
   ctx.beginPath();ctx.moveTo(laneX,approachY);ctx.lineTo(entrance.x,approachY);ctx.lineTo(entrance.x,entrance.y);
   ctx.strokeStyle='#a98d68';ctx.lineWidth=38;ctx.stroke();
-  ctx.strokeStyle='#ead5ad';ctx.lineWidth:26;ctx.stroke();
+  ctx.strokeStyle='#ead5ad';ctx.lineWidth=26;ctx.stroke();
  });
  // 南側は枝道を設けず、幹線の先をレンガ敷きの広場にする。
  ellipse(430,1110,235,175,'#a98d68');ellipse(430,1100,222,162,'#ead5ad');
