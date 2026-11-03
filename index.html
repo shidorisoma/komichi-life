@@ -56,7 +56,7 @@ const homeLayoutCatalog={
  '3LDK':[{name:'広々3LDK',rooms:[{type:'bedroom',name:'寝室',x:125,y:410,w:300,h:190},{type:'bedroom',name:'洋室1',x:125,y:600,w:300,h:190},{type:'bedroom',name:'洋室2',x:125,y:790,w:300,h:190},{type:'living',name:'LDK',x:425,y:410,w:350,h:570},{type:'kitchen',name:'キッチン',x:625,y:410,w:150,h:230}]}]
 };
 let selectedHomeLayout='2LDK',homeSubPage='menu';
-const residentialPlots=[{id:'north-west',label:'北西の住宅地',x:350,y:245},{id:'north-center',label:'北中央の住宅地',x:500,y:255},{id:'south-west',label:'西南の住宅地',x:245,y:1010},{id:'south-center',label:'西中央の住宅地',x:285,y:790},{id:'south-east',label:'西北の住宅地',x:250,y:570},{id:'west-center',label:'西中の住宅地',x:190,y:690},{id:'center-east',label:'北東の住宅地',x:650,y:330},{id:'west-south',label:'西北奥の住宅地',x:390,y:410}];
+const residentialPlots=[{id:'north-west',label:'北西の住宅地',x:350,y:245},{id:'north-center',label:'北中央の住宅地',x:500,y:255},{id:'south-west',label:'西南の住宅地',x:245,y:1010},{id:'south-center',label:'西中央の住宅地',x:285,y:790},{id:'south-east',label:'西北の住宅地',x:250,y:570},{id:'west-center',label:'西中の住宅地',x:190,y:690},{id:'center-east',label:'北東の住宅地',x:650,y:330},{id:'west-south',label:'西北奥の住宅地',x:390,y:410},{id:'center-west-home',label:'中央西の住宅地',x:320,y:500}];
 function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
 function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();saveGame(true);drawWorld();return true}
 function createHomeFromTemplate(layoutKey,residentIds){
@@ -161,6 +161,14 @@ function ensureFurnitureWorld(saved){
   if(!plot){plot=residentialPlots.find(p=>!Object.values(homes).some(other=>other!==home&&other.mapPlotId===p.id))||residentialPlots[index%residentialPlots.length];home.mapPlotId=plot.id;}
   home.x=plot.x;home.y=plot.y;
  });
+ // 既存の東の住宅は広場から離れた中央西の住宅区画へ一度だけ移す。
+ const secondHome=homes.home2;
+ if(secondHome&&secondHome.southAccessLayoutVersion!==1){
+  const target=residentialPlots.find(p=>p.id==='center-west-home');
+  const occupied=Object.values(homes).some(h=>h!==secondHome&&h.mapPlotId===target?.id);
+  if(target&&!occupied){secondHome.mapPlotId=target.id;secondHome.x=target.x;secondHome.y=target.y;}
+  secondHome.southAccessLayoutVersion=1;
+ }
  Object.values(rooms).forEach(room=>room.furnitureIds=[]);
  furniture.forEach(item=>{const room=rooms[item.roomId];if(room&&item.homeId===room.homeId)room.furnitureIds.push(item.instanceId)});
  if(!furniture.length){
@@ -358,20 +366,13 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   ctx.strokeStyle='#ead9b8';ctx.lineWidth=28;ctx.stroke();
  });
  ctx.restore();
- // 各住宅の玄関まで、幹線道路の接続点から専用アクセス路を引く。
+ // 住宅へは必ず南側からのみ接続。建物の背面・側面には道路を通さない。
  homes&&Object.values(homes).forEach(home=>{
-  const entrance=homeEntrance(home);
-  if(!entrance)return;
-  // 施設用の枝道ではなく、幹線道路・住宅道路から玄関へ接続する。
-  const candidates=roadNodes.filter(n=>!n.facility&&n.y>entrance.y+24);
-  const available=candidates.length?candidates:roadNodes.filter(n=>!n.facility);
-  const node=available.reduce((best,n)=>{
-   const score=Math.hypot((n.x-entrance.x)*1.15,n.y-entrance.y);
-   const bestScore=Math.hypot((best.x-entrance.x)*1.15,best.y-entrance.y);
-   return score<bestScore?n:best;
-  },available[0]);
-  const approach={x:entrance.x,y:entrance.y+38};
-  ctx.beginPath();ctx.moveTo(node.x,node.y);ctx.lineTo(approach.x,approach.y);ctx.lineTo(entrance.x,entrance.y);
+  const entrance=homeEntrance(home);if(!entrance)return;
+  const node=homeSouthRoadNode(home);
+  const approach={x:entrance.x,y:entrance.y+100};
+  const front={x:entrance.x,y:entrance.y+25};
+  ctx.beginPath();ctx.moveTo(node.x,node.y);ctx.lineTo(approach.x,approach.y);ctx.lineTo(front.x,front.y);ctx.lineTo(entrance.x,entrance.y);
   ctx.strokeStyle='#b49c76';ctx.lineWidth=48;ctx.stroke();
   ctx.strokeStyle='#ead9b8';ctx.lineWidth=36;ctx.stroke();
  });
@@ -551,14 +552,40 @@ const roadNodes=[
  {id:'bench-path-entry',x:105,y:755,links:['west-mid'],facility:true}
 ];
 function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
-function roadRoute(fromX,fromY,toX,toY){
- const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
- const start=nearest(fromX,fromY),goal=nearest(toX,toY),queue=[[start.id]],visited=new Set([start.id]);let ids=null;
- while(queue.length){const path=queue.shift(),id=path[path.length-1];if(id===goal.id){ids=path;break}const node=roadNodes.find(n=>n.id===id);(node?.links||[]).forEach(next=>{if(!visited.has(next)){visited.add(next);queue.push([...path,next])}})}
- const nodes=(ids||[start.id]).map(id=>roadNodes.find(n=>n.id===id)).filter(Boolean);
- return [{x:fromX,y:fromY},...nodes.map(n=>({x:n.x,y:n.y})),{x:toX,y:toY}];
+function homeSouthRoadNode(home){
+ const entrance=homeEntrance(home);if(!entrance)return roadNodes[0];
+ const candidates=roadNodes.filter(n=>!n.facility&&n.y>entrance.y+100);
+ const pool=candidates.length?candidates:roadNodes.filter(n=>!n.facility);
+ return pool.reduce((best,n)=>{
+  const score=Math.hypot((n.x-entrance.x)*1.15,n.y-(entrance.y+100));
+  const bestScore=Math.hypot((best.x-entrance.x)*1.15,best.y-(entrance.y+100));
+  return score<bestScore?n:best;
+ },pool[0]);
 }
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;if(kind==='home'||kind==='sleep'){const home=homes[householdForResident(p).homeId];const entrance=homeEntrance(home);if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;p.routePoints=roadRoute(p.x,p.y,targetX,targetY);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
+function roadNodePath(start,goal){
+ const queue=[[start.id]],visited=new Set([start.id]);let ids=null;
+ while(queue.length){
+  const path=queue.shift(),id=path[path.length-1];
+  if(id===goal.id){ids=path;break}
+  const node=roadNodes.find(n=>n.id===id);
+  (node?.links||[]).forEach(next=>{if(!visited.has(next)){visited.add(next);queue.push([...path,next])}});
+ }
+ return (ids||[start.id]).map(id=>roadNodes.find(n=>n.id===id)).filter(Boolean);
+}
+function roadRoute(fromX,fromY,toX,toY,destinationHome=null){
+ const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
+ const startHome=Object.values(homes).find(home=>{const e=homeEntrance(home);return e&&Math.hypot(fromX-e.x,fromY-e.y)<28});
+ const start=startHome?homeSouthRoadNode(startHome):nearest(fromX,fromY);
+ const goal=destinationHome?homeSouthRoadNode(destinationHome):nearest(toX,toY);
+ const nodes=roadNodePath(start,goal);
+ const points=[{x:fromX,y:fromY}];
+ if(startHome){const e=homeEntrance(startHome);points.push({x:e.x,y:e.y+100})}
+ points.push(...nodes.map(n=>({x:n.x,y:n.y})));
+ if(destinationHome){const e=homeEntrance(destinationHome);points.push({x:e.x,y:e.y+100},{x:e.x,y:e.y+25})}
+ points.push({x:toX,y:toY});
+ return points;
+}
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
 function chooseFreshSpot(p,spots){
  const recent=Array.isArray(p.recentSpots)?p.recentSpots:[];
  const fresh=spots.filter(s=>!recent.includes(s.id));
