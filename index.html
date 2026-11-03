@@ -279,6 +279,7 @@ function hobbyChoicesFor(p){const raw=String(p.hobbies||'').split(/[\n,、，;�
  function chooseRoutine(p,i){
  if(p.action==='social'&&p.socialPartnerId){const partner=residentById(p.socialPartnerId);if(partner&&partner.action==='social'&&partner.socialPartnerId===p.id&&(partner.phaseState==='moving'||partner.phaseState==='staying')){p.phaseState='staying';p.stay=5;p.activity='二人で一緒に過ごしている';p.stayText=p.activity;return}}
  if(isResidentSleepTime(p)){const household=householdForResident(p);const home=getPlace(household.homeId);const partner=household.partner;const offset=partner?(p.id<partner.id?-12:12):((i%2)*14-7);const sleepX=home.x+offset;const sleepY=home.y+48+(partner?0:(i%3)*5);const stayText=partner?partner.name+'と一緒に眠っている':'家で眠っている';setAction(p,i,'sleep',sleepX,sleepY,'家へ帰っている',stayText,'sit',55+Math.random()*15);return}
+ if(isResidentSleepTime(p)){const household=householdForResident(p);const home=getPlace(household.homeId);const partner=household.partner;const offset=partner?(p.id<partner.id?-12:12):((i%2)*14-7);const sleepX=home.x+offset;const sleepY=home.y+48+(partner?0:(i%3)*5);const stayText=partner?partner.name+'と一緒に眠っている':'家で眠っている';setAction(p,i,'sleep',sleepX,sleepY,'家へ帰っている',stayText,'sit',55+Math.random()*15);return}
  if(sharedGoal&&['nagisumi','yaku'].includes(p.id)){setAction(p,i,'date',i===0?250:310,i===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',35+Math.random()*20);return}
  const previous=p.action;
  const options=[];
@@ -330,9 +331,9 @@ function startSocialVisit(a,b,r,initiator){
  const angle=Math.random()*Math.PI*2,dist=24;
  const ax=ySafe(my+Math.sin(angle)*dist),by=ySafe(my-Math.cos(angle)*dist);
  setAction(a,chars.indexOf(a),'social',Math.max(90,Math.min(810,mx+Math.cos(angle)*dist)),ax,
-  b.name+'のところへ向かっている','二人で一緒に過ごしている','stand',18+Math.random()*10);
+  b.name+'のところへ向かっている',b.name+'と一緒に過ごしている','stand',18+Math.random()*10);
  setAction(b,chars.indexOf(b),'social',Math.max(90,Math.min(810,mx-Math.cos(angle)*dist)),by,
-  a.name+'のところへ向かっている','二人で一緒に過ごしている','stand',18+Math.random()*10);
+  a.name+'のところへ向かっている',a.name+'と一緒に過ごしている','stand',18+Math.random()*10);
  a.socialPartnerId=b.id;b.socialPartnerId=a.id;
  const stamp=day*1440+hour*60+minute;
  r.lastSocialVisitStamp=stamp;
