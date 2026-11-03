@@ -154,22 +154,31 @@ function ensureFurnitureWorld(saved){
    if(!rooms[id])rooms[id]={id,homeId,name:{living:'居間',kitchen:'台所',bedroom:'寝室',study:'書斎'}[type],type,furnitureIds:[]};
   });
  });
- // 住宅配置v5：既存住宅も新しい街区へ一度だけ移転する。
- // 以前の区画IDが残っていても旧座標を引き継がない。
- const homeLayoutVersion=5;
- const homeSlots=['north-west','south-center','south-west','north-center','south-east','center-west-home'];
+ // 住宅配置v6：住人が現在所属していない保存済み住宅も含め、全住宅を新しい街区へ配置。
+ // homes全件を対象にしないと、空き家や旧世帯の家だけ旧位置に残ってしまう。
+ const homeLayoutVersion=6;
+ const allHomes=Object.values(homes);
+ const plotById=new Map(residentialPlots.map(plot=>[plot.id,plot]));
+ const occupiedPlots=new Set();
+ allHomes.forEach(home=>{
+  if(home.mapLayoutVersion>=5&&plotById.has(home.mapPlotId))occupiedPlots.add(home.mapPlotId);
+ });
+ const freePlots=residentialPlots.filter(plot=>!occupiedPlots.has(plot.id));
  let movedHomes=false;
- if(homeIds.some(id=>homes[id]?.mapLayoutVersion!==homeLayoutVersion)){
-  homeIds.forEach((homeId,index)=>{
-   const home=homes[homeId];if(!home)return;
-   const plot=residentialPlots.find(p=>p.id===homeSlots[index%homeSlots.length]);
-   if(plot){
-    if(home.x!==plot.x||home.y!==plot.y||home.mapPlotId!==plot.id)movedHomes=true;
-    home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;
-   }
+ allHomes.forEach(home=>{
+  if(home.mapLayoutVersion>=5&&plotById.has(home.mapPlotId)){
+   const plot=plotById.get(home.mapPlotId);
+   if(home.x!==plot.x||home.y!==plot.y){home.x=plot.x;home.y=plot.y;movedHomes=true;}
    home.mapLayoutVersion=homeLayoutVersion;
-  });
- }
+   return;
+  }
+  const plot=freePlots.shift();
+  if(plot){
+   if(home.x!==plot.x||home.y!==plot.y||home.mapPlotId!==plot.id)movedHomes=true;
+   home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;
+  }
+  home.mapLayoutVersion=homeLayoutVersion;
+ });
  Object.values(rooms).forEach(room=>room.furnitureIds=[]);
  furniture.forEach(item=>{const room=rooms[item.roomId];if(room&&item.homeId===room.homeId)room.furnitureIds.push(item.instanceId)});
  if(!furniture.length){
