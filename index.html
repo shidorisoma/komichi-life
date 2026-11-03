@@ -825,6 +825,15 @@ function benchSceneFor(p){
  if(curiosity>=68)return {stay:'ベンチに座って、行き交う人や街の様子を眺めている',diary:'ベンチから行き交う人や街の様子を眺めた'};
  return {stay:'ベンチでひと休みしている',diary:'ベンチでひと休みした'};
 }
+function walkSceneFor(p,spot){
+ const curiosity=Math.max(0,Math.min(100,p.curiosity??50));
+ const activity=Math.max(0,Math.min(100,p.activityLevel??50));
+ const place=spot.label;
+ if(curiosity>=70)return {stay:place+'で気になるものを見つけ、しばらく観察している',diary:place+'で小さな発見をした'};
+ if(activity>=70)return {stay:place+'まで歩いてきて、気持ちよく身体を伸ばしている',diary:place+'まで歩いて、気分転換をした'};
+ if(curiosity<=30)return {stay:place+'の落ち着いた景色をのんびり眺めている',diary:place+'で静かな時間を過ごした'};
+ return {stay:place+'で景色を眺めながらひと休みしている',diary:place+'まで散歩して景色を楽しんだ'};
+}
 function chooseRoutine(p,i){
  if(p.action==='social'){
   const partner=p.socialPartnerId?residentById(p.socialPartnerId):null;
@@ -866,7 +875,7 @@ function chooseRoutine(p,i){
   }})});
  });
  if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=[{id:'flower-west',x:145,y:430},{id:'flower-east',x:610,y:510},{id:'flower-southwest',x:120,y:930},{id:'flower-southeast',x:730,y:1020},{id:'flower-center',x:360,y:560}];const q=chooseFreshSpot(p,spots);const scene=flowerSceneFor(p);p.flowerScene=scene;setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている',scene.stay,'look',12+Math.random()*18)}});
- if(previous!=='walk')options.push({action:'walk',weight:2.5+(p.activityLevel??50)/20+(p.curiosity??50)/60,run:()=>{const spots=[{id:'riverside-north',x:770,y:520,label:'川沿い'},{id:'bridge',x:760,y:745,label:'小さな橋'},{id:'plaza',x:600,y:760,label:'川辺の広場'},{id:'tree-west',x:90,y:570,label:'大きな木のそば'},{id:'tree-south',x:350,y:1040,label:'木陰'},{id:'path-center',x:420,y:650,label:'こみちの途中'},{id:'riverside-south',x:820,y:1050,label:'川辺'}];const q=chooseFreshSpot(p,spots);setAction(p,i,'walk',q.x,ySafe(q.y),q.label+'まで散歩中',q.label+'で景色を眺めている','stand',8+Math.random()*12+(p.activityLevel??50)*.12)}});
+ if(previous!=='walk')options.push({action:'walk',weight:2.5+(p.activityLevel??50)/20+(p.curiosity??50)/60,run:()=>{const spots=[{id:'riverside-north',x:770,y:520,label:'川沿い'},{id:'bridge',x:760,y:745,label:'小さな橋'},{id:'plaza',x:600,y:760,label:'川辺の広場'},{id:'tree-west',x:90,y:570,label:'大きな木のそば'},{id:'tree-south',x:350,y:1040,label:'木陰'},{id:'path-center',x:420,y:650,label:'こみちの途中'},{id:'riverside-south',x:820,y:1050,label:'川辺'}];const q=chooseFreshSpot(p,spots);const scene=walkSceneFor(p,q);p.walkScene=scene;setAction(p,i,'walk',q.x,ySafe(q.y),q.label+'まで散歩中',scene.stay,'stand',8+Math.random()*12+(p.activityLevel??50)*.12)}});
  if(previous!=='cafe'&&p.needs.hunger>=42&&(p.money??5000)>=450)options.push({action:'cafe',weight:1.5+(p.curiosity??50)/100,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+25+Math.random()*45,cafe.y+35+Math.random()*35,'喫茶店へ向かっている','喫茶店でひと休み','sit',12+Math.random()*12)}});
  if(previous!=='bench'&&p.needs.energy>=38)options.push({action:'bench',weight:2,run:()=>{const seats=[{bench:0,slot:0,x:783,y:780},{bench:0,slot:1,x:807,y:780},{bench:1,slot:0,x:78,y:740},{bench:1,slot:1,x:102,y:740}];const seat=seats[(Math.random()*seats.length)|0];const scene=benchSceneFor(p);p.benchScene=scene;setAction(p,i,'bench',seat.x,seat.y,'ベンチへ向かっている',scene.stay,'sit',10+Math.random()*14);p.benchSeat={bench:seat.bench,slot:seat.slot}}});
  applyScheduleWeights(options,p);
@@ -893,7 +902,7 @@ function arrive(p,i){
  p.pose=p.action==='bench'||p.action==='cafe'||p.action==='date'||p.action==='sleep'||p.action==='home'?'sit':p.action==='flowers'?'look':'stand';
  if(p.action==='cafe'){const cost=450;p.money=Math.max(0,(Number(p.money)||0)-cost);recordMoney(p,'expense',cost,'喫茶こもれび');}
  
- const actionLog={work:p.name+'が仕事をしている。',sleep:p.name+'が家に帰って眠っている。',home:p.name+'が家で過ごしている。',flowers:p.name+'が'+(p.flowerScene?.diary||'花壇のそばで花を眺めた')+'。',bench:p.name+'が'+(p.benchScene?.diary||'ベンチでひと休みした')+'。',cafe:p.name+'が喫茶こもれびで'+(p.cafeScene||'ひと休みしている')+'。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が街を散歩している。'};
+ const actionLog={work:p.name+'が仕事をしている。',sleep:p.name+'が家に帰って眠っている。',home:p.name+'が家で過ごしている。',flowers:p.name+'が'+(p.flowerScene?.diary||'花壇のそばで花を眺めた')+'。',bench:p.name+'が'+(p.benchScene?.diary||'ベンチでひと休みした')+'。',cafe:p.name+'が喫茶こもれびで'+(p.cafeScene||'ひと休みしている')+'。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が'+(p.walkScene?.diary||'街を散歩した')+'。'};
  addDiary(actionLog[p.action]||p.name+'が'+p.activity+'。');
 
 }
