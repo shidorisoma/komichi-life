@@ -949,7 +949,7 @@ function arrive(p,i){
  if(p.action==='walk'&&p.photoTrip){p.needs.mood=Math.min(100,p.needs.mood+3);p.photoTrip=false;addDiary(p.name+'が街の景色を写真に収め、気分転換をした。');}
  if(p.action==='walk'&&p.shoppingTrip){p.shoppingTrip=false;const cost=800+Math.floor(Math.random()*1701);if((Number(p.money)||0)-cost>=5000){p.money-=cost;recordMoney(p,'expense',cost,'買い物');p.needs.mood=Math.min(100,p.needs.mood+2);const cooks=hobbyChoicesFor(p).some(h=>h.kind==='cooking');const stock=householdFoodStore(p);const grocery=Math.random()<(cooks&&stock.foodIngredients<2?.8:.15);if(grocery)stock.foodIngredients=Math.min(5,stock.foodIngredients+1);addDiary(p.name+'が街のお店で'+cost.toLocaleString('ja-JP')+'円の買い物を楽しんだ。'+(grocery?'食材も買って帰った。':''));}else{addDiary(p.name+'は予算を考えて、お店を見て回るだけにした。')}}
  
- const actionLog={work:p.name+'が仕事をしている。',sleep:p.name+'が家に帰って眠っている。',home:p.name+'が家で過ごしている。',flowers:p.name+'が'+(p.flowerScene?.diary||'花壇のそばで花を眺めた')+'。',bench:p.name+'が'+(p.benchScene?.diary||'ベンチでひと休みした')+'。',cafe:p.name+'が喫茶こもれびで'+(p.cafeScene||'ひと休みしている')+'。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が'+(p.walkScene?.diary||'街を散歩した')+'。'};
+ const actionLog={work:p.name+'が仕事をしている。',sleep:p.name+'が家に帰って眠っている。',home:p.name+'が家で過ごしている。',flowers:p.name+'が'+(p.flowerScene?.diary||'花壇のそばで花を眺めた')+'。',bench:p.name+'が'+(p.benchScene?.diary||'ベンチでひと休みした')+'。',cafe:p.name+'が喫茶こもれびで'+(p.cafeScene||'ひと休みしている')+'。'+(p.cafeOrder?' '+p.cafeOrder+'を楽しんだ。':''),date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が'+(p.walkScene?.diary||'街を散歩した')+'。'};
  addDiary(actionLog[p.action]||p.name+'が'+p.activity+'。');
 
 }
