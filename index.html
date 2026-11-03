@@ -343,6 +343,15 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
  roadRoutes.forEach(route=>{ctx.beginPath();ctx.moveTo(route.start[0],route.start[1]);route.curves.forEach(curve=>ctx.bezierCurveTo(curve[0][0],curve[0][1],curve[1][0],curve[1][1],curve[2][0],curve[2][1]));ctx.strokeStyle='#b49c76';ctx.lineWidth=route.main?100:62;ctx.stroke();ctx.strokeStyle='#ead9b8';ctx.lineWidth=route.main?84:48;ctx.stroke()});
  ctx.restore();
+ // 各住宅の玄関まで、最寄りの道路接続点から専用アクセス路を引く。
+ homes&&Object.values(homes).forEach(home=>{
+  const entrance=homeEntrance(home);
+  if(!entrance)return;
+  const node=roadNodes.reduce((best,n)=>Math.hypot(n.x-entrance.x,n.y-entrance.y)<Math.hypot(best.x-entrance.x,best.y-entrance.y)?n:best,roadNodes[0]);
+  ctx.beginPath();ctx.moveTo(node.x,node.y);ctx.lineTo(entrance.x,entrance.y);
+  ctx.strokeStyle='#b49c76';ctx.lineWidth=48;ctx.stroke();
+  ctx.strokeStyle='#ead9b8';ctx.lineWidth=36;ctx.stroke();
+ });
  // 南側は枝道を設けず、幹線の先をレンガ敷きの広場にする。
  ellipse(430,1110,205,155,'#b79b73');ellipse(430,1100,195,145,'#ead8b7');
  ctx.save();ctx.strokeStyle='rgba(166,139,99,.42)';ctx.lineWidth=2;for(let ring=1;ring<=4;ring++){ctx.beginPath();ctx.ellipse(430,1100,ring*38,ring*28,0,0,Math.PI*2);ctx.stroke()}ctx.restore();
