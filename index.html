@@ -244,6 +244,18 @@ function homeBlocksMovement(home,x,y,p){
 function isBlockedByHome(x,y,p){
  return Object.values(homes||{}).some(home=>homeBlocksMovement(home,x,y,p));
 }
+function facilityBlocksMovement(x,y,p){
+ const cafeDoor=Math.abs(x-270)<19&&y>=286&&y<=344;
+ const shopDoor=Math.abs(x-649)<20&&y>=410&&y<=465;
+ const atCafeTarget=p.action==='cafe'&&Math.hypot(x-p.tx,y-p.ty)<28;
+ const atShopTarget=p.shoppingTrip&&Math.hypot(x-p.tx,y-p.ty)<28;
+ if(x>=126&&x<=338&&y>=202&&y<=317&&!cafeDoor&&!atCafeTarget)return true;
+ if(x>=548&&x<=692&&y>=329&&y<=444&&!shopDoor&&!atShopTarget)return true;
+ return false;
+}
+function isBlockedByStructure(x,y,p){
+ return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p);
+}
 function relationshipLabel(ids){return ids.map(id=>residentById(id)?.name||id).join(' ＆ ')}
 function ensureRelationship(a,b,seed){
  const ids=[typeof a==='string'?a:a.id,typeof b==='string'?b:b.id].sort(),id=pairIdFor(ids[0],ids[1]);
@@ -933,7 +945,7 @@ function chooseRoutine(p,i){
    if(hobby.mode==='cafe'){const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+25+Math.random()*45,cafe.y+35+Math.random()*35,'喫茶店へ向かっている',hobby.label,'sit',16+Math.random()*20);return}
    const q=hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:770,y:540,label:'川沿い'},{id:'hobby-path-'+hobby.priority,x:420,y:650,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:600,y:760,label:'川辺の広場'}]);
    if(hobby.mode==='flowers'){p.flowerScene={kind:'gardening',stay:hobby.label,diary:hobby.label+'を楽しんだ'};}
-   const shoppingPlace=hobby.kind==='shopping'?getPlace('shop'):null;setAction(p,i,hobby.mode==='flowers'?'flowers':'walk',shoppingPlace?shoppingPlace.x:q.x,ySafe(shoppingPlace?shoppingPlace.y:q.y),shoppingPlace?shoppingPlace.name+'へ向かっている':q.label?(q.label+'へ向かっている'):'趣味の場所へ向かっている',hobby.label,hobby.pose,14+Math.random()*22);if(hobby.kind==='fishing')p.fishingTrip=true;if(hobby.kind==='photography')p.photoTrip=true;if(hobby.kind==='shopping')p.shoppingTrip=true;
+   const shoppingPlace=hobby.kind==='shopping'?getPlace('shop'):null;setAction(p,i,hobby.mode==='flowers'?'flowers':'walk',shoppingPlace?650:q.x,ySafe(shoppingPlace?455:q.y),shoppingPlace?shoppingPlace.name+'へ向かっている':q.label?(q.label+'へ向かっている'):'趣味の場所へ向かっている',hobby.label,hobby.pose,14+Math.random()*22);if(hobby.kind==='fishing')p.fishingTrip=true;if(hobby.kind==='photography')p.photoTrip=true;if(hobby.kind==='shopping')p.shoppingTrip=true;
   }})});
  });
  if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=[{id:'flower-west',x:145,y:430},{id:'flower-east',x:610,y:510},{id:'flower-southwest',x:120,y:930},{id:'flower-southeast',x:730,y:1020},{id:'flower-center',x:360,y:560}];const q=chooseFreshSpot(p,spots);const scene=flowerSceneFor(p);p.flowerScene=scene;setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている',scene.stay,'look',12+Math.random()*18)}});
@@ -1167,9 +1179,9 @@ function tickLife(){
 }
 function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;calendarDay++;updateWeather();addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);if(d>2){
  let step=Math.min(d,dt*42),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
- if(!isBlockedByHome(nx,ny,p)){p.x=nx;p.y=ny}
+ if(!isBlockedByStructure(nx,ny,p)){p.x=nx;p.y=ny}
  else{
-  const canX=!isBlockedByHome(nx,p.y,p),canY=!isBlockedByHome(p.x,ny,p);
+  const canX=!isBlockedByStructure(nx,p.y,p),canY=!isBlockedByStructure(p.x,ny,p);
   if(canX&&canY){if(Math.abs(mx)>=Math.abs(my))p.x=nx;else p.y=ny}
   else if(canX)p.x=nx;
   else if(canY)p.y=ny;
