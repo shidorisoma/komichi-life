@@ -460,7 +460,29 @@ function recordMemory(id,title,text,pairId=null){
  return true;
 }
 
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;p.action=kind;p.tx=targetX;p.ty=targetY;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
+// 道路の接続点。描画用の道路と同じ座標系で経路を管理する。
+const roadNodes=[
+ {id:'south',x:430,y:1120,links:['s1']},
+ {id:'s1',x:405,y:900,links:['south','s2','west-south']},
+ {id:'s2',x:420,y:790,links:['s1','s3','west-mid']},
+ {id:'s3',x:420,y:650,links:['s2','s4','west-north']},
+ {id:'s4',x:420,y:455,links:['s3','s5','west-upper']},
+ {id:'s5',x:475,y:245,links:['s4','north-mid','north-east']},
+ {id:'west-south',x:245,y:1010,links:['s1']},
+ {id:'west-mid',x:220,y:735,links:['s2']},
+ {id:'west-north',x:235,y:545,links:['s3']},
+ {id:'west-upper',x:270,y:365,links:['s4']},
+ {id:'north-mid',x:350,y:300,links:['s5']},
+ {id:'north-east',x:635,y:320,links:['s5']}
+];
+function roadRoute(fromX,fromY,toX,toY){
+ const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
+ const start=nearest(fromX,fromY),goal=nearest(toX,toY),queue=[[start.id]],visited=new Set([start.id]);let ids=null;
+ while(queue.length){const path=queue.shift(),id=path[path.length-1];if(id===goal.id){ids=path;break}const node=roadNodes.find(n=>n.id===id);(node?.links||[]).forEach(next=>{if(!visited.has(next)){visited.add(next);queue.push([...path,next])}})}
+ const nodes=(ids||[start.id]).map(id=>roadNodes.find(n=>n.id===id)).filter(Boolean);
+ return [{x:fromX,y:fromY},...nodes.map(n=>({x:n.x,y:n.y})),{x:toX,y:toY}];
+}
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;p.action=kind;p.tx=targetX;p.ty=targetY;p.routePoints=roadRoute(p.x,p.y,targetX,targetY);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.phaseState='moving';p.stay=duration;renderResidentStatus()}
 function chooseFreshSpot(p,spots){
  const recent=Array.isArray(p.recentSpots)?p.recentSpots:[];
  const fresh=spots.filter(s=>!recent.includes(s.id));
@@ -833,7 +855,7 @@ function tickLife(){
  }
  updateRelationshipPanel();
 }
-function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;calendarDay++;updateWeather();addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){let dx=p.tx-p.x,dy=p.ty-p.y,d=Math.hypot(dx,dy);if(d>2){let step=Math.min(d,dt*42);p.x+=dx/d*step;p.y+=dy/d*step}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside')completeWork(p);chooseRoutine(p,i)}}}})}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;calendarDay++;updateWeather();addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);if(d>2){let step=Math.min(d,dt*42);p.x+=dx/d*step;p.y+=dy/d*step}else if(route&&(p.routeIndex||1)<route.length-1){p.routeIndex=(p.routeIndex||1)+1}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside')completeWork(p);chooseRoutine(p,i)}}}})}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）';const night=hour>=20||hour<6;document.querySelector('.sun').textContent=weatherType==='rainy'?'☂':weatherType==='cloudy'?'☁':night?'☾':hour>=17?'🌇':'☀';{const subtitle=document.getElementById('placeSubtitle');if(subtitle)subtitle.textContent='春・'+weatherLabel()}}updateClock();setInterval(updateClock,500);
 function select(i){if(!chars[i])return;selected=i;if(!interiorHomeId){panX=450-chars[i].x;panY=720-chars[i].y}renderResidentStatus();drawWorld()};document.getElementById('residentStatus').addEventListener('click',e=>{
  const person=e.target.closest('.person');if(!person)return;
