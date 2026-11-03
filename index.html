@@ -21,6 +21,7 @@ const places=[
  {id:'home',name:'西の住宅',icon:'🏡',x:645,y:340,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'home2',name:'東の住宅',icon:'🏠',x:250,y:850,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'cafe',name:'喫茶こもれび',icon:'☕',x:240,y:290,type:'cafe',description:'飲み物を楽しめる喫茶店',actions:['食事','休憩','デート']},
+ {id:'shop',name:'こみち商店',icon:'🛒',x:430,y:470,type:'shop',description:'日用品や食材を買える小さな商店',actions:['買い物','食材を買う']},
  {id:'plaza',name:'川辺の広場',icon:'🌳',x:600,y:760,type:'outdoor',description:'川辺の散歩や休憩を楽しめる広場',actions:['散歩','休憩']},
  {id:'bench-river',name:'川辺のベンチ',icon:'🪑',x:795,y:800,type:'bench',description:'水の流れを眺めながら休めるベンチ',actions:['休憩']},
  {id:'bench-path',name:'こみちのベンチ',icon:'🪑',x:90,y:760,type:'bench',description:'木陰のそばでひと休みできるベンチ',actions:['休憩']},
@@ -908,7 +909,7 @@ function chooseRoutine(p,i){
    if(hobby.mode==='cafe'){const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+25+Math.random()*45,cafe.y+35+Math.random()*35,'喫茶店へ向かっている',hobby.label,'sit',16+Math.random()*20);return}
    const q=hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:770,y:540,label:'川沿い'},{id:'hobby-path-'+hobby.priority,x:420,y:650,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:600,y:760,label:'川辺の広場'}]);
    if(hobby.mode==='flowers'){p.flowerScene={kind:'gardening',stay:hobby.label,diary:hobby.label+'を楽しんだ'};}
-   setAction(p,i,hobby.mode==='flowers'?'flowers':'walk',q.x,ySafe(q.y),q.label?(q.label+'へ向かっている'):'趣味の場所へ向かっている',hobby.label,hobby.pose,14+Math.random()*22);if(hobby.kind==='fishing')p.fishingTrip=true;if(hobby.kind==='photography')p.photoTrip=true;if(hobby.kind==='shopping')p.shoppingTrip=true;
+   const shoppingPlace=hobby.kind==='shopping'?getPlace('shop'):null;setAction(p,i,hobby.mode==='flowers'?'flowers':'walk',shoppingPlace?shoppingPlace.x:q.x,ySafe(shoppingPlace?shoppingPlace.y:q.y),shoppingPlace?shoppingPlace.name+'へ向かっている':q.label?(q.label+'へ向かっている'):'趣味の場所へ向かっている',hobby.label,hobby.pose,14+Math.random()*22);if(hobby.kind==='fishing')p.fishingTrip=true;if(hobby.kind==='photography')p.photoTrip=true;if(hobby.kind==='shopping')p.shoppingTrip=true;
   }})});
  });
  if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=[{id:'flower-west',x:145,y:430},{id:'flower-east',x:610,y:510},{id:'flower-southwest',x:120,y:930},{id:'flower-southeast',x:730,y:1020},{id:'flower-center',x:360,y:560}];const q=chooseFreshSpot(p,spots);const scene=flowerSceneFor(p);p.flowerScene=scene;setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている',scene.stay,'look',12+Math.random()*18)}});
