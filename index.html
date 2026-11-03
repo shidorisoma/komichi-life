@@ -1275,15 +1275,22 @@ function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(sa
   }
  }
  // 横滑りで位置だけ変わっていても、目的地へ近づいていなければ足止め扱い。
- if(Math.hypot(point.x-p.x,point.y-p.y)>=d-.15){
+ if(Math.hypot(point.x-p.x,point.y-p.y)>=d-.45){
   p.stuckTime=(p.stuckTime||0)+dt;
   if(p.stuckTime>=1.5){
    p.stuckTime=0;p.routeRetries=(p.routeRetries||0)+1;
    const detour=route?findMovementDetour(p,point):null;
    if(detour&&route){
     route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route;
-   }else if(route&&(p.routeIndex||1)<route.length-1){
-    p.routeIndex=(p.routeIndex||1)+1;
+   }else if((p.routeRetries||0)>=2){
+    // 通常の迂回と経路再計算でも進めない場合は、通行可能な道路ノードへ退避する。
+    const safeNodes=roadNodes.filter(n=>!n.facility&&!isBlockedByStructure(n.x,n.y,p));
+    const safe=safeNodes.sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
+    if(safe){p.x=safe.x;p.y=safe.y}
+    if(p.action==='date'&&sharedGoal){sharedGoal='';goalTicks=0}
+    p.action='idle';p.phaseState='idle';p.stay=0;p.routePoints=[];p.routeIndex=0;p.tx=p.x;p.ty=p.y;
+    p.activity='街で過ごしている';p.stayText='';p.pose='stand';p.socialPartnerId=null;p.stuckTime=0;p.routeRetries=0;
+    chooseRoutine(p,i);
    }else{
     p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,null,p);p.routeIndex=1;
    }
