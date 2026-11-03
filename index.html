@@ -322,10 +322,8 @@ function findMovementDetour(p,point){
 function natureBlocksMovement(x,y,p){
  const trees=[{x:690,y:575,r:25},{x:675,y:930,r:22},{x:575,y:710,r:20},{x:360,y:1110,r:21}];
  for(const tree of trees)if(Math.hypot(x-tree.x,y-tree.y)<tree.r)return true;
- for(let i=0;i<15;i++){
-  const sx=560+(i*47)%170,sy=430+(i*83)%620,sr=8+(i%3)*3;
-  if(Math.hypot(x-sx,y-sy)<sr)return true;
- }
+ // 低い植え込みは景観用の地被として扱い、歩行を妨げない。
+ // 木の幹と花壇のみを通行障害物にする。
  const beds=[{left:650,right:745,top:654,bottom:725},{left:625,right:720,top:1034,bottom:1105}];
  if(beds.some(b=>x>b.left&&x<b.right&&y>b.top&&y<b.bottom))return true;
  return false;
