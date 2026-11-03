@@ -822,7 +822,15 @@ function specialNoteWakeRule(p,other=null){
 }
 function flowerSceneFor(p){
  const hobbies=hobbyChoicesFor(p);
- if(hobbies.some(h=>h.kind==='gardening'))return {kind:'gardening',stay:'花壇の草花を眺め、育ち具合を確かめている',diary:'花壇の草花を眺め、育ち具合を確かめた'};
+ if(hobbies.some(h=>h.kind==='gardening')){
+  if(weatherType==='rainy')return {kind:'gardening',stay:'雨上がりの花壇を見回り、草花の様子を確かめている',diary:'雨上がりの花壇を見回り、草花の様子を確かめた'};
+  if(weatherType==='sunny')return {kind:'gardening',stay:'日差しを浴びる草花の手入れをしている',diary:'日差しを浴びる草花の手入れをした'};
+  if(weatherType==='cloudy')return {kind:'gardening',stay:'涼しい空気の中で、草花の育ち具合を確かめている',diary:'涼しい空気の中で草花の育ち具合を確かめた'};
+  return {kind:'gardening',stay:'花壇の草花を眺め、育ち具合を確かめている',diary:'花壇の草花を眺め、育ち具合を確かめた'};
+ }
+ if(weatherType==='rainy')return {kind:'weather',stay:'雨粒をまとった花を眺めている',diary:'雨粒をまとった花を眺めた'};
+ if(weatherType==='sunny')return {kind:'weather',stay:'日差しの中で色鮮やかに咲く花を楽しんでいる',diary:'日差しの中で色鮮やかに咲く花を楽しんだ'};
+ if(weatherType==='cloudy')return {kind:'weather',stay:'風に揺れる花をのんびり眺めている',diary:'風に揺れる花をのんびり眺めた'};
  if((p.curiosity??50)>=68)return {kind:'observe',stay:'花の色や形をじっくり観察している',diary:'花の色や形をじっくり観察した'};
  if((p.activityLevel??50)<35)return {kind:'quiet',stay:'花壇のそばで静かに季節の花を楽しんでいる',diary:'花壇のそばで季節の花を楽しんだ'};
  return {kind:'view',stay:'花壇のそばで足を止め、花を眺めている',diary:'花壇のそばで花を眺めた'};
