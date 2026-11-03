@@ -56,7 +56,7 @@ const homeLayoutCatalog={
  '3LDK':[{name:'広々3LDK',rooms:[{type:'bedroom',name:'寝室',x:125,y:410,w:300,h:190},{type:'bedroom',name:'洋室1',x:125,y:600,w:300,h:190},{type:'bedroom',name:'洋室2',x:125,y:790,w:300,h:190},{type:'living',name:'LDK',x:425,y:410,w:350,h:570},{type:'kitchen',name:'キッチン',x:625,y:410,w:150,h:230}]}]
 };
 let selectedHomeLayout='2LDK',homeSubPage='menu';
-const residentialPlots=[{id:'north-west',label:'北西の住宅地',x:220,y:260},{id:'north-center',label:'北中央の住宅地',x:390,y:260},{id:'south-west',label:'西南の住宅地',x:220,y:550},{id:'south-center',label:'西中央の住宅地',x:390,y:550},{id:'south-east',label:'西北の住宅地',x:220,y:850},{id:'center-west-home',label:'中央西の住宅地',x:390,y:850}];
+const residentialPlots=[{id:'north-west',label:'北西の住宅地',x:220,y:260},{id:'north-center',label:'北中央の住宅地',x:390,y:260},{id:'south-west',label:'西南の住宅地',x:220,y:550},{id:'south-center',label:'西中央の住宅地',x:390,y:550},{id:'south-east',label:'西北の住宅地',x:220,y:700},{id:'center-west-home',label:'中央西の住宅地',x:390,y:850}];
 function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
 function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();saveGame(true);drawWorld();return true}
 function createHomeFromTemplate(layoutKey,residentIds){
@@ -164,11 +164,11 @@ function ensureFurnitureWorld(saved){
  // 広場に最も近い既存住宅を、広場から離れた中央西の住宅区画へ一度だけ移す。
  const plazaSideHome=Object.values(homes).sort((a,b)=>Math.hypot(a.x-430,a.y-1100)-Math.hypot(b.x-430,b.y-1100))[0];
  let movedPlazaHome=false;
- if(plazaSideHome&&Object.keys(homes).length>1&&plazaSideHome.southAccessLayoutVersion!==3){
+ if(plazaSideHome&&Object.keys(homes).length>1&&plazaSideHome.southAccessLayoutVersion!==4){
   const target=residentialPlots.find(p=>p.id==='south-east');
   const occupied=Object.values(homes).some(h=>h!==plazaSideHome&&h.mapPlotId===target?.id);
   if(target&&!occupied){plazaSideHome.mapPlotId=target.id;plazaSideHome.x=target.x;plazaSideHome.y=target.y;movedPlazaHome=true;}
-  plazaSideHome.southAccessLayoutVersion=3;
+  plazaSideHome.southAccessLayoutVersion=4;
  }
  Object.values(rooms).forEach(room=>room.furnitureIds=[]);
  furniture.forEach(item=>{const room=rooms[item.roomId];if(room&&item.homeId===room.homeId)room.furnitureIds.push(item.instanceId)});
@@ -348,7 +348,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   // カフェへはメインストリートから短く分岐
   {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
   // 西側住宅街の共用道路は一本に集約。
-  {start:[90,463],curves:[[[90,560],[90,656],[90,753]],[[90,850],[90,947],[90,1043]]]},
+  {start:[90,463],curves:[[[90,560],[90,656],[90,753]],[[90,800],[90,850],[90,900]]]},
   // メインストリートとの接続は北側の一か所だけ。
   {start:[90,463],curves:[[[190,450],[340,490],[490,555]]]}
  ];
@@ -374,7 +374,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // 住宅の南玄関だけを、近い方の共用道路へ短い枝道で接続する。
  homes&&Object.values(homes).forEach(home=>{
   const entrance=homeEntrance(home);if(!entrance)return;
-  const approachY=entrance.y+125,laneX=90;
+  const approachY=entrance.y+50,laneX=90;
   ctx.beginPath();ctx.moveTo(laneX,approachY);ctx.lineTo(entrance.x,approachY);ctx.lineTo(entrance.x,entrance.y);
   ctx.strokeStyle='#a98d68';ctx.lineWidth=38;ctx.stroke();
   ctx.strokeStyle='#ead5ad';ctx.lineWidth=26;ctx.stroke();
@@ -544,7 +544,7 @@ const roadNodes=[
  // 西側住宅街は一本の共用道路に集約。
  {id:'west-north',x:90,y:463,links:['west-mid','main-mid']},
  {id:'west-mid',x:90,y:753,links:['west-north','west-south','bench-path-entry']},
- {id:'west-south',x:90,y:1043,links:['west-mid']},
+ {id:'west-south',x:90,y:900,links:['west-mid']},
  {id:'cafe-entry',x:250,y:330,links:['main-upper'],facility:true},
  {id:'bench-path-entry',x:105,y:755,links:['west-mid'],facility:true},
  // 公園への接続は中央メインストリートの一点のみ。
@@ -556,7 +556,7 @@ function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function homeSouthRoadNode(home){
  if(!home)return roadNodes[0];
  // 住宅の南玄関から真南へ出た共用道路の接続点だけを使う。
- const approachY=home.y+78+125,laneX=90;
+ const approachY=home.y+78+50,laneX=90;
  const accessNodes=roadNodes.filter(n=>Math.abs(n.x-laneX)<1);
  return accessNodes.reduce((best,n)=>Math.abs(n.y-approachY)<Math.abs(best.y-approachY)?n:best,accessNodes[0]);
 }
@@ -578,12 +578,12 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null){
  const nodes=roadNodePath(start,goal);
  const points=[{x:fromX,y:fromY}];
  if(startHome){
-  const e=homeEntrance(startHome),approachY=e.y+125;
+  const e=homeEntrance(startHome),approachY=e.y+50;
   points.push({x:e.x,y:approachY},{x:start.x,y:approachY});
  }
  points.push(...nodes.map(n=>({x:n.x,y:n.y})));
  if(destinationHome){
-  const e=homeEntrance(destinationHome),approachY=e.y+125;
+  const e=homeEntrance(destinationHome),approachY=e.y+50;
   points.push({x:goal.x,y:goal.y},{x:e.x,y:approachY},{x:e.x,y:e.y+25});
  }
  points.push({x:toX,y:toY});
