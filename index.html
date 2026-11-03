@@ -343,28 +343,29 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  poly([[0,350],[480,180],[755,320],[760,1120],[430,1370],[0,1160]],'#d9c49d','#a58d68',3);
  // 道路ネットワーク。中央幹線から北・西の住宅地へ接続。
  const roadRoutes=[
-  // 中央をゆるやかに蛇行する、レンガ敷きの幅広メインストリート。
+  // 一本の幅広い中央メインストリート
   {main:true,start:[470,170],curves:[[[505,280],[525,430],[490,555]],[[455,700],[445,870],[445,1010]]]},
-  // 左側の住宅街へ伸びる短い枝道。
-  {start:[505,350],curves:[[[445,365],[360,405],[300,450]]]},
-  {start:[490,555],curves:[[[420,575],[345,650],[275,700]],[[235,715],[205,735],[185,750]]]},
-  {start:[465,790],curves:[[[410,820],[345,900],[275,950]],[[230,965],[205,985],[185,1000]]]}
+  // カフェへはメインストリートから短く分岐
+  {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
+  // 住宅街の共用道路。南玄関の前だけに短い横道を出す。
+  {start:[65,425],curves:[[[65,510],[65,590],[65,675]],[[65,760],[65,845],[65,925]]]},
+  {start:[65,675],curves:[[[160,675],[275,675],[380,675]],[[420,690],[445,735],[465,790]]]}
  ];
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
  roadRoutes.forEach(route=>{
   ctx.beginPath();ctx.moveTo(route.start[0],route.start[1]);
   route.curves.forEach(curve=>ctx.bezierCurveTo(curve[0][0],curve[0][1],curve[1][0],curve[1][1],curve[2][0],curve[2][1]));
-  ctx.strokeStyle='#a98d68';ctx.lineWidth=route.main?112:58;ctx.stroke();
-  ctx.strokeStyle='#ead5ad';ctx.lineWidth=route.main?94:44;ctx.stroke();
+  ctx.strokeStyle='#a98d68';ctx.lineWidth=route.main?112:46;ctx.stroke();
+  ctx.strokeStyle='#ead5ad';ctx.lineWidth=route.main?94:34;ctx.stroke();
  });
- // 公園内の散歩道。住宅地とは別の細い曲線ルート。
+ // 公園の散歩道はメインストリートから入り、川辺をゆるく周回する。
  ctx.beginPath();ctx.moveTo(490,555);ctx.lineTo(610,555);ctx.bezierCurveTo(700,555,780,610,755,760);ctx.bezierCurveTo(740,850,690,890,650,900);ctx.bezierCurveTo(680,950,735,990,780,1010);
  ctx.strokeStyle='#a98d68';ctx.lineWidth=42;ctx.stroke();ctx.strokeStyle='#f0dfbd';ctx.lineWidth=30;ctx.stroke();
  ctx.restore();
  // 住宅以外の施設にも入口と歩行者用アクセス路を設定。
  const facilityPaths=[
-  [[300,450],[250,330]],                         // 喫茶こもれび
-  [[185,750],[105,805]],                         // こみちのベンチ
+  [[250,330],[250,330]],                         // 喫茶こもれびの入口
+  [[65,675],[105,755]],                          // こみちのベンチ
   [[650,900],[700,930],[780,1010]]               // 川辺のベンチ
  ];
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
@@ -375,13 +376,21 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   ctx.strokeStyle='#ead9b8';ctx.lineWidth=28;ctx.stroke();
  });
  ctx.restore();
- // 住宅への専用路は玄関より南側だけを通り、南面から正面接続する。
+ // 住宅街の共用道路から、各住宅の南玄関へ短い枝道を引く。
  homes&&Object.values(homes).forEach(home=>{
   const entrance=homeEntrance(home);if(!entrance)return;
-  const node=homeSouthRoadNode(home),approachY=entrance.y+100;
-  ctx.beginPath();ctx.moveTo(node.x,node.y);ctx.lineTo(node.x,approachY);ctx.lineTo(entrance.x,approachY);ctx.lineTo(entrance.x,entrance.y+25);ctx.lineTo(entrance.x,entrance.y);
-  ctx.strokeStyle='#a98d68';ctx.lineWidth=48;ctx.stroke();
-  ctx.strokeStyle='#ead5ad';ctx.lineWidth=36;ctx.stroke();
+  const approachY=entrance.y+125;
+  ctx.beginPath();ctx.moveTo(65,approachY);ctx.lineTo(entrance.x,approachY);ctx.lineTo(entrance.x,entrance.y);
+  ctx.strokeStyle='#a98d68';ctx.lineWidth=42;ctx.stroke();
+  ctx.strokeStyle='#ead5ad';ctx.lineWidth=30;ctx.stroke();
+ });
+ // 住宅は各列で共用の玄関前通路へ接続。家の裏や側面に道を回さない。
+ homes&&Object.values(homes).forEach(home=>{
+  const entrance=homeEntrance(home);if(!entrance)return;
+  const approachY=entrance.y+125;
+  ctx.beginPath();ctx.moveTo(65,approachY);ctx.lineTo(entrance.x,approachY);ctx.lineTo(entrance.x,entrance.y+25);ctx.lineTo(entrance.x,entrance.y);
+  ctx.strokeStyle='#a98d68';ctx.lineWidth=42;ctx.stroke();
+  ctx.strokeStyle='#ead5ad';ctx.lineWidth=30;ctx.stroke();
  });
  // 南側は枝道を設けず、幹線の先をレンガ敷きの広場にする。
  ellipse(430,1110,235,175,'#a98d68');ellipse(430,1100,222,162,'#ead5ad');
@@ -540,22 +549,21 @@ function recordMemory(id,title,text,pairId=null){
 
 // 道路の接続点。描画用の道路と同じ座標系で経路を管理する。
 const roadNodes=[
- // 幅広い中央メインストリート。北から南の円形広場へ続く。
+ // 中央メインストリート
  {id:'main-north',x:470,y:170,links:['main-upper']},
- {id:'main-upper',x:505,y:350,links:['main-north','main-mid','res-north']},
- {id:'main-mid',x:490,y:555,links:['main-upper','main-lower','res-mid','park-entry']},
- {id:'main-lower',x:465,y:790,links:['main-mid','main-plaza','res-south']},
+ {id:'main-upper',x:505,y:350,links:['main-north','main-mid','cafe-entry']},
+ {id:'main-mid',x:490,y:555,links:['main-upper','main-lower','park-entry']},
+ {id:'main-lower',x:465,y:790,links:['main-mid','main-plaza','west-junction']},
  {id:'main-plaza',x:445,y:1010,links:['main-lower','plaza-center']},
  {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
- // 左側の住宅街。各枝道は住宅の南側へ回り込む。
- {id:'res-north',x:300,y:450,links:['main-upper','cafe-entry']},
- {id:'res-mid',x:275,y:700,links:['main-mid','res-mid-west','bench-path-entry']},
- {id:'res-mid-west',x:185,y:750,links:['res-mid']},
- {id:'res-south',x:275,y:950,links:['main-lower','res-south-west']},
- {id:'res-south-west',x:185,y:1000,links:['res-south']},
- {id:'cafe-entry',x:250,y:330,links:['res-north'],facility:true},
- {id:'bench-path-entry',x:105,y:755,links:['res-mid-west'],facility:true},
- // 右側は公園の曲線散歩道。公園内に住宅は置かない。
+ // 西側住宅街の共用道路。3本の短い玄関前通路をまとめる。
+ {id:'west-north',x:65,y:425,links:['west-mid']},
+ {id:'west-mid',x:65,y:675,links:['west-north','west-south','west-junction','bench-path-entry']},
+ {id:'west-south',x:65,y:925,links:['west-mid']},
+ {id:'west-junction',x:380,y:675,links:['west-mid','main-lower']},
+ {id:'cafe-entry',x:250,y:330,links:['main-upper'],facility:true},
+ {id:'bench-path-entry',x:105,y:755,links:['west-mid'],facility:true},
+ // 川辺の公園は独立した散歩道で周回
  {id:'park-entry',x:610,y:555,links:['main-mid','park-east']},
  {id:'park-east',x:735,y:620,links:['park-entry','park-loop-north']},
  {id:'park-loop-north',x:755,y:760,links:['park-east','park-loop-south']},
@@ -565,14 +573,11 @@ const roadNodes=[
 ];
 function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function homeSouthRoadNode(home){
- const entrance=homeEntrance(home);if(!entrance)return roadNodes[0];
- const candidates=roadNodes.filter(n=>!n.facility&&n.y>entrance.y+100);
- const pool=candidates.length?candidates:roadNodes.filter(n=>!n.facility);
- return pool.reduce((best,n)=>{
-  const score=Math.hypot((n.x-entrance.x)*1.15,n.y-(entrance.y+100));
-  const bestScore=Math.hypot((best.x-entrance.x)*1.15,best.y-(entrance.y+100));
-  return score<bestScore?n:best;
- },pool[0]);
+ if(!home)return roadNodes[0];
+ // 住宅の南玄関から真南へ出た共用道路の接続点だけを使う。
+ const approachY=home.y+78+125;
+ const accessNodes=roadNodes.filter(n=>['west-north','west-mid','west-south'].includes(n.id));
+ return accessNodes.reduce((best,n)=>Math.abs(n.y-approachY)<Math.abs(best.y-approachY)?n:best,accessNodes[0]);
 }
 function roadNodePath(start,goal){
  const queue=[[start.id]],visited=new Set([start.id]);let ids=null;
@@ -592,13 +597,13 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null){
  const nodes=roadNodePath(start,goal);
  const points=[{x:fromX,y:fromY}];
  if(startHome){
-  const e=homeEntrance(startHome),approachY=e.y+100;
+  const e=homeEntrance(startHome),approachY=e.y+125;
   points.push({x:e.x,y:approachY},{x:start.x,y:approachY});
  }
  points.push(...nodes.map(n=>({x:n.x,y:n.y})));
  if(destinationHome){
-  const e=homeEntrance(destinationHome),approachY=e.y+100;
-  points.push({x:goal.x,y:goal.y},{x:goal.x,y:approachY},{x:e.x,y:approachY},{x:e.x,y:e.y+25});
+  const e=homeEntrance(destinationHome),approachY=e.y+125;
+  points.push({x:goal.x,y:goal.y},{x:e.x,y:approachY},{x:e.x,y:e.y+25});
  }
  points.push({x:toX,y:toY});
  return points;
