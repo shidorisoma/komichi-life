@@ -897,7 +897,7 @@ function chooseRoutine(p,i){
   variants.forEach(variant=>{const action=(variant==='outdoor'||hobby.mode==='walk')?'walk':hobby.mode==='flowers'?'flowers':hobby.mode==='cafe'?'cafe':'home';options.push({action,weight:baseWeight,isHobby:true,run:()=>{
    if(hobby.mode==='home'&&variant!=='outdoor'){
     const home=getPlace(householdForResident(p).homeId);const room=variant==='living'?'living':hobby.room;
-    const fishMeal=hobby.kind==='cooking'&&(Number(p.fishIngredients)||0)>0;if(fishMeal)p.fishIngredients=Math.max(0,(Number(p.fishIngredients)||0)-1);p.homeHobby={kind:hobby.kind,room,name:hobby.name,fishMeal};const hobbyLabel=fishMeal?'釣った魚を使って料理をしている':hobby.label;setAction(p,i,'home',home.x,home.y+28,'家へ戻っている',hobbyLabel,'sit',16+Math.random()*24);return
+    const fishMeal=hobby.kind==='cooking'&&(Number(p.fishIngredients)||0)>0;const foodMeal=hobby.kind==='cooking'&&!fishMeal&&(Number(p.foodIngredients)||0)>0;if(fishMeal)p.fishIngredients=Math.max(0,(Number(p.fishIngredients)||0)-1);else if(foodMeal)p.foodIngredients=Math.max(0,(Number(p.foodIngredients)||0)-1);p.homeHobby={kind:hobby.kind,room,name:hobby.name,fishMeal,foodMeal};const hobbyLabel=fishMeal?'釣った魚を使って料理をしている':foodMeal?'買ってきた食材で料理をしている':hobby.label;setAction(p,i,'home',home.x,home.y+28,'家へ戻っている',hobbyLabel,'sit',16+Math.random()*24);return
    }
    p.homeHobby=null;
    if(variant==='outdoor'){
@@ -939,7 +939,7 @@ function arrive(p,i){
  if(p.action==='cafe'){const cost=450;p.money=Math.max(0,(Number(p.money)||0)-cost);recordMoney(p,'expense',cost,'喫茶こもれび');}
  if(p.action==='walk'&&p.fishingTrip){p.fishIngredients=Math.min(5,(Number(p.fishIngredients)||0)+1);p.fishingTrip=false;addDiary(p.name+'が川辺で魚を釣り、自宅へ持ち帰った。');}
  if(p.action==='walk'&&p.photoTrip){p.needs.mood=Math.min(100,p.needs.mood+3);p.photoTrip=false;addDiary(p.name+'が街の景色を写真に収め、気分転換をした。');}
- if(p.action==='walk'&&p.shoppingTrip){p.shoppingTrip=false;const cost=800+Math.floor(Math.random()*1701);if((Number(p.money)||0)-cost>=5000){p.money-=cost;recordMoney(p,'expense',cost,'買い物');p.needs.mood=Math.min(100,p.needs.mood+2);addDiary(p.name+'が街のお店で'+cost.toLocaleString('ja-JP')+'円の買い物を楽しんだ。');}else{addDiary(p.name+'は予算を考えて、お店を見て回るだけにした。');}}
+ if(p.action==='walk'&&p.shoppingTrip){p.shoppingTrip=false;const cost=800+Math.floor(Math.random()*1701);if((Number(p.money)||0)-cost>=5000){p.money-=cost;recordMoney(p,'expense',cost,'買い物');p.needs.mood=Math.min(100,p.needs.mood+2);const grocery=Math.random()<.45;if(grocery)p.foodIngredients=Math.min(5,(Number(p.foodIngredients)||0)+1);addDiary(p.name+'が街のお店で'+cost.toLocaleString('ja-JP')+'円の買い物を楽しんだ。'+(grocery?'食材も買って帰った。':''));}else{addDiary(p.name+'は予算を考えて、お店を見て回るだけにした。')}}
  
  const actionLog={work:p.name+'が仕事をしている。',sleep:p.name+'が家に帰って眠っている。',home:p.name+'が家で過ごしている。',flowers:p.name+'が'+(p.flowerScene?.diary||'花壇のそばで花を眺めた')+'。',bench:p.name+'が'+(p.benchScene?.diary||'ベンチでひと休みした')+'。',cafe:p.name+'が喫茶こもれびで'+(p.cafeScene||'ひと休みしている')+'。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が'+(p.walkScene?.diary||'街を散歩した')+'。'};
  addDiary(actionLog[p.action]||p.name+'が'+p.activity+'。');
@@ -1082,7 +1082,7 @@ function recoverMoodFromRoutine(p,nowStamp){
   change=(hobbyBonus[kind]??.7)+curiosity/500;
   if(kind==='reading'||kind==='craft'||kind==='music')change+=curiosity/250;
   if(kind==='game')change+=sociability/500;
-  if(kind==='cooking'&&p.homeHobby.fishMeal){change+=5;p.needs.hunger=Math.min(100,p.needs.hunger+18);p.homeHobby.fishMeal=false;addDiary(p.name+'が釣った魚を料理して食べ、いつもより満足そうにしている。');}
+  if(kind==='cooking'&&p.homeHobby.fishMeal){change+=5;p.needs.hunger=Math.min(100,p.needs.hunger+18);p.homeHobby.fishMeal=false;addDiary(p.name+'が釣った魚を料理して食べ、いつもより満足そうにしている。');}else if(kind==='cooking'&&p.homeHobby.foodMeal){change+=2;p.needs.hunger=Math.min(100,p.needs.hunger+12);p.homeHobby.foodMeal=false;addDiary(p.name+'が買ってきた食材で料理をして食べた。');}
  }
  else if(p.phaseState==='moving')change=-.05;
  if(change>0)p.needs.mood=Math.min(100,p.needs.mood+change);
