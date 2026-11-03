@@ -251,6 +251,41 @@ function householdForResident(p){
 }
 function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morning')return {bed:21,wake:5};if(rhythm==='night')return {bed:2,wake:10};return {bed:22,wake:6}}
  function isResidentSleepTime(p){const {bed,wake}=sleepWindowFor(p);return bed<wake?(hour>=bed&&hour<wake):(hour>=bed||hour<wake)}
+ function workPlanFor(p){
+  const style=p.workStyle||'none';if(style==='none'||!p.jobTitle)return null;
+  const frequency=p.workFrequency||'normal',duration=p.workDuration||'normal';
+  const durationMinutes=duration==='short'?35:duration==='long'?115:65;
+  const start=String(p.workStart||'09:00').split(':').map(Number),end=String(p.workEnd||'17:00').split(':').map(Number);
+  const startMinute=(start[0]||0)*60+(start[1]||0),endMinute=(end[0]||0)*60+(end[1]||0),now=hour*60+minute;
+  let working=false,urgent=false;
+  if(style==='fixed')working=startMinute<endMinute?(now>=startMinute&&now<endMinute):(now>=startMinute||now<endMinute);
+  else if(style==='irregular'){
+   const dayKey=(day+String(p.id).split('').reduce((n,ch)=>n+ch.charCodeAt(0),0))%7;
+   const workDays=frequency==='low'?2:frequency==='high'?6:4;
+   const blockStart=frequency==='low'?11:frequency==='high'?8:9,blockEnd=frequency==='low'?15:frequency==='high'?19:17;
+   working=dayKey<workDays&&hour>=blockStart&&hour<blockEnd;
+  }else if(style==='free'){
+   const chance=frequency==='low'?.28:frequency==='high'?.78:.52;
+   const daySeed=(day*17+String(p.id).length*13)%10;
+   working=hour>=10&&hour<19&&daySeed/10<chance&&hour<(duration==='long'?18:duration==='short'?15:17);
+  }
+  if(!working&&p.urgentCall&&p.workCallDay!==day&&hour>=8&&hour<21){
+   const chance=p.callFrequency==='low'?.025:p.callFrequency==='high'?.11:.055;
+   urgent=Math.random()<chance;if(urgent)p.workCallDay=day;
+  }
+  return working||urgent?{duration:urgent?25:durationMinutes,urgent}:null;
+ }
+ function workPlaceFor(p){
+  const name=String(p.workplace||'');
+  const matched=places.find(q=>name&&(name.includes(q.name)||q.name.includes(name)));
+  if(matched)return matched;
+  if(/喫茶|カフェ|飲食|店/.test(name))return getPlace('cafe');
+  return getPlace('plaza');
+ }
+ function startWork(p,i,plan){
+  const place=workPlaceFor(p),title=p.jobTitle||'仕事';
+  setAction(p,i,'work',place.x,place.y,plan.urgent?'急な呼び出しで仕事に向かっている':title+'の仕事に向かっている',plan.urgent?'急な仕事に対応している':title+'の仕事をしている','stand',plan.duration);
+ }
  function dailyScheduleFor(p){
  if(isResidentSleepTime(p))return {phase:'sleep',label:'睡眠時間',weights:{}};
  if(hour>=6&&hour<9)return {phase:'morning',label:'朝の時間',weights:{walk:1.25,flowers:1.15,cafe:1.1,bench:.75}};
@@ -305,8 +340,11 @@ function specialNoteWakeRule(p,other=null){
 }
  function chooseRoutine(p,i){
  if(p.action==='social'&&p.socialPartnerId){const partner=residentById(p.socialPartnerId);if(partner&&partner.action==='social'&&partner.socialPartnerId===p.id&&(partner.phaseState==='moving'||partner.phaseState==='staying')){p.phaseState='staying';p.stay=5;p.activity=partner.name+'と一緒に過ごしている';p.stayText=p.activity;return}}
- if(isResidentSleepTime(p)&&!specialNoteWakeRule(p)){const household=householdForResident(p);const home=getPlace(household.homeId);const partner=household.partner;const partnerSleeping=partner&&partner.action==='sleep'&&partner.phaseState==='staying';const offset=partner?(p.id<partner.id?-12:12):((i%2)*14-7);const sleepX=home.x+offset;const sleepY=home.y+48+(partner?0:(i%3)*5);const stayText=partnerSleeping?partner.name+'と一緒に眠っている':'家で眠っている';setAction(p,i,'sleep',sleepX,sleepY,'家へ帰っている',stayText,'sit',55+Math.random()*15);return}
+ const workPlan=workPlanFor(p);
+  if(workPlan&&p.priorityStyle==='work'){startWork(p,i,workPlan);return}
+  if(isResidentSleepTime(p)&&!specialNoteWakeRule(p)){const household=householdForResident(p);const home=getPlace(household.homeId);const partner=household.partner;const partnerSleeping=partner&&partner.action==='sleep'&&partner.phaseState==='staying';const offset=partner?(p.id<partner.id?-12:12):((i%2)*14-7);const sleepX=home.x+offset;const sleepY=home.y+48+(partner?0:(i%3)*5);const stayText=partnerSleeping?partner.name+'と一緒に眠っている':'家で眠っている';setAction(p,i,'sleep',sleepX,sleepY,'家へ帰っている',stayText,'sit',55+Math.random()*15);return}
  if(sharedGoal&&['nagisumi','yaku'].includes(p.id)){setAction(p,i,'date',i===0?250:310,i===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',35+Math.random()*20);return}
+ if(workPlan){startWork(p,i,workPlan);return}
  const previous=p.action;
  const options=[];
  if(p.needs.hunger<42&&previous!=='cafe')options.push({action:'cafe',weight:5,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+25+Math.random()*45,cafe.y+35+Math.random()*35,'喫茶店へ向かっている','喫茶店でひと休み','sit',18+Math.random()*14)}});
@@ -351,7 +389,7 @@ function arrive(p,i){
  p.phaseState='staying';p.x=p.tx;p.y=p.ty;p.activity=p.stayText;renderResidentStatus();
  p.pose=p.action==='bench'||p.action==='cafe'||p.action==='date'||p.action==='sleep'||p.action==='home'?'sit':p.action==='flowers'?'look':'stand';
  
- const actionLog={sleep:p.name+'が家に帰って眠っている。',home:p.name+'が家で過ごしている。',flowers:p.name+'が花壇のそばで足を止め、花を眺めている。',bench:p.name+'がベンチに座ってひと休みしている。',cafe:p.name+'が喫茶こもれびでひと休みしている。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が街を散歩している。'};
+ const actionLog={work:p.name+'が仕事をしている。',sleep:p.name+'が家に帰って眠っている。',home:p.name+'が家で過ごしている。',flowers:p.name+'が花壇のそばで足を止め、花を眺めている。',bench:p.name+'がベンチに座ってひと休みしている。',cafe:p.name+'が喫茶こもれびでひと休みしている。',date:p.name+'が喫茶店で一緒に過ごしている。',walk:p.name+'が街を散歩している。'};
  addDiary(actionLog[p.action]||p.name+'が'+p.activity+'。');
 
 }
@@ -438,7 +476,8 @@ function recoverMoodFromRoutine(p,nowStamp){
  const curiosity=Math.max(0,Math.min(100,p.curiosity??50));
  let change=0;
  if(p.action==='sleep'&&p.phaseState==='staying')change=0;
- else if(p.action==='social'&&p.phaseState==='staying')change=(1.15+sociability/180)*socialMoodRecoveryRate(p);
+ else if(p.action==='work'&&p.phaseState==='staying')change=-.08;
+  else if(p.action==='social'&&p.phaseState==='staying')change=(1.15+sociability/180)*socialMoodRecoveryRate(p);
  else if(p.action==='cafe'&&p.phaseState==='staying')change=.8;
  else if(p.action==='bench'&&p.phaseState==='staying')change=.55;
  else if(p.action==='flowers'&&p.phaseState==='staying')change=.35+curiosity/300;
@@ -485,7 +524,7 @@ function tickLife(){
  const recoveryStamp=day*1440+hour*60+minute;
  if(minute%10===0&&recoveryStamp!==lastRecoveryStamp){
   lastRecoveryStamp=recoveryStamp;
-  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe'||p.action==='sleep'||p.action==='home')){n.energy=Math.min(100,n.energy+(p.action==='sleep'?13:p.action==='bench'?9:p.action==='home'?5:3));if(p.action!=='sleep')n.mood=Math.min(100,n.mood+(p.action==='home'?1.2:2));if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+22)}});
+  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe'||p.action==='sleep'||p.action==='home'||p.action==='work')){n.energy=Math.min(100,n.energy+(p.action==='sleep'?13:p.action==='bench'?9:p.action==='home'?5:p.action==='work'?-0.4:3));if(p.action!=='sleep')n.mood=Math.min(100,n.mood+(p.action==='home'?1.2:2));if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+22)}});
  }
  updateRelationshipPanel();
 }
