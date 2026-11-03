@@ -440,7 +440,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   // 小さな石畳
  ctx.save();ctx.globalAlpha=.28;ctx.strokeStyle='#aa946e';ctx.lineWidth=1;for(let y=330;y<1350;y+=38){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(770,y-100);ctx.stroke()}for(let x=10;x<760;x+=48){ctx.beginPath();ctx.moveTo(x,300);ctx.lineTo(x+180,1320);ctx.stroke()}ctx.restore();
  // カフェと住宅
- drawCafe(95,190);
+ drawCafe(240,290);
  drawShop(620,390);
  // 登録されている住居を、それぞれの所在地に描画
  function drawHouseExterior(home,index){
