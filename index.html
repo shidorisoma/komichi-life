@@ -419,7 +419,15 @@ function openPlaceResidents(){
  const here=interiorHomeId?chars.filter(p=>householdForResident(p).homeId===interiorHomeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'):chars.filter(p=>p.action!=='home'&&p.action!=='sleep'&&p.action!=='workOutside');
  const panel=document.getElementById('panel'),title=document.getElementById('panelTitle'),body=document.getElementById('panelBody');
  panel.classList.remove('mapPanel','homePanel');panel.classList.add('show');title.textContent='この場所にいる住人';
- body.innerHTML=(here.length?here.map(p=>'<div class="residentRow">'+residentAvatar(p)+'<div class="residentInfo"><b>'+escapeHtml(p.name)+'</b><div class="activity">'+escapeHtml(p.activity||'過ごしている')+'</div></div><button type="button" class="residentResetBtn" data-resident-index="'+chars.indexOf(p)+'">リセット</button></div>').join(''):'<div class="subtle">この場所にいる住人はいません。</div>')+'<button class="actionBtn" id="closePlaceResidents">閉じる</button>';
+ body.innerHTML=(here.length?here.map(p=>{
+ const route=Array.isArray(p.routePoints)?p.routePoints:[];
+ const state=p.phaseState||'未設定',action=p.action||'未設定';
+ const diagnostic='状態 '+action+' / '+state+'<br>位置 '+Math.round(p.x)+','+Math.round(p.y)+' → 目的地 '+Math.round(p.tx)+','+Math.round(p.ty)+'<br>経路 '+Math.min((p.routeIndex||0)+1,route.length)+' / '+route.length+'・停滞 '+(Number(p.stuckTime)||0).toFixed(1)+'秒';
+ return '<div class="residentRow">'+residentAvatar(p)+'<div class="residentInfo"><b>'+escapeHtml(p.name)+'</b><div class="activity">'+escapeHtml(p.activity||'過ごしている')+'</div><div class="subtle" style="font-size:10px;line-height:1.5;margin-top:3px">'+diagnostic+'</div></div><button type="button" class="residentResetBtn" data-resident-index="'+chars.indexOf(p)+'">リセット</button></div>';
+ }).join(''):'<div class="subtle">この場所にいる住人はいません。</div>')+'<div class="subtle" id="runtimeDiagnostic" style="margin:8px 0"></div><button class="actionBtn" id="closePlaceResidents">閉じる</button>';
+ const runtimeDiagnostic=document.getElementById('runtimeDiagnostic');
+ runtimeDiagnostic.textContent='ゲーム稼働 '+(paused?'停止中':'動作中')+' / 最終フレーム '+(typeof last==='number'?last.toFixed(0):'不明');
+
  body.querySelectorAll('.residentResetBtn').forEach(button=>button.onclick=()=>resetResidentPosition(chars[Number(button.dataset.residentIndex)],Number(button.dataset.residentIndex)));
  document.getElementById('closePlaceResidents').onclick=()=>{panel.classList.remove('show');showTab(interiorHomeId?'home':'walk',true)};
 }
