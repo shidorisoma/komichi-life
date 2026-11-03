@@ -734,11 +734,16 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const goal=destinationHome?homeSouthRoadNode(destinationHome):nearest(toX,toY);
  const nodes=roadNodePath(start,goal);
  const points=[{x:fromX,y:fromY}];
+ let routeNodes=nodes;
  if(startHome){
-  const e=homeEntrance(startHome),approachY=startHome.y<400?430:e.y+50;
-  points.push({x:e.x,y:approachY},{x:start.x,y:approachY});
+  const e=homeEntrance(startHome),upperHouse=startHome.y<400,approachY=upperHouse?430:e.y+50;
+  // 上側住宅は玄関前から横道へそのまま出られる。最寄りノードまで逆走せず、
+  // 横道上の次の経路ノードへ直接つなぐ。
+  points.push({x:e.x,y:approachY});
+  if(upperHouse)routeNodes=nodes.slice(1);
+  else points.push({x:start.x,y:approachY});
  }
- points.push(...nodes.map(n=>({x:n.x,y:n.y})));
+ points.push(...routeNodes.map(n=>({x:n.x,y:n.y})));
  if(destinationHome){
   const e=homeEntrance(destinationHome),approachY=destinationHome.y<400?430:e.y+50;
   points.push({x:goal.x,y:goal.y},{x:e.x,y:approachY},{x:e.x,y:e.y+25});
