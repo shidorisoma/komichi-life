@@ -255,28 +255,31 @@ function householdForResident(p){
 }
 function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morning')return {bed:21,wake:5};if(rhythm==='night')return {bed:2,wake:10};return {bed:22,wake:6}}
  function isResidentSleepTime(p){const {bed,wake}=sleepWindowFor(p);return bed<wake?(hour>=bed&&hour<wake):(hour>=bed||hour<wake)}
+ function scheduledWorkDay(p){
+  const frequency=p.workFrequency||'weekdays',weekday=day%7;
+  if(frequency==='daily')return true;
+  if(frequency==='weekdays')return weekday>=1&&weekday<=5;
+  if(frequency==='weekends')return weekday===0||weekday===6;
+  if(frequency==='fixedDays')return Array.isArray(p.workDays)&&p.workDays.includes(weekday);
+  const weekKey=Math.floor(calendarDay/7);
+  if(p.workWeekKey!==weekKey||!Array.isArray(p.workWeekDays)){
+   let count=frequency==='randomHigh'?5+((weekKey+String(p.id).length)%3):frequency==='randomLow'?1+((weekKey+String(p.id).length)%4):Math.max(1,Math.min(7,Math.floor(Number(p.workDaysPerWeek)||3)));
+   let seed=0;const seedText=String(p.id)+'|'+weekKey;for(let i=0;i<seedText.length;i++)seed=(seed*31+seedText.charCodeAt(i))>>>0;
+   const pool=[0,1,2,3,4,5,6];for(let i=pool.length-1;i>0;i--){seed=(seed*1664525+1013904223)>>>0;const j=seed%(i+1);[pool[i],pool[j]]=[pool[j],pool[i]]}
+   p.workWeekDays=pool.slice(0,count).sort((x,y)=>x-y);p.workWeekKey=weekKey;
+  }
+  return p.workWeekDays.includes(weekday);
+ }
  function workPlanFor(p){
   const style=p.workStyle||'none';if(style==='none'||!p.jobTitle)return null;
-  const frequency=p.workFrequency||'normal',duration=p.workDuration||'normal';
-  const durationMinutes=duration==='short'?35:duration==='long'?115:65;
-  const start=String(p.workStart||'09:00').split(':').map(Number),end=String(p.workEnd||'17:00').split(':').map(Number);
+  const frequency=p.workFrequency||'weekdays',duration=p.workDuration||'normal',durationMinutes=duration==='short'?35:duration==='long'?115:65;
+  const scheduledToday=scheduledWorkDay(p),start=String(p.workStart||'09:00').split(':').map(Number),end=String(p.workEnd||'17:00').split(':').map(Number);
   const startMinute=(start[0]||0)*60+(start[1]||0),endMinute=(end[0]||0)*60+(end[1]||0),now=hour*60+minute;
   let working=false,urgent=false;
-  if(style==='fixed')working=startMinute<endMinute?(now>=startMinute&&now<endMinute):(now>=startMinute||now<endMinute);
-  else if(style==='irregular'){
-   const dayKey=(day+String(p.id).split('').reduce((n,ch)=>n+ch.charCodeAt(0),0))%7;
-   const workDays=frequency==='low'?2:frequency==='high'?6:4;
-   const blockStart=frequency==='low'?11:frequency==='high'?8:9,blockEnd=frequency==='low'?15:frequency==='high'?19:17;
-   working=dayKey<workDays&&hour>=blockStart&&hour<blockEnd;
-  }else if(style==='free'){
-   const chance=frequency==='low'?.28:frequency==='high'?.78:.52;
-   const daySeed=(day*17+String(p.id).length*13)%10;
-   working=hour>=10&&hour<19&&daySeed/10<chance&&hour<(duration==='long'?18:duration==='short'?15:17);
-  }
-  if(!working&&p.urgentCall&&p.workCallDay!==day&&hour>=8&&hour<21){
-   const chance=p.callFrequency==='low'?.025:p.callFrequency==='high'?.11:.055;
-   urgent=Math.random()<chance;if(urgent)p.workCallDay=day;
-  }
+  if(scheduledToday&&style==='fixed')working=startMinute<endMinute?(now>=startMinute&&now<endMinute):(now>=startMinute||now<endMinute);
+  else if(scheduledToday&&style==='irregular'){const blockStart=frequency==='randomLow'?11:frequency==='randomHigh'?8:9,blockEnd=frequency==='randomLow'?15:frequency==='randomHigh'?19:17;working=hour>=blockStart&&hour<blockEnd}
+  else if(scheduledToday&&style==='free')working=hour>=10&&hour<19&&hour<(duration==='long'?18:duration==='short'?15:17);
+  if(!scheduledToday&&p.urgentCall&&p.workCallDay!==calendarDay&&hour>=8&&hour<21){const chance=p.callFrequency==='low'?.025:p.callFrequency==='high'?.11:.055;urgent=Math.random()<chance;if(urgent)p.workCallDay=calendarDay}
   return working||urgent?{duration:urgent?25:durationMinutes,urgent}:null;
  }
  function workPlaceFor(p){
@@ -294,13 +297,11 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
  recordMoney(p,'income',payment.amount,payment.description);
 }
 function startWork(p,i,plan){
-  if(p.workPayDay!==calendarDay&&!p.pendingWorkPay){
-   const mode=p.incomeMode||'fixed',fixed=Math.max(0,Math.floor(Number(p.fixedIncome??1500)||0)),min=Math.max(0,Math.floor(Number(p.randomIncomeMin)||0)),max=Math.max(min,Math.floor(Number(p.randomIncomeMax)||0));
-   const random=min+Math.floor(Math.random()*(max-min+1));
-   const wage=mode==='random'?random:fixed+(mode==='mixed'?random:0);
-   p.pendingWorkPay={amount:wage,description:plan.urgent?'急な仕事の報酬':(p.jobTitle||'仕事')+'の収入'};
-  }
-  const title=p.jobTitle||'仕事';
+ const mode=p.incomeMode||'fixed',fixed=Math.max(0,Math.floor(Number(p.fixedIncome??1500)||0)),min=Math.max(0,Math.floor(Number(p.randomIncomeMin)||0)),max=Math.max(min,Math.floor(Number(p.randomIncomeMax)||0));
+ const random=min+Math.floor(Math.random()*(max-min+1)),baseWage=mode==='random'?random:fixed+(mode==='mixed'?random:0);
+ const wage=plan.urgent?Math.round(baseWage*1.25):baseWage;
+ p.pendingWorkPay={amount:wage,description:plan.urgent?'急な呼び出しの報酬（1.25倍）':(p.jobTitle||'仕事')+'の収入'};
+ const title=p.jobTitle||'仕事';
   const travel=plan.urgent?'急な呼び出しで仕事に向かっている':title+'の仕事に向かっている';
   const stay=plan.urgent?'急な仕事に対応している':title+'の仕事をしている';
   if(p.workOutside){
