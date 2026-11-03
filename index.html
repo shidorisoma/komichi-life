@@ -241,8 +241,10 @@ function householdForResident(p){
  if(romanticPairs.length){const firstPairHome=romanticPairs[0]&&'home';return {homeId:firstPairHome==='home'?'home2':'home',partner:null}}
  return {homeId:index%2===0?'home':'home2',partner:null};
 }
-function dailyScheduleFor(p){
- if(hour>=22||hour<6)return {phase:'sleep',label:'睡眠時間',weights:{}};
+function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morning')return {bed:21,wake:5};if(rhythm==='night')return {bed:2,wake:10};return {bed:22,wake:6}}
+ function isResidentSleepTime(p){const {bed,wake}=sleepWindowFor(p);return bed<wake?(hour>=bed&&hour<wake):(hour>=bed||hour<wake)}
+ function dailyScheduleFor(p){
+ if(isResidentSleepTime(p))return {phase:'sleep',label:'睡眠時間',weights:{}};
  if(hour>=6&&hour<9)return {phase:'morning',label:'朝の時間',weights:{walk:1.25,flowers:1.15,cafe:1.1,bench:.75}};
  if(hour>=9&&hour<12)return {phase:'active',label:'午前の時間',weights:{walk:1.3,flowers:1.2,cafe:.85,bench:.8}};
  if(hour>=12&&hour<14)return {phase:'lunch',label:'お昼の時間',weights:{cafe:1.65,walk:.85,flowers:.8,bench:.9}};
@@ -266,7 +268,7 @@ function applyScheduleWeights(options,p){
  });
 }
 function chooseRoutine(p,i){
- if(hour>=22||hour<6){const household=householdForResident(p);const home=getPlace(household.homeId);const partner=household.partner;const offset=partner?(p.id<partner.id?-12:12):((i%2)*14-7);const sleepX=home.x+offset;const sleepY=home.y+48+(partner?0:(i%3)*5);const stayText=partner?partner.name+'と一緒に眠っている':'家で眠っている';setAction(p,i,'sleep',sleepX,sleepY,'家へ帰っている',stayText,'sit',55+Math.random()*15);return}
+ if(isResidentSleepTime(p)){const household=householdForResident(p);const home=getPlace(household.homeId);const partner=household.partner;const offset=partner?(p.id<partner.id?-12:12):((i%2)*14-7);const sleepX=home.x+offset;const sleepY=home.y+48+(partner?0:(i%3)*5);const stayText=partner?partner.name+'と一緒に眠っている':'家で眠っている';setAction(p,i,'sleep',sleepX,sleepY,'家へ帰っている',stayText,'sit',55+Math.random()*15);return}
  if(sharedGoal&&['nagisumi','yaku'].includes(p.id)){setAction(p,i,'date',i===0?250:310,i===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',35+Math.random()*20);return}
  const previous=p.action;
  const options=[];
