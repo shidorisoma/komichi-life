@@ -982,7 +982,9 @@ function startSocialVisit(a,b,r,initiator){
     ?{text:'静かな時間を一緒に過ごし、ゆっくり言葉を交わしている',diary:'静かな時間を一緒に過ごした'}
     :{text:'近況を話しながら一緒に過ごしている',diary:'近況を話しながら一緒に過ごした'};
  const scene=sharedScene||relationshipScene||personalityScene;
- const stayText=scene.text;
+ const weatherPrefix=weatherType==='rainy'?'雨音を聞きながら、':weatherType==='sunny'?'日差しの差し込む場所で、':weatherType==='cloudy'?'涼しい風を感じながら、':'';
+ const weatherDiary=weatherType==='rainy'?'雨音の聞こえる中で':weatherType==='sunny'?'日差しの中で':weatherType==='cloudy'?'涼しい風の中で':'';
+ const stayText=weatherPrefix+scene.text;
  setAction(a,chars.indexOf(a),'social',Math.max(90,Math.min(810,mx+Math.cos(angle)*dist)),ax,
   b.name+'のところへ向かっている',stayText,'stand',duration);
  setAction(b,chars.indexOf(b),'social',Math.max(90,Math.min(810,mx-Math.cos(angle)*dist)),by,
@@ -995,7 +997,7 @@ function startSocialVisit(a,b,r,initiator){
  const pairId=r.id;
  sameSocialPairCount=lastSocialPairId===pairId?sameSocialPairCount+1:1;
  lastSocialPairId=pairId;
- addDiary(a.name+'と'+b.name+'が待ち合わせ、'+scene.diary+'。');
+ addDiary(a.name+'と'+b.name+'が待ち合わせ、'+(weatherDiary?weatherDiary+' '+scene.diary:scene.diary)+'。');
 }
 function scheduleSocialVisits(nowStamp){
  if(sharedGoal||chars.length<2||nowStamp%30!==0)return;
