@@ -285,8 +285,46 @@ function facilityBlocksMovement(x,y,p){
  if(x>=548&&x<=692&&y>=329&&y<=444&&!shopDoor&&!atShopTarget)return true;
  return false;
 }
+// 川の岸線を描画と同じベジェ曲線からサンプリングし、水面への侵入を防ぐ。
+const riverEdgeSamples=(()=>{
+ const curves=[
+  [[760,180],[690,360],[880,470],[790,650]],
+  [[790,650],[710,830],[900,940],[790,1170]]
+ ];
+ const samples=[];
+ curves.forEach(curve=>{
+  for(let i=0;i<=100;i++){
+   const t=i/100,u=1-t;
+   const x=u*u*u*curve[0][0]+3*u*u*t*curve[1][0]+3*u*t*t*curve[2][0]+t*t*t*curve[3][0];
+   const y=u*u*u*curve[0][1]+3*u*u*t*curve[1][1]+3*u*t*t*curve[2][1]+t*t*t*curve[3][1];
+   samples.push({x,y});
+  }
+ });
+ return samples.sort((a,b)=>a.y-b.y);
+})();
+function riverEdgeX(y){
+ if(y<180||y>1170)return Infinity;
+ let lo=0,hi=riverEdgeSamples.length-1;
+ while(hi-lo>1){const mid=(lo+hi)>>1;if(riverEdgeSamples[mid].y<y)lo=mid;else hi=mid}
+ const a=riverEdgeSamples[lo],b=riverEdgeSamples[hi],t=(y-a.y)/Math.max(.001,b.y-a.y);
+ return a.x+(b.x-a.x)*t;
+}
+function pointInPolygon(x,y,polygon){
+ let inside=false;
+ for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
+  const a=polygon[i],b=polygon[j];
+  if(((a.y>y)!==(b.y>y))&&(x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x))inside=!inside;
+ }
+ return inside;
+}
+function riverBlocksMovement(x,y){
+ // 橋の石畳部分だけは水面側へ踏み出せる。
+ const bridgeWalkway=[{x:675,y:740},{x:812,y:675},{x:855,y:710},{x:725,y:800}];
+ if(pointInPolygon(x,y,bridgeWalkway))return false;
+ return x>riverEdgeX(y)-10;
+}
 function isBlockedAtPoint(x,y,p){
- return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p)||natureBlocksMovement(x,y,p);
+ return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p)||natureBlocksMovement(x,y,p)||riverBlocksMovement(x,y);
 }
 // 住人は点ではなく幅のある体として扱い、左右の肩幅ぶんも障害物から離す。
 function isBlockedByStructure(x,y,p){
