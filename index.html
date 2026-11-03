@@ -302,20 +302,23 @@ function movementSegmentClear(x1,y1,x2,y2,p){
 }
 function findMovementDetour(p,point){
  const currentDistance=Math.hypot(point.x-p.x,point.y-p.y);
- const radii=[34,52,72,96,124];
+ const radii=[32,48,64,84,108,136,168,204];
  let best=null,bestScore=Infinity;
+ // 目的地の周囲を細かく探索し、迂回点の前後どちらも障害物のない候補だけを採用する。
  for(const radius of radii){
-  for(let i=0;i<20;i++){
-   const angle=Math.PI*2*i/20;
+  for(let i=0;i<32;i++){
+   const angle=Math.PI*2*i/32;
    const candidate={x:point.x+Math.cos(angle)*radius,y:point.y+Math.sin(angle)*radius};
+   if(candidate.x<24||candidate.x>876||candidate.y<24||candidate.y>1376)continue;
    if(isBlockedByStructure(candidate.x,candidate.y,p))continue;
    const remaining=Math.hypot(point.x-candidate.x,point.y-candidate.y);
    const travel=Math.hypot(candidate.x-p.x,candidate.y-p.y);
-   if(remaining>=currentDistance+8||!movementSegmentClear(p.x,p.y,candidate.x,candidate.y,p))continue;
-   const score=remaining+travel*.35;
+   if(remaining>=currentDistance+8||travel<8)continue;
+   if(!movementSegmentClear(p.x,p.y,candidate.x,candidate.y,p))continue;
+   if(!movementSegmentClear(candidate.x,candidate.y,point.x,point.y,p))continue;
+   const score=travel+remaining+radius*.025;
    if(score<bestScore){best=candidate;bestScore=score}
   }
-  if(best)break;
  }
  return best;
 }
