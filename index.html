@@ -723,8 +723,6 @@ function applyScheduleWeights(options,p){
   if(action==='flowers')option.weight*=.35+curious/100*1.25;
   if(action==='cafe')option.weight*=.65+social/100*.7;
   if(action==='home')option.weight*=1+(100-social)/100*.8+(100-active)/100*.9+(100-curious)/100*.5;
-  const preferenceKey={walk:'walkPreference',flowers:'naturePreference',cafe:'cafePreference'}[action];
-  if(preferenceKey){const preference=Math.max(0,Math.min(100,Number.isFinite(p[preferenceKey])?p[preferenceKey]:50));option.weight*=.55+preference/100*.9;}
  });
 }
 function hobbyChoicesFor(p){
@@ -792,7 +790,8 @@ function specialNoteWakeRule(p,other=null){
   const hobbies=hobbyChoicesFor(p).filter(hobbyConditionMet);hobbies.forEach(hobby=>{
   const flexible=/^(reading|craft)$/.test(hobby.kind);
   const variants=hobby.mode==='home'?(flexible?['room','living','outdoor']:['room','living']):['default'];
-  const baseWeight=Math.max(.45,3.2-hobby.priority*.6)/variants.length;
+  // 趣味欄の先頭ほど本人にとって大切。登録した趣味は通常行動より選ばれやすくする。
+  const baseWeight=Math.max(1.8,5.2-hobby.priority*.85)/variants.length;
   variants.forEach(variant=>{const action=(variant==='outdoor'||hobby.mode==='walk')?'walk':hobby.mode==='flowers'?'flowers':hobby.mode==='cafe'?'cafe':'home';options.push({action,weight:baseWeight,isHobby:true,run:()=>{
    if(hobby.mode==='home'&&variant!=='outdoor'){
     const home=getPlace(householdForResident(p).homeId);const room=variant==='living'?'living':hobby.room;
