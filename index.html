@@ -663,8 +663,9 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
   return getPlace('plaza');
  }
  function completeWork(p){
- addDiary(p.name+'は仕事が終わった。');
+ addDiary(p.name+(p.workHomeShift?'は自宅での仕事を終えた。':'は仕事が終わった。'));
  p.workCompletedDay=calendarDay;
+ p.workHomeShift=false;
  if(!p.pendingWorkPay)return;
  const payment=p.pendingWorkPay;p.pendingWorkPay=null;
  p.money=Math.max(0,Number(p.money)||0)+payment.amount;
@@ -672,7 +673,8 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
  recordMoney(p,'income',payment.amount,payment.description);
 }
 function startWork(p,i,plan){
- addDiary(plan.urgent?p.name+'は呼び出されて仕事に行った。':p.name+'は仕事に行った。');
+ const homeBased=/自宅|在宅|配信|ストリーマー|streamer|streaming|リモート|オンライン/.test(String(p.workplace||''));
+ addDiary(homeBased?p.name+'は自宅で仕事を始めた。':(plan.urgent?p.name+'は呼び出されて仕事に行った。':p.name+'は仕事に行った。'));
  const mode=p.incomeMode||'fixed',fixed=Math.max(0,Math.floor(Number(p.fixedIncome??1500)||0)),min=Math.max(0,Math.floor(Number(p.randomIncomeMin)||0)),max=Math.max(min,Math.floor(Number(p.randomIncomeMax)||0));
  const random=min+Math.floor(Math.random()*(max-min+1)),baseWage=mode==='random'?random:fixed+(mode==='mixed'?random:0);
  const wage=plan.urgent?Math.round(baseWage*1.25):baseWage;
@@ -686,7 +688,15 @@ function startWork(p,i,plan){
    p.phaseState='staying';p.stay=plan.duration;p.pose='stand';p.tx=p.x;p.ty=p.y;
    renderResidentStatus();return;
   }
+  if(homeBased){
+   const home=getPlace(householdForResident(p).homeId);
+   p.workHomeShift=true;
+   setAction(p,i,'home',home.x,home.y+28,'仕事の準備をしている','自宅で'+stay,'sit',plan.duration);
+   p.homeHobby={kind:'work',room:'hobby',name:'仕事'};
+   return;
+  }
   const place=workPlaceFor(p);
+  p.workHomeShift=false;
   setAction(p,i,'work',place.x,place.y,travel,stay,'stand',plan.duration);
  }
  function weatherLabel(){return weatherType==='rainy'?'雨':weatherType==='cloudy'?'くもり':'晴れ'}
@@ -1019,7 +1029,7 @@ function tickLife(){
  }
  updateRelationshipPanel();
 }
-function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;calendarDay++;updateWeather();addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);if(d>2){let step=Math.min(d,dt*42);p.x+=dx/d*step;p.y+=dy/d*step}else if(route&&(p.routeIndex||1)<route.length-1){p.routeIndex=(p.routeIndex||1)+1}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside')completeWork(p);chooseRoutine(p,i)}}}})}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;calendarDay++;updateWeather();addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);if(d>2){let step=Math.min(d,dt*42);p.x+=dx/d*step;p.y+=dy/d*step}else if(route&&(p.routeIndex||1)<route.length-1){p.routeIndex=(p.routeIndex||1)+1}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}})}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）';const night=hour>=20||hour<6;document.querySelector('.sun').textContent=weatherType==='rainy'?'☂':weatherType==='cloudy'?'☁':night?'☾':hour>=17?'🌇':'☀';{const subtitle=document.getElementById('placeSubtitle');if(subtitle)subtitle.textContent='春・'+weatherLabel()}}updateClock();setInterval(updateClock,500);
 function select(i){if(!chars[i])return;selected=i;if(!interiorHomeId){panX=450-chars[i].x;panY=720-chars[i].y}renderResidentStatus();drawWorld()};document.getElementById('residentStatus').addEventListener('click',e=>{
  const person=e.target.closest('.person');if(!person)return;
