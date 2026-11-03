@@ -81,7 +81,7 @@ function syncHomePlaces(){
 function updateHomeDetails(homeId,name,memberIds){
  const home=homes[homeId];if(!home||!Array.isArray(memberIds)||!memberIds.length)return false;
  const selectedIds=[...new Set(memberIds)].filter(id=>residentById(id));if(!selectedIds.length)return false;
- chars.forEach(p=>{if(p.homeId===homeId&&!selectedIds.includes(p.id))delete p.homeId});
+ chars.forEach(p=>{if(householdForResident(p).homeId===homeId&&!selectedIds.includes(p.id)){const fallback=Object.keys(homes).find(id=>id!==homeId);if(fallback)p.homeId=fallback;else delete p.homeId}});
  selectedIds.forEach(id=>{const p=residentById(id);p.homeId=homeId});
  const hid='household:'+homeId;
  households[hid]={...(households[hid]||{}),id:hid,homeId,residentIds:selectedIds};
