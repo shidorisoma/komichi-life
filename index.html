@@ -835,7 +835,6 @@ function roadNodePath(start,goal){
  return ids.map(id=>graphNodes.find(n=>n.id===id)).filter(Boolean);
 }
 function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
- const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
  const ownHome=resident?homes[householdForResident(resident).homeId]:null;
  const startHome=ownHome&&(()=>{
   const e=homeEntrance(ownHome),sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
@@ -843,17 +842,33 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
   const inside=fromX>=ownHome.x-w/2-9&&fromX<=ownHome.x+w/2+9&&fromY>=ownHome.y-h*.34-24&&fromY<=ownHome.y+h*.52+31;
   return inside||(e&&Math.hypot(fromX-e.x,fromY-e.y)<90);
  })()?ownHome:null;
- const start=startHome?homeSouthRoadNode(startHome):nearest(fromX,fromY);
- const goal=destinationHome?homeSouthRoadNode(destinationHome):nearest(toX,toY);
- const nodes=roadNodePath(start,goal);
+ const fixedStart=startHome?homeSouthRoadNode(startHome):null;
+ const fixedGoal=destinationHome?homeSouthRoadNode(destinationHome):null;
+ const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
+ // 直線で安全に接続できる道路ノードを複数候補にし、道路上の移動距離も含めて最短の組み合わせを選ぶ。
+ const candidates=(x,y,p)=>{
+  const visible=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p)&&movementSegmentClear(x,y,n.x,n.y,p))
+   .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y)).slice(0,7);
+  return visible.length?visible:[nearest(x,y)];
+ };
+ const starts=fixedStart?[fixedStart]:candidates(fromX,fromY,resident);
+ const goals=fixedGoal?[fixedGoal]:candidates(toX,toY,resident);
+ let start=starts[0],goal=goals[0],nodes=null,bestScore=Infinity;
+ starts.forEach(a=>goals.forEach(b=>{
+  const path=roadNodePath(a,b);
+  if(!path.length||path[path.length-1].id!==b.id)return;
+  let roadDistance=0;
+  for(let i=1;i<path.length;i++)roadDistance+=Math.hypot(path[i].x-path[i-1].x,path[i].y-path[i-1].y);
+  const score=Math.hypot(fromX-a.x,fromY-a.y)+roadDistance+Math.hypot(toX-b.x,toY-b.y);
+  if(score<bestScore){bestScore=score;start=a;goal=b;nodes=path}
+ }));
+ if(!nodes)nodes=roadNodePath(start,goal);
  const points=[{x:fromX,y:fromY}];
- let routeNodes=nodes;
  if(startHome){
   const e=homeEntrance(startHome),approachY=e.y+50;
-  // 玄関から真下の短い縦道で横道へ合流。左右の行き先は横道上で選ぶ。
   points.push({x:e.x,y:approachY});
  }
- points.push(...routeNodes.map(n=>({x:n.x,y:n.y})));
+ points.push(...nodes.map(n=>({x:n.x,y:n.y})));
  if(destinationHome){
   const e=homeEntrance(destinationHome),approachY=destinationHome.y<400?430:e.y+50;
   points.push({x:goal.x,y:goal.y},{x:e.x,y:approachY},{x:e.x,y:e.y+25});
