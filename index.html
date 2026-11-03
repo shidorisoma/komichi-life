@@ -505,9 +505,9 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // 住宅の南玄関から最寄りの共用道路へ短く接続。上側2軒は南側の横道、下側は西側縦道。
  homes&&Object.values(homes).forEach(home=>{
   const entrance=homeEntrance(home);if(!entrance)return;
-  const isNorth=home.y<400;
-  const approachY=isNorth?430:entrance.y+50;
-  const laneX=isNorth?entrance.x:90;
+  const approachY=home.y<400?430:entrance.y+50;
+  // 経路計算で選ばれる最寄りの共用道路ノードと、描画する玄関道の接続位置を一致させる。
+  const laneX=homeSouthRoadNode(home).x;
   ctx.beginPath();ctx.moveTo(laneX,approachY);ctx.lineTo(entrance.x,approachY);ctx.lineTo(entrance.x,entrance.y);
   ctx.strokeStyle='#a98d68';ctx.lineWidth=38;ctx.stroke();
   ctx.strokeStyle='#ead5ad';ctx.lineWidth=26;ctx.stroke();
