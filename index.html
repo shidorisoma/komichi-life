@@ -1093,6 +1093,10 @@ function tickLife(){
   const close=a.action!=='workOutside'&&b.action!=='workOutside'&&(a.phaseState==='staying'||a.phaseState==='moving')&&(b.phaseState==='staying'||b.phaseState==='moving')&&Math.hypot(a.x-b.x,a.y-b.y)<95;
   if(close&&nowStamp-relation.lastInteractionStamp>=15){
    relation.lastInteractionStamp=nowStamp;relation.affection=Math.min(100,relation.affection+.15);relation.trust=Math.min(100,relation.trust+.2);relation.intimacy=Math.min(100,relation.intimacy+.15);
+   if(relation.affection>=70&&relation.trust>=70&&relation.intimacy>=65){
+    const names=a.name+'と'+b.name;
+    recordMemory('relationship_deepening_'+encodeURIComponent(relation.id),'距離が近づいた日',names+'の関係が深まり、以前より自然に一緒の時間を過ごせるようになった。',relation.id);
+   }
   }
   if(close&&nowStamp-relation.lastSocialStamp>=30){
    relation.lastSocialStamp=nowStamp;
