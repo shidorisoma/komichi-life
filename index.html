@@ -829,6 +829,9 @@ function walkSceneFor(p,spot){
  const curiosity=Math.max(0,Math.min(100,p.curiosity??50));
  const activity=Math.max(0,Math.min(100,p.activityLevel??50));
  const place=spot.label;
+ if(weatherType==='rainy')return {stay:place+'で雨音を聞きながら、濡れた街の景色を眺めている',diary:place+'で雨に濡れた街の景色を眺めた'};
+ if(weatherType==='sunny'&&curiosity<70)return {stay:place+'で日差しを感じながら、気持ちよく歩いている',diary:place+'で心地よい日差しを感じながら散歩した'};
+ if(weatherType==='cloudy'&&activity<70)return {stay:place+'で涼しい風に吹かれながら、街を眺めている',diary:place+'で涼しい風を感じながら散歩した'};
  if(curiosity>=70)return {stay:place+'で気になるものを見つけ、しばらく観察している',diary:place+'で小さな発見をした'};
  if(activity>=70)return {stay:place+'まで歩いてきて、気持ちよく身体を伸ばしている',diary:place+'まで歩いて、気分転換をした'};
  if(curiosity<=30)return {stay:place+'の落ち着いた景色をのんびり眺めている',diary:place+'で静かな時間を過ごした'};
