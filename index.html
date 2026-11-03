@@ -16,7 +16,7 @@
 (()=>{const c=document.getElementById('world'),ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',paused=false,minute=25,hour=15,day=2,selected=0,tab='walk',last=0,elapsed=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
 const places=[
  {id:'home',name:'西の住宅',icon:'🏡',x:645,y:340,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
- {id:'home2',name:'東の住宅',icon:'🏠',x:250,y:470,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
+ {id:'home2',name:'東の住宅',icon:'🏠',x:250,y:850,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'cafe',name:'喫茶こもれび',icon:'☕',x:240,y:290,type:'cafe',description:'飲み物を楽しめる喫茶店',actions:['食事','休憩','デート']},
  {id:'plaza',name:'川辺の広場',icon:'🌳',x:600,y:760,type:'outdoor',description:'川辺の散歩や休憩を楽しめる広場',actions:['散歩','休憩']},
  {id:'bench-river',name:'川辺のベンチ',icon:'🪑',x:795,y:800,type:'bench',description:'水の流れを眺めながら休めるベンチ',actions:['休憩']},
@@ -139,7 +139,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  drawCafe(240,290);
  // 住宅
  poly([[555,300],[635,260],[725,300],[645,340]],'#a77d58','#806044',2);poly([[555,300],[645,340],[645,420],[555,380]],'#e7d6b6');poly([[645,340],[725,300],[725,380],[645,420]],'#d4b994');poly([[545,298],[635,248],[738,294],[646,349]],'#916b4c','#75563d',2);poly([[583,310],[620,330],[620,365],[583,347]],'#9ab6ad');poly([[674,326],[706,310],[706,350],[674,366]],'#9ab6ad');ctx.fillStyle='#66513d';ctx.fillRect(628,365,24,55);ctx.fillStyle='#fff1cf';ctx.font='bold 12px sans-serif';ctx.fillText('HOME A',610,287);
- poly([[150,428],[240,378],[343,424],[251,479]],'#916b4c','#75563d',2);poly([[188,440],[225,460],[225,495],[188,475]],'#9ab6ad');poly([[279,456],[311,440],[311,480],[279,496]],'#9ab6ad');ctx.fillStyle='#66513d';ctx.fillRect(248,479,24,55);ctx.fillStyle='#fff1cf';ctx.font='bold 12px sans-serif';ctx.fillText('HOME B',225,417);
+ poly([[150,808],[240,758],[343,804],[251,859]],'#916b4c','#75563d',2);poly([[188,820],[225,840],[225,875],[188,855]],'#9ab6ad');poly([[279,836],[311,820],[311,860],[279,876]],'#9ab6ad');ctx.fillStyle='#66513d';ctx.fillRect(248,859,24,55);ctx.fillStyle='#fff1cf';ctx.font='bold 12px sans-serif';ctx.fillText('HOME B',225,797);
  // 花壇と小さな庭
  poly([[35,430],[170,375],[245,415],[110,478]],'#9b7954');poly([[35,416],[170,360],[245,400],[110,462]],'#d2b48a');for(let i=0;i<20;i++)flower(55+(i*29)%175,397+(i*13)%56,.9);
  poly([[535,520],[630,475],[690,510],[595,558]],'#a88a62');poly([[535,504],[630,459],[690,494],[595,542]],'#dfc59b');for(let i=0;i<18;i++)flower(550+(i*23)%125,490+(i*11)%52,.95);
