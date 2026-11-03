@@ -154,22 +154,21 @@ function ensureFurnitureWorld(saved){
    if(!rooms[id])rooms[id]={id,homeId,name:{living:'居間',kitchen:'台所',bedroom:'寝室',study:'書斎'}[type],type,furnitureIds:[]};
   });
  });
- // 旧マップの住居座標を新しい住宅区画へ移す。以後は区画IDで位置を管理。
- const plotOrder=['north-west','north-center','south-east','west-center','south-center','south-west','west-south','center-east'];
- homeIds.forEach((homeId,index)=>{
-  const home=homes[homeId];if(!home)return;
-  let plot=home.mapPlotId?residentialPlots.find(p=>p.id===home.mapPlotId):null;
-  if(!plot){plot=residentialPlots.find(p=>!Object.values(homes).some(other=>other!==home&&other.mapPlotId===p.id))||residentialPlots[index%residentialPlots.length];home.mapPlotId=plot.id;}
-  home.x=plot.x;home.y=plot.y;
- });
- // 広場に最も近い既存住宅を、広場から離れた中央西の住宅区画へ一度だけ移す。
- const plazaSideHome=Object.values(homes).sort((a,b)=>Math.hypot(a.x-430,a.y-1100)-Math.hypot(b.x-430,b.y-1100))[0];
- let movedPlazaHome=false;
- if(plazaSideHome&&Object.keys(homes).length>1&&plazaSideHome.southAccessLayoutVersion!==4){
-  const target=residentialPlots.find(p=>p.id==='south-east');
-  const occupied=Object.values(homes).some(h=>h!==plazaSideHome&&h.mapPlotId===target?.id);
-  if(target&&!occupied){plazaSideHome.mapPlotId=target.id;plazaSideHome.x=target.x;plazaSideHome.y=target.y;movedPlazaHome=true;}
-  plazaSideHome.southAccessLayoutVersion=4;
+ // 住宅配置v5：既存住宅も新しい街区へ一度だけ移転する。
+ // 以前の区画IDが残っていても旧座標を引き継がない。
+ const homeLayoutVersion=5;
+ const homeSlots=['north-west','south-center','south-west','north-center','south-east','center-west-home'];
+ let movedHomes=false;
+ if(homeIds.some(id=>homes[id]?.mapLayoutVersion!==homeLayoutVersion)){
+  homeIds.forEach((homeId,index)=>{
+   const home=homes[homeId];if(!home)return;
+   const plot=residentialPlots.find(p=>p.id===homeSlots[index%homeSlots.length]);
+   if(plot){
+    if(home.x!==plot.x||home.y!==plot.y||home.mapPlotId!==plot.id)movedHomes=true;
+    home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;
+   }
+   home.mapLayoutVersion=homeLayoutVersion;
+  });
  }
  Object.values(rooms).forEach(room=>room.furnitureIds=[]);
  furniture.forEach(item=>{const room=rooms[item.roomId];if(room&&item.homeId===room.homeId)room.furnitureIds.push(item.instanceId)});
@@ -184,7 +183,7 @@ function ensureFurnitureWorld(saved){
    });
   });
  }
- if(movedPlazaHome)saveGame();
+ if(movedHomes)saveGame();
 }
 function membersForHome(homeId){return chars.filter(p=>householdForResident(p).homeId===homeId).map(p=>p.id)}
 function furnitureOwnerCanUse(item,residentId){
