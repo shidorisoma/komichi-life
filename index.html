@@ -744,8 +744,12 @@ function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function homeSouthRoadNode(home){
  if(!home)return roadNodes[0];
  const row=home.y<520?'row1':home.y<700?'row2':'row3';
- const accessNodes=roadNodes.filter(n=>n.id==='west-'+(row==='row1'?'north':row==='row2'?'mid':'south')||n.id==='res-'+row+'-center'||n.id==='res-'+row+'-east');
- return accessNodes.reduce((best,n)=>Math.hypot(n.x-home.x,n.y-(home.y+128))<Math.hypot(best.x-home.x,best.y-(home.y+128))?n:best,accessNodes[0]||roadNodes[0]);
+ // 玄関前から右方向へそのまま横道に合流できるノードを優先。
+ // 西側の縦道を最寄りとして選ぶと、玄関から左へ逆走するL字経路になる。
+ const rowNodes=roadNodes.filter(n=>n.id==='res-'+row+'-center'||n.id==='res-'+row+'-east');
+ const rightNodes=rowNodes.filter(n=>n.x>=home.x+2);
+ const candidates=rightNodes.length?rightNodes:rowNodes;
+ return candidates.reduce((best,n)=>Math.hypot(n.x-(home.x+2),n.y-(home.y+128))<Math.hypot(best.x-(home.x+2),best.y-(home.y+128))?n:best,candidates[0]||roadNodes[0]);
 }
 function roadNodePath(start,goal){
  if(!start||!goal)return start?[start]:[];
