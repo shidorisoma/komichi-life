@@ -347,7 +347,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  const facilityPaths=[
   [[270,365],[270,330]],                         // 喫茶こもれび
   [[420,790],[520,780],[620,760]],               // 川辺の広場
-  [[620,760],[700,755],[780,800]],               // 橋・川辺のベンチ
+  [[620,760],[700,755],[765,740],[780,800]],    // 橋・川辺のベンチ
   [[220,735],[105,755]]                          // こみちのベンチ
  ];
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
@@ -545,8 +545,9 @@ const roadNodes=[
  {id:'cafe-entry',x:270,y:330,links:['west-upper'],facility:true},
  {id:'park-west',x:520,y:780,links:['s2','park-center'],facility:true},
  {id:'park-center',x:620,y:760,links:['park-west','bridge-entry','river-bench'],facility:true},
- {id:'bridge-entry',x:700,y:755,links:['park-center','river-bench'],facility:true},
- {id:'river-bench',x:780,y:800,links:['bridge-entry','park-center'],facility:true},
+ {id:'bridge-entry',x:700,y:755,links:['park-center','bridge-center'],facility:true},
+ {id:'bridge-center',x:765,y:740,links:['bridge-entry','river-bench'],facility:true},
+ {id:'river-bench',x:780,y:800,links:['bridge-center','park-center'],facility:true},
  {id:'bench-path-entry',x:105,y:755,links:['west-mid'],facility:true}
 ];
 function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
