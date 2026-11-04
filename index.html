@@ -278,7 +278,7 @@ function isBlockedByHome(x,y,p){
 }
 function facilityBlocksMovement(x,y,p){
  const cafeDoor=Math.abs(x-270)<19&&y>=286&&y<=344;
- const shopDoor=Math.abs(x-649)<20&&y>=410&&y<=465;
+ const shopDoor=Math.abs(x-649)<20&&y>=410&&y<=440;
  const atCafeTarget=p.action==='cafe'&&Math.hypot(x-p.tx,y-p.ty)<28;
  const atShopTarget=p.shoppingTrip&&Math.hypot(x-p.tx,y-p.ty)<28;
  if(x>=126&&x<=338&&y>=202&&y<=317&&!cafeDoor&&!atCafeTarget)return true;
