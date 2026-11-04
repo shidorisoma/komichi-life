@@ -805,10 +805,10 @@ function homeSouthRoadNode(home){
  const links=['west-'+(row==='row1'?'north':row==='row2'?'mid':'south'),'res-'+row+'-center','res-'+row+'-east'];
  return {id:'home-access-'+home.id,x:entrance.x,y:roadY,links};
 }
-function roadNodePath(start,goal){
+function roadNodePath(start,goal,resident=null){
  if(!start||!goal)return start?[start]:[];
  if(start.id===goal.id)return [start];
- // 住宅の玄関直下にある仮想T字分岐も含めて最短経路を計算する。
+ // 道路グラフの接続線そのものが建物・家具・川岸を横切らないか確認する。
  const graphNodes=[...roadNodes];
  [start,goal].forEach(node=>{if(!graphNodes.some(n=>n.id===node.id))graphNodes.push(node)});
  const distance=new Map(graphNodes.map(n=>[n.id,Infinity]));
@@ -821,7 +821,7 @@ function roadNodePath(start,goal){
   if(currentId===goal.id)break;
   unvisited.delete(currentId);
   const current=graphNodes.find(n=>n.id===currentId);
-  const neighbors=graphNodes.filter(n=>unvisited.has(n.id)&&((current?.links||[]).includes(n.id)||(n.links||[]).includes(currentId)));
+  const neighbors=graphNodes.filter(n=>unvisited.has(n.id)&&((current?.links||[]).includes(n.id)||(n.links||[]).includes(currentId))&&(!resident||movementSegmentClear(current.x,current.y,n.x,n.y,resident)));
   neighbors.forEach(next=>{
    const edge=Math.hypot(next.x-current.x,next.y-current.y);
    const candidate=currentDistance+edge;
@@ -855,14 +855,14 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const goals=fixedGoal?[fixedGoal]:candidates(toX,toY,resident);
  let start=starts[0],goal=goals[0],nodes=null,bestScore=Infinity;
  starts.forEach(a=>goals.forEach(b=>{
-  const path=roadNodePath(a,b);
+  const path=roadNodePath(a,b,resident);
   if(!path.length||path[path.length-1].id!==b.id)return;
   let roadDistance=0;
   for(let i=1;i<path.length;i++)roadDistance+=Math.hypot(path[i].x-path[i-1].x,path[i].y-path[i-1].y);
   const score=Math.hypot(fromX-a.x,fromY-a.y)+roadDistance+Math.hypot(toX-b.x,toY-b.y);
   if(score<bestScore){bestScore=score;start=a;goal=b;nodes=path}
  }));
- if(!nodes)nodes=roadNodePath(start,goal);
+ if(!nodes)nodes=roadNodePath(start,goal,resident);
  const points=[{x:fromX,y:fromY}];
  if(startHome){
   const e=homeEntrance(startHome),approachY=e.y+50;
