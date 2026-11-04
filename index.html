@@ -537,7 +537,7 @@ let saveToastTimer=null;
 function showSaveToast(message='保存しました'){let toast=document.getElementById('saveToast');if(!toast){toast=document.createElement('div');toast.id='saveToast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');document.body.appendChild(toast)}toast.textContent='✓ '+message;toast.classList.add('show');clearTimeout(saveToastTimer);saveToastTimer=setTimeout(()=>toast.classList.remove('show'),2000)}
 function saveGame(notify=false){
  try{
-  const data={version:5,furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},residents:chars.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}))};
+  const data={version:5,stampEpoch:'calendar',furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},residents:chars.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}))};
   localStorage.setItem(SAVE_KEY,JSON.stringify(data));if(notify)showSaveToast();
  }catch(e){console.warn('セーブに失敗しました',e)}
 }
@@ -562,6 +562,25 @@ function loadGame(){
   }
   selected=Math.min(selected,Math.max(0,chars.length-1));
   restoreRelationships(data.relationships,data.bond);
+  // Older saves used weekday (1..7) as a time axis, which rolled backwards weekly.
+  // Convert previous cooldown stamps to elapsed in-game calendar days exactly once.
+  if(data.stampEpoch!=='calendar'){
+   const migrateStamp=stamp=>{
+    if(!Number.isFinite(stamp)||stamp<0)return stamp;
+    const oldDay=Math.floor(stamp/1440);
+    if(oldDay<1||oldDay>7)return stamp;
+    const daysAgo=(day-oldDay+7)%7;
+    return (calendarDay-daysAgo)*1440+(stamp%1440);
+   };
+   lastRecoveryStamp=migrateStamp(lastRecoveryStamp);
+   lastBondStamp=migrateStamp(lastBondStamp);
+   chars.forEach(p=>['lastInitiatedSocialStamp','lastSocialStamp','lastMoodRecoveryStamp'].forEach(k=>{
+    if(Number.isFinite(p[k]))p[k]=migrateStamp(p[k]);
+   }));
+   Object.values(relationships).forEach(r=>['lastInteractionStamp','lastSocialStamp','lastSocialVisitStamp'].forEach(k=>{
+    if(Number.isFinite(r[k]))r[k]=migrateStamp(r[k]);
+   }));
+  }
   renderResidentStatus();
   return true;
  }catch(e){console.warn('セーブデータを読み込めませんでした',e);return false}
@@ -1515,7 +1534,7 @@ function startSocialVisit(a,b,r,initiator){
  setAction(b,chars.indexOf(b),'social',meeting.second.x,meeting.second.y,
   a.name+'のところへ向かっている',stayText,'stand',duration);
  a.socialPartnerId=b.id;b.socialPartnerId=a.id;
- const stamp=day*1440+hour*60+minute;
+ const stamp=calendarDay*1440+hour*60+minute;
  r.lastSocialVisitStamp=stamp;
  a.lastSocialStamp=stamp;b.lastSocialStamp=stamp;
  initiator.lastInitiatedSocialStamp=stamp;
@@ -1603,7 +1622,7 @@ function recoverMoodFromRoutine(p,nowStamp){
 }
 function tickLife(){
  chars.forEach(p=>{const n=p.needs;n.energy=Math.max(8,n.energy-.12);n.hunger=Math.max(8,n.hunger-.08);n.mood=Math.max(20,Math.min(100,n.mood+(n.energy<25?-.15:.025)))});
- const nowStamp=day*1440+hour*60+minute;
+ const nowStamp=calendarDay*1440+hour*60+minute;
  chars.forEach(p=>recoverMoodFromRoutine(p,nowStamp));
  if(sharedGoal){
   const datePair=['nagisumi','yaku'].map(residentById).filter(Boolean);const together=datePair.length===2&&datePair.every(p=>p.phaseState==='staying'&&p.action==='date')&&Math.hypot(datePair[0].x-datePair[1].x,datePair[0].y-datePair[1].y)<110;
@@ -1641,7 +1660,7 @@ function tickLife(){
    recordMemory(eventKey,'一緒に過ごした時間',pairNames+'が'+sharedActivity+'、穏やかな時間を過ごした。',relation.id);
   }
  }
- const recoveryStamp=day*1440+hour*60+minute;
+ const recoveryStamp=calendarDay*1440+hour*60+minute;
  if(minute%10===0&&recoveryStamp!==lastRecoveryStamp){
   lastRecoveryStamp=recoveryStamp;
   chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe'||p.action==='sleep'||p.action==='home'||p.action==='work')){n.energy=Math.min(100,n.energy+(p.action==='sleep'?13:p.action==='bench'?9:p.action==='home'?5:p.action==='work'?-0.4:3));if(p.action!=='sleep')n.mood=Math.min(100,n.mood+(p.action==='home'?1.2:2));if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+22);if(p.action==='home'&&p.homeHobby?.kind==='cooking')n.hunger=Math.min(100,n.hunger+6)}});
