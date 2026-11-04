@@ -59,7 +59,22 @@ const homeLayoutCatalog={
 let selectedHomeLayout='2LDK',homeSubPage='menu';
 const residentialPlots=[{id:'north-west',label:'西側上段の住宅地',x:145,y:430},{id:'north-center',label:'中央上段の住宅地',x:330,y:430},{id:'south-west',label:'西側中段の住宅地',x:145,y:600},{id:'south-center',label:'中央中段の住宅地',x:330,y:600},{id:'south-east',label:'西側下段の住宅地',x:145,y:770},{id:'center-west-home',label:'中央下段の住宅地',x:330,y:770}];
 function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
-function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();saveGame(true);drawWorld();return true}
+// House placement and household changes must refresh any ongoing home/sleep route.
+function syncResidentHomeDestination(p){
+ if(!p||(p.action!=='home'&&p.action!=='sleep'))return;
+ const home=homes[householdForResident(p).homeId];
+ if(!home)return;
+ const entrance=homeEntrance(home);
+ if(p.phaseState==='staying'){
+  p.x=entrance.x;p.y=entrance.y;p.tx=entrance.x;p.ty=entrance.y;
+  p.routePoints=[];p.routeIndex=0;p.stuckTime=0;p.routeRetries=0;
+ }else if(p.phaseState==='moving'){
+  p.tx=entrance.x;p.ty=entrance.y;
+  p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,home,p);
+  p.routeIndex=1;p.stuckTime=0;p.routeRetries=0;
+ }
+}
+function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();chars.filter(p=>householdForResident(p).homeId===homeId).forEach(syncResidentHomeDestination);renderResidentStatus();saveGame(true);drawWorld();return true}
 function createHomeFromTemplate(layoutKey,residentIds){
  const variants=homeLayoutCatalog[layoutKey],memberIds=[...new Set((Array.isArray(residentIds)?residentIds:[residentIds]).filter(Boolean))];
  if(!variants?.length||!memberIds.length||memberIds.some(id=>!residentById(id)))return null;
@@ -70,7 +85,7 @@ function createHomeFromTemplate(layoutKey,residentIds){
  homes[homeId]=home;
  home.rooms.forEach(room=>{rooms[room.id]=room;home.roomIds.push(room.id)});
  households[hid]={id:hid,homeId,residentIds:memberIds.slice()};
- memberIds.forEach(id=>{const p=residentById(id);p.homeId=homeId});
+ memberIds.forEach(id=>{const p=residentById(id);p.homeId=homeId;syncResidentHomeDestination(p)});
  const add=(type,room,x,y)=>{const def=furnitureCatalog[type],instanceId=homeId+'-'+type+'-'+furniture.length;const item={instanceId,furnitureId:type,purchaserId:'system',ownershipType:def.ownership,ownerId:def.ownership==='household'?hid:memberIds[0],homeId,roomId:room.id,x,y,rotation:0,allowedResidentIds:null,placed:true};furniture.push(item);room.furnitureIds.push(instanceId)};
  const bedroom=home.rooms.find(r=>r.type==='bedroom'),kitchen=home.rooms.find(r=>r.type==='kitchen'),living=home.rooms.find(r=>r.type==='living')||home.rooms.find(r=>r.type!=='bedroom');
  if(bedroom)add('bed',bedroom,bedroom.x+bedroom.w/2,bedroom.y+bedroom.h/2);
@@ -93,12 +108,13 @@ function updateHomeDetails(homeId,name,memberIds){
  currentIds.forEach(id=>{if(!selectedIds.includes(id)){const p=residentById(id);if(p&&fallback)p.homeId=fallback}});
  selectedIds.forEach(id=>{const p=residentById(id);p.homeId=homeId});
  const hid='household:'+homeId;households[hid]={...(households[hid]||{}),id:hid,homeId,residentIds:selectedIds};
- home.name=String(name||'').trim()||home.name||'住居';syncHomePlaces();saveGame(true);return true;
+ home.name=String(name||'').trim()||home.name||'住居';syncHomePlaces();new Set([...currentIds,...selectedIds]).forEach(id=>syncResidentHomeDestination(residentById(id)));renderResidentStatus();saveGame(true);return true;
 }
 function deleteHome(homeId){
  const home=homes[homeId];if(!home||Object.keys(homes).length<=1)return false;
  const fallback=Object.keys(homes).find(id=>id!==homeId),memberIds=new Set(households['household:'+homeId]?.residentIds||[]);
- chars.filter(p=>p.homeId===homeId||memberIds.has(p.id)).forEach(p=>{p.homeId=fallback});
+ const reassignedResidents=chars.filter(p=>p.homeId===homeId||memberIds.has(p.id));
+ reassignedResidents.forEach(p=>{p.homeId=fallback});
  const fallbackRooms=homes[fallback]?.rooms||[];
  furniture=furniture.filter(item=>{
   if(item.homeId!==homeId)return true;
@@ -110,7 +126,7 @@ function deleteHome(homeId){
  });
  (home.roomIds||home.rooms?.map(r=>r.id)||[]).forEach(id=>delete rooms[id]);
  delete households['household:'+homeId];delete homes[homeId];places=places.filter(p=>p.id!==homeId);
- syncHomePlaces();if(interiorHomeId===homeId)interiorHomeId='';saveGame(true);return true;
+ syncHomePlaces();reassignedResidents.forEach(syncResidentHomeDestination);if(interiorHomeId===homeId)interiorHomeId='';renderResidentStatus();saveGame(true);drawWorld();return true;
 }
 function renderHomeMenu(){
  const body=document.getElementById('panelBody');
@@ -384,13 +400,13 @@ const WORLD_STREET_FURNITURE={
   {id:'cafe-bench-west',x:110,y:365,group:'cafe'},
   {id:'cafe-bench-center',x:175,y:365,group:'cafe'},
   {id:'cafe-bench-east',x:240,y:365,group:'cafe'},
-  {id:'plaza-bench',x:730,y:800},
+  {id:'plaza-bench',x:715,y:800},
   {id:'south-bench',x:360,y:1180}
  ],
  lamps:[
   {id:'plaza-lamp',x:650,y:730},
   {id:'residential-lamp',x:310,y:520},
-  {id:'riverside-lamp',x:860,y:1000}
+  {id:'riverside-lamp',x:785,y:1000}
  ],
  sign:{
   id:'town-sign',
@@ -521,7 +537,7 @@ let saveToastTimer=null;
 function showSaveToast(message='保存しました'){let toast=document.getElementById('saveToast');if(!toast){toast=document.createElement('div');toast.id='saveToast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');document.body.appendChild(toast)}toast.textContent='✓ '+message;toast.classList.add('show');clearTimeout(saveToastTimer);saveToastTimer=setTimeout(()=>toast.classList.remove('show'),2000)}
 function saveGame(notify=false){
  try{
-  const data={version:5,furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},residents:chars.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}))};
+  const data={version:5,stampEpoch:'calendar',furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},residents:chars.map(p=>({...p,profile:{...p.profile},needs:{...p.needs}}))};
   localStorage.setItem(SAVE_KEY,JSON.stringify(data));if(notify)showSaveToast();
  }catch(e){console.warn('セーブに失敗しました',e)}
 }
@@ -546,6 +562,25 @@ function loadGame(){
   }
   selected=Math.min(selected,Math.max(0,chars.length-1));
   restoreRelationships(data.relationships,data.bond);
+  // Older saves used weekday (1..7) as a time axis, which rolled backwards weekly.
+  // Convert previous cooldown stamps to elapsed in-game calendar days exactly once.
+  if(data.stampEpoch!=='calendar'){
+   const migrateStamp=stamp=>{
+    if(!Number.isFinite(stamp)||stamp<0)return stamp;
+    const oldDay=Math.floor(stamp/1440);
+    if(oldDay<1||oldDay>7)return stamp;
+    const daysAgo=(day-oldDay+7)%7;
+    return (calendarDay-daysAgo)*1440+(stamp%1440);
+   };
+   lastRecoveryStamp=migrateStamp(lastRecoveryStamp);
+   lastBondStamp=migrateStamp(lastBondStamp);
+   chars.forEach(p=>['lastInitiatedSocialStamp','lastSocialStamp','lastMoodRecoveryStamp'].forEach(k=>{
+    if(Number.isFinite(p[k]))p[k]=migrateStamp(p[k]);
+   }));
+   Object.values(relationships).forEach(r=>['lastInteractionStamp','lastSocialStamp','lastSocialVisitStamp'].forEach(k=>{
+    if(Number.isFinite(r[k]))r[k]=migrateStamp(r[k]);
+   }));
+  }
   renderResidentStatus();
   return true;
  }catch(e){console.warn('セーブデータを読み込めませんでした',e);return false}
@@ -586,7 +621,11 @@ function resetResidentPosition(p,i){
    }
   }
  }
- if(!destination)destination=center;
+ if(!destination){
+  destination=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p))
+   .sort((a,b)=>Math.hypot(a.x-center.x,a.y-center.y)-Math.hypot(b.x-center.x,b.y-center.y))[0];
+  if(!destination){console.warn('住人の安全な復旧地点を確保できませんでした',p.id);return}
+ }
  p.x=destination.x;p.y=destination.y;p.tx=p.x;p.ty=p.y;
  p.routePoints=[];p.routeIndex=0;p.stuckTime=0;p.routeRetries=0;
  p.action='idle';p.phaseState='idle';p.stay=0;p.stayText='';
@@ -624,7 +663,7 @@ function openPlaceResidents(){
 renderResidentStatus();
 function addResident(definition){const id=definition.id||'resident-'+Date.now();if(chars.some(p=>p.id===id))return null;const offset=chars.length%5;const resident={id,name:definition.name||'新しい住人',money:Number.isFinite(definition.money)?Math.max(0,definition.money):5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},sociability:Number.isFinite(definition.sociability)?Math.max(0,Math.min(100,definition.sociability)):50,curiosity:Number.isFinite(definition.curiosity)?Math.max(0,Math.min(100,definition.curiosity)):50,activityLevel:Number.isFinite(definition.activityLevel)?Math.max(0,Math.min(100,definition.activityLevel)):50,walkPreference:Number.isFinite(definition.walkPreference)?Math.max(0,Math.min(100,definition.walkPreference)):50,naturePreference:Number.isFinite(definition.naturePreference)?Math.max(0,Math.min(100,definition.naturePreference)):50,cafePreference:Number.isFinite(definition.cafePreference)?Math.max(0,Math.min(100,definition.cafePreference)):50,lastInitiatedSocialStamp:-1,lastSocialStamp:-1,x:420+offset*28,y:700+offset*32,tx:420+offset*28,ty:700+offset*32,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame(true);return resident;}
 window.addResident=addResident;
-window.addEventListener('pagehide',saveGame);
+window.addEventListener('pagehide',()=>saveGame());
 document.addEventListener('visibilitychange',()=>{lastClockSample=performance.now();if(document.visibilityState==='hidden')saveGame()});
 
 function resize(){dpr=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=c.clientHeight;c.width=W*dpr;c.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}new ResizeObserver(resize).observe(c);resize();
@@ -752,7 +791,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  const outdoorResidents=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
  const houseDrawItems=Object.values(homes||{}).map((home,index)=>{
   const geometry=homeExteriorGeometry(home);
-  return {y:home.y+geometry.front+18,draw:()=>drawHouseExterior(home,index)};
+  return {y:home.y+geometry.front+6,draw:()=>drawHouseExterior(home,index)};
  });
  const depthItems=[
   ...houseDrawItems,
@@ -1032,7 +1071,19 @@ chars.forEach(p=>{
 });
 saveGame();
 function resolveOpenDestination(x,y,p){if(!isBlockedByStructure(x,y,p))return {x,y};let best=null,bestDistance=Infinity;for(let radius=12;radius<=120;radius+=12){for(let i=0;i<24;i++){const angle=Math.PI*2*i/24,candidate={x:x+Math.cos(angle)*radius,y:y+Math.sin(angle)*radius};if(isBlockedByStructure(candidate.x,candidate.y,p))continue;const distance=Math.hypot(candidate.x-x,candidate.y-y);if(distance<bestDistance){best=candidate;bestDistance=distance}}if(best)return best}return {x,y}}
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=resolveOpenDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}p.phaseState='moving';p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.stay=duration;renderResidentStatus()}
+function interruptSocialForNewAction(p){
+ if(p.action!=='social'||!p.socialPartnerId)return;
+ const partner=residentById(p.socialPartnerId);
+ p.socialPartnerId=null;
+ if(!partner||partner.socialPartnerId!==p.id)return;
+ partner.socialPartnerId=null;
+ if(partner.action==='social'){
+  partner.action='idle';partner.phaseState='idle';partner.routePoints=[];partner.routeIndex=0;
+  partner.tx=partner.x;partner.ty=partner.y;partner.stay=0;partner.stuckTime=0;partner.routeRetries=0;
+  partner.activity='街で過ごしている';partner.stayText='';partner.pose='stand';
+ }
+}
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='social')interruptSocialForNewAction(p);if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=resolveOpenDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}p.phaseState='moving';p.stuckTime=0;p.routeRetries=0;p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.stay=duration;renderResidentStatus()}
 function chooseFreshSpot(p,spots){
  const recent=Array.isArray(p.recentSpots)?p.recentSpots:[];
  const fresh=spots.filter(s=>!recent.includes(s.id));
@@ -1086,7 +1137,8 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
  }
  function workPlaceFor(p){
   const name=String(p.workplace||'');
-  const matched=places.find(q=>name&&(name.includes(q.name)||q.name.includes(name)));
+  const usablePlaces=places.filter(q=>q.type==='home'?!!homes[q.id]:['cafe','shop','plaza'].includes(q.id));
+  const matched=usablePlaces.find(q=>name&&(name.includes(q.name)||q.name.includes(name)));
   if(matched)return matched;
   if(/喫茶|カフェ|飲食|店/.test(name))return getPlace('cafe');
   return getPlace('plaza');
@@ -1112,6 +1164,7 @@ function startWork(p,i,plan){
   const travel=plan.urgent?'急な呼び出しで仕事に向かっている':title+'の仕事に向かっている';
   const stay=plan.urgent?'急な仕事に対応している':title+'の仕事をしている';
   if(p.workOutside){
+   interruptSocialForNewAction(p);
    p.action='workOutside';p.socialPartnerId=null;p.homeHobby=null;p.benchSeat=null;
    p.activity='街の外で仕事中';p.stayText='街の外で'+stay;
    p.phaseState='staying';p.stay=plan.duration;p.pose='stand';p.tx=p.x;p.ty=p.y;
@@ -1126,7 +1179,15 @@ function startWork(p,i,plan){
   }
   const place=workPlaceFor(p);
   p.workHomeShift=false;
-  setAction(p,i,'work',place.x,place.y,travel,stay,'stand',plan.duration);
+  // Work destinations need usable street-side entrances, not a building's roof center.
+  let workTarget={x:place.x,y:place.y};
+  const building=WORLD_BUILDINGS[place.id];
+  if(building)workTarget={x:building.door.x,y:building.door.maxY-14};
+  else if(place.type==='home'&&homes[place.id]){
+   const entrance=homeEntrance(homes[place.id]);
+   workTarget={x:entrance.x,y:entrance.y+32};
+  }
+  setAction(p,i,'work',workTarget.x,workTarget.y,travel,stay,'stand',plan.duration);
  }
  function weatherLabel(){return weatherType==='rainy'?'雨':weatherType==='cloudy'?'くもり':'晴れ'}
  function updateWeather(){if(weatherDay!==calendarDay){weatherDay=calendarDay;const previous=weatherType;if(Math.random()<.42){const roll=Math.random();weatherType=roll<.48?'sunny':roll<.76?'cloudy':'rainy'}if(weatherType!==previous)addDiary('天気が'+weatherLabel()+'に変わった。');}}
@@ -1207,8 +1268,8 @@ function hobbyChoicesFor(p){
   else if(/散歩|ウォーキング|walking|ランニング|ジョギング|running/.test(t)){kind='walk';mode='walk';label=name+'をしている';pose='stand';spot={id:'hobby-walk-'+index,x:420,y:650,label:'こみちの途中'}}
   else if(/写真|撮影|photography|camera/.test(t)){kind='photography';mode='walk';label='写真を撮っている';pose='stand';spot={id:'hobby-photo-'+index,x:770,y:540,label:'川沿い'}}
   else if(/買い物|ショッピング|shopping/.test(t)){kind='shopping';mode='walk';label='買い物をしている';pose='stand';spot={id:'hobby-shop-'+index,x:500,y:500,label:'街のお店'}}
-  else if(/園芸|ガーデニング|植物|gardening/.test(t)){kind='gardening';mode='flowers';label='植物の手入れをしている';pose='look';spot={id:'hobby-garden-'+index,x:610,y:510}}
-  else if(/釣り|fishing/.test(t)){kind='fishing';mode='walk';label='釣りをしている';pose='sit';spot={id:'hobby-fishing-'+index,x:790,y:760,label:'川辺'}}
+  else if(/園芸|ガーデニング|植物|gardening/.test(t)){kind='gardening';mode='flowers';label='植物の手入れをしている';pose='look';spot={id:'hobby-garden-'+index,x:700,y:720}}
+  else if(/釣り|fishing/.test(t)){kind='fishing';mode='walk';label='釣りをしている';pose='sit';spot={id:'hobby-fishing-'+index,x:755,y:900,label:'川辺'}}
   else if(/カフェ巡り|喫茶店巡り/.test(t)){kind='cafe';mode='cafe';label='喫茶店で過ごしている';pose='sit'}
   const timeRule=/朝|午前|昼|午後|夕方|夜|深夜/.test(name)?(/朝|午前/.test(name)?'morning':/昼/.test(name)?'noon':/午後/.test(name)?'afternoon':/夕方/.test(name)?'evening':/深夜/.test(name)?'lateNight':'night'):'any';
    const weatherRule=/雨/.test(name)?'rainy':/晴れ/.test(name)?'sunny':/曇り/.test(name)?'cloudy':/雪/.test(name)?'snowy':'any';
@@ -1481,7 +1542,7 @@ function startSocialVisit(a,b,r,initiator){
  setAction(b,chars.indexOf(b),'social',meeting.second.x,meeting.second.y,
   a.name+'のところへ向かっている',stayText,'stand',duration);
  a.socialPartnerId=b.id;b.socialPartnerId=a.id;
- const stamp=day*1440+hour*60+minute;
+ const stamp=calendarDay*1440+hour*60+minute;
  r.lastSocialVisitStamp=stamp;
  a.lastSocialStamp=stamp;b.lastSocialStamp=stamp;
  initiator.lastInitiatedSocialStamp=stamp;
@@ -1569,7 +1630,7 @@ function recoverMoodFromRoutine(p,nowStamp){
 }
 function tickLife(){
  chars.forEach(p=>{const n=p.needs;n.energy=Math.max(8,n.energy-.12);n.hunger=Math.max(8,n.hunger-.08);n.mood=Math.max(20,Math.min(100,n.mood+(n.energy<25?-.15:.025)))});
- const nowStamp=day*1440+hour*60+minute;
+ const nowStamp=calendarDay*1440+hour*60+minute;
  chars.forEach(p=>recoverMoodFromRoutine(p,nowStamp));
  if(sharedGoal){
   const datePair=['nagisumi','yaku'].map(residentById).filter(Boolean);const together=datePair.length===2&&datePair.every(p=>p.phaseState==='staying'&&p.action==='date')&&Math.hypot(datePair[0].x-datePair[1].x,datePair[0].y-datePair[1].y)<110;
@@ -1607,7 +1668,7 @@ function tickLife(){
    recordMemory(eventKey,'一緒に過ごした時間',pairNames+'が'+sharedActivity+'、穏やかな時間を過ごした。',relation.id);
   }
  }
- const recoveryStamp=day*1440+hour*60+minute;
+ const recoveryStamp=calendarDay*1440+hour*60+minute;
  if(minute%10===0&&recoveryStamp!==lastRecoveryStamp){
   lastRecoveryStamp=recoveryStamp;
   chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe'||p.action==='sleep'||p.action==='home'||p.action==='work')){n.energy=Math.min(100,n.energy+(p.action==='sleep'?13:p.action==='bench'?9:p.action==='home'?5:p.action==='work'?-0.4:3));if(p.action!=='sleep')n.mood=Math.min(100,n.mood+(p.action==='home'?1.2:2));if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+22);if(p.action==='home'&&p.homeHobby?.kind==='cooking')n.hunger=Math.min(100,n.hunger+6)}});
@@ -1712,7 +1773,20 @@ function loop(t){
  let dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy),minGap=24;
  if(d<minGap){
   if(d<.01){dx=((a+b)%2?1:-1);dy=0;d=1}
-  const push=(minGap-d)/2,ux=dx/d,uy=dy/d;
+  const ux=dx/d,uy=dy/d;
+  // Resting residents keep their assigned seat; only the passerby gives way.
+  if(p.phaseState==='staying'&&q.phaseState==='staying')continue;
+  if(p.phaseState==='staying'){
+   const qx=q.x+ux*(minGap-d),qy=q.y+uy*(minGap-d);
+   if(movementSegmentClear(q.x,q.y,qx,qy,q)){q.x=qx;q.y=qy}
+   continue;
+  }
+  if(q.phaseState==='staying'){
+   const px=p.x-ux*(minGap-d),py=p.y-uy*(minGap-d);
+   if(movementSegmentClear(p.x,p.y,px,py,p)){p.x=px;p.y=py}
+   continue;
+  }
+  const push=(minGap-d)/2;
   const px=p.x-ux*push,py=p.y-uy*push,qx=q.x+ux*push,qy=q.y+uy*push;
   // 住人同士の押し出しも移動線を検査し、壁や家具の向こう側へ押し込まない。
   const canMoveP=movementSegmentClear(p.x,p.y,px,py,p),canMoveQ=movementSegmentClear(q.x,q.y,qx,qy,q);
