@@ -384,8 +384,12 @@ function natureBlocksMovement(x,y,p){
  for(const tree of trees)if(Math.hypot(x-tree.x,y-tree.y)<tree.r)return true;
  // 低い植え込みは景観用の地被として扱い、歩行を妨げない。
  // 木の幹と花壇のみを通行障害物にする。
- const beds=[{left:650,right:745,top:654,bottom:725},{left:625,right:720,top:1034,bottom:1105}];
- if(beds.some(b=>x>b.left&&x<b.right&&y>b.top&&y<b.bottom))return true;
+ // 描画されている花壇の外周ポリゴンと同じ形で判定し、周囲に透明な四角形を作らない。
+ const beds=[
+  [{x:650,y:684},{x:700,y:654},{x:745,y:679},{x:695,y:709}],
+  [{x:625,y:1064},{x:675,y:1034},{x:720,y:1059},{x:670,y:1089}]
+ ];
+ if(beds.some(polygon=>pointInPolygon(x,y,polygon)))return true;
  return false;
 }
 
