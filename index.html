@@ -384,7 +384,7 @@ const WORLD_STREET_FURNITURE={
   {id:'cafe-bench-west',x:110,y:365,group:'cafe'},
   {id:'cafe-bench-center',x:175,y:365,group:'cafe'},
   {id:'cafe-bench-east',x:240,y:365,group:'cafe'},
-  {id:'plaza-bench',x:760,y:800},
+  {id:'plaza-bench',x:730,y:800},
   {id:'south-bench',x:360,y:1180}
  ],
  lamps:[
@@ -609,7 +609,7 @@ function updateResidentDiagnostics(){
   node.textContent='状態 '+(p.action||'?')+' / '+(p.phaseState||'?')+'・位置 '+p.x.toFixed(1)+','+p.y.toFixed(1)+' → 目的地 '+Math.round(p.tx)+','+Math.round(p.ty)+'・次地点 '+Math.round(point.x)+','+Math.round(point.y)+' ('+distance.toFixed(1)+'px)・経路 '+(route.length?index+1:0)+'/'+route.length+'・停滞 '+(Number(p.stuckTime)||0).toFixed(1)+'秒・次地点障害物 '+(blocked?'あり':'なし')+'・次区間障害物 '+(segmentBlocked?'あり':'なし')+'・現在地障害物 '+(currentBlocked?'あり':'なし');
  });
  const runtime=document.getElementById('runtimeDiagnostic');
- if(runtime)runtime.textContent='ゲーム稼働 '+(paused?'停止中':'動作中')+' / 最終フレーム '+(typeof last==='number'?last.toFixed(0):'不明')+' / 時刻 '+hour+':'+String(minute).padStart(2,'0');
+ if(runtime)runtime.textContent='ゲーム稼働 '+(paused?'停止中':'動作中')+' / 最終フレーム '+(typeof last==='number'?last.toFixed(0):'不明')+' / 時刻 '+hour+':'+String(minute).padStart(2,'0')+(lastFrameErrorCount?' / 更新エラー '+lastFrameErrorCount+'回: '+lastFrameError:'');
 }
 function openPlaceResidents(){
  const panel=document.getElementById('panel'),title=document.getElementById('panelTitle'),body=document.getElementById('panelBody');
@@ -1300,8 +1300,8 @@ function walkSceneFor(p,spot){
 function availableBenchSeats(i){
  const benches=WORLD_STREET_FURNITURE.benches.filter(item=>item.group!=='cafe');
  const seats=benches.flatMap((bench,index)=>[
-  {bench:index,slot:0,x:bench.x+(index===0?-25:-20),y:bench.y+35},
-  {bench:index,slot:1,x:bench.x+(index===0?0:20),y:bench.y+35}
+  {bench:index,slot:0,x:bench.x-17,y:bench.y-10},
+  {bench:index,slot:1,x:bench.x+17,y:bench.y-10}
  ]);
  const occupied=new Set(chars.filter((q,j)=>j!==i&&q.action==='bench'&&q.benchSeat).map(q=>q.benchSeat.bench+':'+q.benchSeat.slot));
  const free=seats.filter(seat=>!occupied.has(seat.bench+':'+seat.slot));
@@ -1340,8 +1340,9 @@ function chooseRoutine(p,i){
    }
    p.homeHobby=null;
    if(variant==='outdoor'){
-    const benches=[{x:735,y:835,label:'川辺のベンチ'},{x:340,y:1215,label:'広場のベンチ'},{x:720,y:840,label:'川沿い'}];const q=benches[(Math.random()*benches.length)|0];
-    setAction(p,i,'walk',q.x,q.y,q.label+'へ向かっている',hobby.label,'sit',14+Math.random()*22);return
+    const seats=availableBenchSeats(i);const seat=seats[(Math.random()*seats.length)|0];
+    p.benchScene={diary:hobby.label};setAction(p,i,'bench',seat.x,seat.y,'ベンチへ向かっている',hobby.label,'sit',14+Math.random()*22);
+    p.benchSeat={bench:seat.bench,slot:seat.slot};return
    }
    if(hobby.mode==='cafe'){const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている',hobby.label,'sit',16+Math.random()*20);return}
    const q=hobby.mode==='flowers'?chooseFreshSpot(p,[{id:'garden-east',x:700,y:720,label:'東の花壇'},{id:'garden-south',x:670,y:1115,label:'南の花壇'}]):(hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:740,y:540,label:'川沿い'},{id:'hobby-path-'+hobby.priority,x:420,y:650,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:600,y:760,label:'川辺の広場'}]));
@@ -1578,7 +1579,8 @@ function tickLife(){
  }
  updateRelationshipPanel();
 }
-function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;calendarDay++;updateWeather();addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?18:2;if(d>waypointTolerance){
+let lastFrameError='',lastFrameErrorAt=0,lastFrameErrorCount=0;
+function loop(t){try{let dt=Math.max(0,Math.min((t-last)/1000,.08));last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;calendarDay++;updateWeather();addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?18:2;if(d>waypointTolerance){
  const oldX=p.x,oldY=p.y;
  let step=Math.min(d,dt*42),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
  // 目標地点だけでなく、現在地からの移動線全体を検査して壁抜けを防ぐ。
@@ -1640,8 +1642,14 @@ function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(sa
    if(movementSegmentClear(q.x,q.y,backX,backY,q)){q.x=backX;q.y=backY}
   }
  }
-}}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
-const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）';const night=hour>=20||hour<6;document.querySelector('.sun').textContent=weatherType==='rainy'?'☂':weatherType==='cloudy'?'☁':night?'☾':hour>=17?'🌇':'☀';{const subtitle=document.getElementById('placeSubtitle');if(subtitle)subtitle.textContent='春・'+weatherLabel()}}updateClock();setInterval(updateClock,500);
+}}drawWorld();
+ }catch(error){
+  lastFrameError=error instanceof Error?error.message:String(error);
+  lastFrameErrorCount++;
+  if(t-lastFrameErrorAt>5000){lastFrameErrorAt=t;console.error('街の更新に失敗。次のフレームで再試行します。',error)}
+ }finally{requestAnimationFrame(loop)}
+}requestAnimationFrame(loop);
+const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）'+(lastFrameErrorCount?' ⚠':'');const night=hour>=20||hour<6;document.querySelector('.sun').textContent=weatherType==='rainy'?'☂':weatherType==='cloudy'?'☁':night?'☾':hour>=17?'🌇':'☀';{const subtitle=document.getElementById('placeSubtitle');if(subtitle)subtitle.textContent='春・'+weatherLabel()}}updateClock();setInterval(updateClock,500);
 function select(i){if(!chars[i])return;selected=i;if(!interiorHomeId){panX=450-chars[i].x;panY=720-chars[i].y}renderResidentStatus();drawWorld()};document.getElementById('residentStatus').addEventListener('click',e=>{
  const person=e.target.closest('.person');if(!person)return;
  const i=Number(person.dataset.index),p=chars[i];if(!p)return;
