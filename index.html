@@ -774,10 +774,10 @@ function drawCafe(x,y){
 // Procedural textures below remain as a graceful offline/slow-load fallback.
 const townTextures={};
 const townMaterialSources={
- grass:'assets/town-grass.svg?v=2',
- brick:'assets/town-cobblestone.svg?v=2',
- stone:'assets/town-limestone.svg?v=2',
- water:'assets/town-water.svg?v=2'
+ grass:'assets/town-grass-painted.webp?v=3',
+ brick:'assets/town-cobblestone-painted.webp?v=3',
+ stone:'assets/town-limestone-painted.webp?v=3',
+ water:'assets/town-water-painted.webp?v=3'
 };
 const townMaterialImages={};
 for(const [kind,src] of Object.entries(townMaterialSources)){
@@ -879,7 +879,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  townRiverOutline();const water=ctx.createLinearGradient(740,200,1030,1000);
  water.addColorStop(0,'#8cdbdb');water.addColorStop(.5,'#45b9d7');water.addColorStop(1,'#268ac3');
  ctx.fillStyle=water;ctx.fill();
- ctx.save();townRiverOutline();ctx.clip();ctx.globalAlpha=.5;ctx.fillStyle=townTexture('water');ctx.fillRect(685,120,370,1230);ctx.restore();
+ ctx.save();townRiverOutline();ctx.clip();ctx.globalAlpha=.83;ctx.fillStyle=townTexture('water');ctx.fillRect(685,120,370,1230);ctx.restore();
  ctx.beginPath();ctx.moveTo(760,180);ctx.bezierCurveTo(690,360,880,470,790,650);
  ctx.bezierCurveTo(710,830,900,940,790,1170);ctx.lineTo(1030,1300);
  ctx.strokeStyle='#859875';ctx.lineWidth=27;ctx.stroke();
@@ -898,7 +898,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   if(x<920)ellipse(x,y,4+(i%3)*2,2,'rgba(231,252,245,.76)');
  }
  // Gentle warm soil beneath the paved streets, leaving lush green parkland.
- ctx.save();ctx.globalAlpha=.22;
+ ctx.save();ctx.globalAlpha=.1;
  poly([[65,370],[470,210],[733,340],[737,1116],[438,1330],[56,1140]],'#e8d8ae',null);
  ctx.restore();
  // 道路ネットワークは描画・橋の歩行判定で共有する定義を使用。
