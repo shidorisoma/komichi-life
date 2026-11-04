@@ -1503,10 +1503,16 @@ function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(sa
   if(d<.01){dx=((a+b)%2?1:-1);dy=0;d=1}
   const push=(minGap-d)/2,ux=dx/d,uy=dy/d;
   const px=p.x-ux*push,py=p.y-uy*push,qx=q.x+ux*push,qy=q.y+uy*push;
-  const canMoveP=!isBlockedByStructure(px,py,p),canMoveQ=!isBlockedByStructure(qx,qy,q);
+  // 住人同士の押し出しも移動線を検査し、壁や家具の向こう側へ押し込まない。
+  const canMoveP=movementSegmentClear(p.x,p.y,px,py,p),canMoveQ=movementSegmentClear(q.x,q.y,qx,qy,q);
   if(canMoveP&&canMoveQ){p.x=px;p.y=py;q.x=qx;q.y=qy}
-  else if(canMoveP){p.x=p.x-ux*push*2;p.y=p.y-uy*push*2}
-  else if(canMoveQ){q.x=q.x+ux*push*2;q.y=q.y+uy*push*2}
+  else if(canMoveP){
+   const backX=p.x-ux*push*2,backY=p.y-uy*push*2;
+   if(movementSegmentClear(p.x,p.y,backX,backY,p)){p.x=backX;p.y=backY}
+  }else if(canMoveQ){
+   const backX=q.x+ux*push*2,backY=q.y+uy*push*2;
+   if(movementSegmentClear(q.x,q.y,backX,backY,q)){q.x=backX;q.y=backY}
+  }
  }
 }}drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）';const night=hour>=20||hour<6;document.querySelector('.sun').textContent=weatherType==='rainy'?'☂':weatherType==='cloudy'?'☁':night?'☾':hour>=17?'🌇':'☀';{const subtitle=document.getElementById('placeSubtitle');if(subtitle)subtitle.textContent='春・'+weatherLabel()}}updateClock();setInterval(updateClock,500);
