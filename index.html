@@ -889,16 +889,17 @@ function homeSouthRoadNode(home){
  if(!home)return roadNodes[0];
  const row=home.y<520?'row1':home.y<700?'row2':'row3';
  const entrance=homeEntrance(home),roadY=entrance.y+50;
- // 玄関前の縦道は、同じ高さにある横道の左右隣接ノードだけへ接続する。
- // 遠いノードへ斜めにショートカットして、道のない芝生を横切る経路を防ぐ。
+ // 上段・中段の住宅裏側は、ひとつ下の住宅の接地判定が道路へ張り出す。
+ // 道路上のアクセス点を住宅同士の隙間へ寄せ、玄関からは斜めに接続する。
+ const accessX=row==='row3'?entrance.x:(home.x<230?entrance.x+73:entrance.x-73);
  const rowNodes={
   row1:[{id:'west-north',x:90},{id:'res-row1-center',x:250},{id:'res-row1-east',x:430}],
   row2:[{id:'west-mid',x:90},{id:'res-row2-center',x:250},{id:'res-row2-east',x:430}],
   row3:[{id:'west-south',x:90},{id:'res-row3-center',x:250},{id:'res-row3-east',x:430}]
  }[row];
- const rightIndex=Math.max(1,Math.min(rowNodes.length-1,rowNodes.findIndex(node=>node.x>=entrance.x)));
+ const rightIndex=Math.max(1,Math.min(rowNodes.length-1,rowNodes.findIndex(node=>node.x>=accessX)));
  const links=[rowNodes[rightIndex-1].id,rowNodes[rightIndex].id];
- return {id:'home-access-'+home.id,x:entrance.x,y:roadY,links};
+ return {id:'home-access-'+home.id,x:accessX,y:roadY,links};
 }
 function roadNodePath(start,goal,resident=null){
  if(!start||!goal)return start?[start]:[];
@@ -988,13 +989,14 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  if(!nodes)nodes=roadNodePath(start,goal,resident);
  const points=[{x:fromX,y:fromY}];
  if(startHome){
-  const e=homeEntrance(startHome),approachY=e.y+50;
-  points.push({x:e.x,y:approachY});
+  // 住宅裏の道路へは、住宅同士の隙間に置いたアクセス点から接続する。
+  points.push({x:fixedStart.x,y:fixedStart.y});
  }
  points.push(...nodes.map(n=>({x:n.x,y:n.y})));
  if(destinationHome){
-  const e=homeEntrance(destinationHome),approachY=destinationHome.y<400?430:e.y+50;
-  points.push({x:goal.x,y:goal.y},{x:e.x,y:approachY},{x:e.x,y:e.y+25});
+  const e=homeEntrance(destinationHome);
+  // 帰宅時も道路上の安全なアクセス点から玄関へ直接斜めに接続する。
+  points.push({x:goal.x,y:goal.y},{x:e.x,y:e.y+25});
  }
  points.push({x:toX,y:toY});
  return compactRoutePoints(points,resident);
