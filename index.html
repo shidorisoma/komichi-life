@@ -384,7 +384,7 @@ const WORLD_STREET_FURNITURE={
   {id:'cafe-bench-west',x:110,y:365,group:'cafe'},
   {id:'cafe-bench-center',x:175,y:365,group:'cafe'},
   {id:'cafe-bench-east',x:240,y:365,group:'cafe'},
-  {id:'plaza-bench',x:730,y:800},
+  {id:'plaza-bench',x:715,y:800},
   {id:'south-bench',x:360,y:1180}
  ],
  lamps:[
@@ -752,7 +752,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  const outdoorResidents=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
  const houseDrawItems=Object.values(homes||{}).map((home,index)=>{
   const geometry=homeExteriorGeometry(home);
-  return {y:home.y+geometry.front+18,draw:()=>drawHouseExterior(home,index)};
+  return {y:home.y+geometry.front+6,draw:()=>drawHouseExterior(home,index)};
  });
  const depthItems=[
   ...houseDrawItems,
@@ -1032,7 +1032,7 @@ chars.forEach(p=>{
 });
 saveGame();
 function resolveOpenDestination(x,y,p){if(!isBlockedByStructure(x,y,p))return {x,y};let best=null,bestDistance=Infinity;for(let radius=12;radius<=120;radius+=12){for(let i=0;i<24;i++){const angle=Math.PI*2*i/24,candidate={x:x+Math.cos(angle)*radius,y:y+Math.sin(angle)*radius};if(isBlockedByStructure(candidate.x,candidate.y,p))continue;const distance=Math.hypot(candidate.x-x,candidate.y-y);if(distance<bestDistance){best=candidate;bestDistance=distance}}if(best)return best}return {x,y}}
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=resolveOpenDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}p.phaseState='moving';p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.stay=duration;renderResidentStatus()}
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=resolveOpenDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}p.phaseState='moving';p.stuckTime=0;p.routeRetries=0;p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.stay=duration;renderResidentStatus()}
 function chooseFreshSpot(p,spots){
  const recent=Array.isArray(p.recentSpots)?p.recentSpots:[];
  const fresh=spots.filter(s=>!recent.includes(s.id));
@@ -1712,7 +1712,20 @@ function loop(t){
  let dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy),minGap=24;
  if(d<minGap){
   if(d<.01){dx=((a+b)%2?1:-1);dy=0;d=1}
-  const push=(minGap-d)/2,ux=dx/d,uy=dy/d;
+  const ux=dx/d,uy=dy/d;
+  // Resting residents keep their assigned seat; only the passerby gives way.
+  if(p.phaseState==='staying'&&q.phaseState==='staying')continue;
+  if(p.phaseState==='staying'){
+   const qx=q.x+ux*(minGap-d),qy=q.y+uy*(minGap-d);
+   if(movementSegmentClear(q.x,q.y,qx,qy,q)){q.x=qx;q.y=qy}
+   continue;
+  }
+  if(q.phaseState==='staying'){
+   const px=p.x-ux*(minGap-d),py=p.y-uy*(minGap-d);
+   if(movementSegmentClear(p.x,p.y,px,py,p)){p.x=px;p.y=py}
+   continue;
+  }
+  const push=(minGap-d)/2;
   const px=p.x-ux*push,py=p.y-uy*push,qx=q.x+ux*push,qy=q.y+uy*push;
   // 住人同士の押し出しも移動線を検査し、壁や家具の向こう側へ押し込まない。
   const canMoveP=movementSegmentClear(p.x,p.y,px,py,p),canMoveQ=movementSegmentClear(q.x,q.y,qx,qy,q);
