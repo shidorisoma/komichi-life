@@ -1644,6 +1644,27 @@ function advanceGameClock(){
  }
 }
 setInterval(advanceGameClock,250);
+// Shared recovery for both kinds of blocked waypoint, keeping social partners in sync.
+function recoverResidentFromFailedRoute(p,i){
+ const partner=p.action==='social'&&p.socialPartnerId?residentById(p.socialPartnerId):null;
+ if(partner&&partner.socialPartnerId===p.id){
+  partner.socialPartnerId=null;
+  if(partner.action==='social'){
+   partner.action='idle';partner.phaseState='idle';partner.stay=0;partner.routePoints=[];partner.routeIndex=0;
+   partner.tx=partner.x;partner.ty=partner.y;partner.activity='街で過ごしている';partner.stayText='';
+   partner.pose='stand';partner.stuckTime=0;partner.routeRetries=0;
+  }
+ }
+ const safe=roadNodes.filter(n=>!n.facility&&!isBlockedByStructure(n.x,n.y,p)&&movementSegmentClear(p.x,p.y,n.x,n.y,p))
+  .sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
+ if(safe){p.x=safe.x;p.y=safe.y}
+ if(p.action==='date'&&sharedGoal){sharedGoal='';goalTicks=0}
+ p.action='idle';p.phaseState='idle';p.stay=0;p.routePoints=[];p.routeIndex=0;
+ p.tx=p.x;p.ty=p.y;p.activity='街で過ごしている';p.stayText='';p.pose='stand';
+ p.socialPartnerId=null;p.benchSeat=null;p.stuckTime=0;p.routeRetries=0;
+ chooseRoutine(p,i);
+ if(partner&&partner.action==='idle')chooseRoutine(partner,chars.indexOf(partner));
+}
 function loop(t){
  // Ignore duplicate same-timestamp callbacks after Safari resumes drawing.
  if(t<=last)return;
@@ -1676,15 +1697,7 @@ function loop(t){
     point.detourTried=true;detour.isDetour=true;
     route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route;
    }else if((p.routeRetries||0)>=2){
-    // 通常の迂回と経路再計算でも進めない場合は、通行可能な道路ノードへ退避する。
-    const safeNodes=roadNodes.filter(n=>!n.facility&&!isBlockedByStructure(n.x,n.y,p)&&movementSegmentClear(p.x,p.y,n.x,n.y,p));
-    const safe=safeNodes.sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
-    // 壁や川を越えた道路ノードへ強制移動しない。現在地から見通せる場所だけを退避先にする。
-    if(safe){p.x=safe.x;p.y=safe.y}
-    if(p.action==='date'&&sharedGoal){sharedGoal='';goalTicks=0}
-    p.action='idle';p.phaseState='idle';p.stay=0;p.routePoints=[];p.routeIndex=0;p.tx=p.x;p.ty=p.y;
-    p.activity='街で過ごしている';p.stayText='';p.pose='stand';p.socialPartnerId=null;p.stuckTime=0;p.routeRetries=0;
-    chooseRoutine(p,i);
+    recoverResidentFromFailedRoute(p,i);
    }else{
     p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);p.routeIndex=1;
    }
@@ -1692,7 +1705,7 @@ function loop(t){
  }else{
   p.stuckTime=0;p.routeRetries=0;
  }
-}else if(route&&(p.routeIndex||1)<route.length-1){const reached=route[Math.min(p.routeIndex||1,route.length-1)];const safeReach=reached&&!isBlockedByStructure(reached.x,reached.y,p)&&movementSegmentClear(p.x,p.y,reached.x,reached.y,p);if(safeReach){p.x=reached.x;p.y=reached.y;p.routeIndex=(p.routeIndex||1)+1;p.stuckTime=0;p.routeRetries=0}else{const detour=reached?findMovementDetour(p,reached):null;if(detour){route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route}else{p.stuckTime=(p.stuckTime||0)+dt;if(p.stuckTime>1.5){p.stuckTime=0;p.routeRetries=(p.routeRetries||0)+1;p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);p.routeIndex=1}}}}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}else if(p.phaseState==='idle'){chooseRoutine(p,i)}})}for(let a=0;a<chars.length;a++){for(let b=a+1;b<chars.length;b++){
+}else if(route&&(p.routeIndex||1)<route.length-1){const reached=route[Math.min(p.routeIndex||1,route.length-1)];const safeReach=reached&&!isBlockedByStructure(reached.x,reached.y,p)&&movementSegmentClear(p.x,p.y,reached.x,reached.y,p);if(safeReach){p.x=reached.x;p.y=reached.y;p.routeIndex=(p.routeIndex||1)+1;p.stuckTime=0;p.routeRetries=0}else{const detour=reached?findMovementDetour(p,reached):null;if(detour){route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route}else{p.stuckTime=(p.stuckTime||0)+dt;if(p.stuckTime>1.5){p.stuckTime=0;p.routeRetries=(p.routeRetries||0)+1;if(p.routeRetries>=2)recoverResidentFromFailedRoute(p,i);else{p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);p.routeIndex=1}}}}}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}else if(p.phaseState==='idle'){chooseRoutine(p,i)}})}for(let a=0;a<chars.length;a++){for(let b=a+1;b<chars.length;b++){
  const p=chars[a],q=chars[b];if(!isOutdoorResident(p)||!isOutdoorResident(q))continue;
  let dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy),minGap=24;
  if(d<minGap){
