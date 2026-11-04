@@ -338,9 +338,13 @@ function streetFurnitureBlocksMovement(x,y,p){
 function isBlockedAtPoint(x,y,p){
  return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p)||natureBlocksMovement(x,y,p)||riverBlocksMovement(x,y)||streetFurnitureBlocksMovement(x,y,p);
 }
-// 住人は点ではなく幅のある体として扱い、左右の肩幅ぶんも障害物から離す。
+// 住人の胴体を中心とした複数点で当たり判定し、斜め・上下方向のすり抜けも防ぐ。
 function isBlockedByStructure(x,y,p){
- return isBlockedAtPoint(x,y,p)||isBlockedAtPoint(x-12,y,p)||isBlockedAtPoint(x+12,y,p);
+ const bodyPoints=[
+  [0,0],[-11,0],[11,0],[0,-8],[0,8],
+  [-8,-6],[8,-6],[-8,6],[8,6]
+ ];
+ return bodyPoints.some(([ox,oy])=>isBlockedAtPoint(x+ox,y+oy,p));
 }
 function movementSegmentClear(x1,y1,x2,y2,p){
  const distance=Math.hypot(x2-x1,y2-y1),steps=Math.max(2,Math.ceil(distance/8));
