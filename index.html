@@ -392,6 +392,15 @@ function findMovementDetour(p,point){
  }
  return best;
 }
+// Static nature layout is the single source for tree placement and trunk collision.
+const WORLD_NATURE_OBJECTS={
+ trees:[
+  {id:'tree-east-north',x:690,y:575,scale:1.15},
+  {id:'tree-east-middle',x:675,y:930,scale:.9},
+  {id:'tree-riverside',x:575,y:710,scale:.75},
+  {id:'tree-southwest',x:360,y:1110,scale:.82}
+ ]
+};
 function natureBlocksMovement(x,y,p){
  // 木の葉や影ではなく、描画されている幹の矩形だけを塞ぐ。
  // 幹の幅・高さは drawWorld 内の tree() と同じ倍率で算出する。
