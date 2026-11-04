@@ -334,19 +334,36 @@ function riverBlocksMovement(x,y){
  if(pointInPolygon(x,y,bridgeWalkway))return false;
  return x>riverEdgeX(y)-10;
 }
+// Shared placement data for street furniture. Rendering and collision use these same objects.
+const WORLD_STREET_FURNITURE={
+ benches:[
+  {id:'cafe-bench-west',x:110,y:365,group:'cafe'},
+  {id:'cafe-bench-center',x:175,y:365,group:'cafe'},
+  {id:'cafe-bench-east',x:240,y:365,group:'cafe'},
+  {id:'plaza-bench',x:760,y:800},
+  {id:'south-bench',x:360,y:1180}
+ ],
+ lamps:[
+  {id:'plaza-lamp',x:650,y:730},
+  {id:'residential-lamp',x:310,y:520},
+  {id:'riverside-lamp',x:860,y:1000}
+ ],
+ sign:{
+  id:'town-sign',
+  polygon:[[420,450],[456,432],[456,475],[420,493]]
+ }
+};
 function streetFurnitureBlocksMovement(x,y,p){
  // 街に描画しているベンチをすべて障害物として扱う。
  // カフェ前のテラス3台も含め、表示と当たり判定の数を一致させる。
- const benches=[{x:110,y:365},{x:175,y:365},{x:240,y:365},{x:760,y:800},{x:360,y:1180}];
- for(const bench of benches){
+ for(const bench of WORLD_STREET_FURNITURE.benches){
   const atSeat=p.action==='bench'&&Math.hypot(x-p.tx,y-p.ty)<42;
   if(!atSeat&&x>=bench.x-32&&x<=bench.x+32&&y>=bench.y-19&&y<=bench.y+13)return true;
  }
  // 街灯は描画上の支柱とランプ部分をまとめて障害物にする。
- const lamps=[{x:650,y:730},{x:310,y:520},{x:860,y:1000}];
- if(lamps.some(l=>x>=l.x-10&&x<=l.x+10&&y>=l.y-58&&y<=l.y+5))return true;
+ if(WORLD_STREET_FURNITURE.lamps.some(l=>x>=l.x-10&&x<=l.x+10&&y>=l.y-58&&y<=l.y+5))return true;
  // 案内板の支柱と板面は歩行者が通り抜けないようにする。
- if(pointInPolygon(x,y,[{x:420,y:450},{x:456,y:432},{x:456,y:475},{x:420,y:493}]))return true;
+ if(pointInPolygon(x,y,WORLD_STREET_FURNITURE.sign.polygon.map(([px,py])=>({x:px,y:py}))))return true;
  return false;
 }
 function isBlockedAtPoint(x,y,p){
