@@ -59,7 +59,22 @@ const homeLayoutCatalog={
 let selectedHomeLayout='2LDK',homeSubPage='menu';
 const residentialPlots=[{id:'north-west',label:'西側上段の住宅地',x:145,y:430},{id:'north-center',label:'中央上段の住宅地',x:330,y:430},{id:'south-west',label:'西側中段の住宅地',x:145,y:600},{id:'south-center',label:'中央中段の住宅地',x:330,y:600},{id:'south-east',label:'西側下段の住宅地',x:145,y:770},{id:'center-west-home',label:'中央下段の住宅地',x:330,y:770}];
 function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
-function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();saveGame(true);drawWorld();return true}
+// House placement and household changes must refresh any ongoing home/sleep route.
+function syncResidentHomeDestination(p){
+ if(!p||(p.action!=='home'&&p.action!=='sleep'))return;
+ const home=homes[householdForResident(p).homeId];
+ if(!home)return;
+ const entrance=homeEntrance(home);
+ if(p.phaseState==='staying'){
+  p.x=entrance.x;p.y=entrance.y;p.tx=entrance.x;p.ty=entrance.y;
+  p.routePoints=[];p.routeIndex=0;p.stuckTime=0;p.routeRetries=0;
+ }else if(p.phaseState==='moving'){
+  p.tx=entrance.x;p.ty=entrance.y;
+  p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,home,p);
+  p.routeIndex=1;p.stuckTime=0;p.routeRetries=0;
+ }
+}
+function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();chars.filter(p=>householdForResident(p).homeId===homeId).forEach(syncResidentHomeDestination);renderResidentStatus();saveGame(true);drawWorld();return true}
 function createHomeFromTemplate(layoutKey,residentIds){
  const variants=homeLayoutCatalog[layoutKey],memberIds=[...new Set((Array.isArray(residentIds)?residentIds:[residentIds]).filter(Boolean))];
  if(!variants?.length||!memberIds.length||memberIds.some(id=>!residentById(id)))return null;
@@ -70,7 +85,7 @@ function createHomeFromTemplate(layoutKey,residentIds){
  homes[homeId]=home;
  home.rooms.forEach(room=>{rooms[room.id]=room;home.roomIds.push(room.id)});
  households[hid]={id:hid,homeId,residentIds:memberIds.slice()};
- memberIds.forEach(id=>{const p=residentById(id);p.homeId=homeId});
+ memberIds.forEach(id=>{const p=residentById(id);p.homeId=homeId;syncResidentHomeDestination(p)});
  const add=(type,room,x,y)=>{const def=furnitureCatalog[type],instanceId=homeId+'-'+type+'-'+furniture.length;const item={instanceId,furnitureId:type,purchaserId:'system',ownershipType:def.ownership,ownerId:def.ownership==='household'?hid:memberIds[0],homeId,roomId:room.id,x,y,rotation:0,allowedResidentIds:null,placed:true};furniture.push(item);room.furnitureIds.push(instanceId)};
  const bedroom=home.rooms.find(r=>r.type==='bedroom'),kitchen=home.rooms.find(r=>r.type==='kitchen'),living=home.rooms.find(r=>r.type==='living')||home.rooms.find(r=>r.type!=='bedroom');
  if(bedroom)add('bed',bedroom,bedroom.x+bedroom.w/2,bedroom.y+bedroom.h/2);
@@ -93,12 +108,13 @@ function updateHomeDetails(homeId,name,memberIds){
  currentIds.forEach(id=>{if(!selectedIds.includes(id)){const p=residentById(id);if(p&&fallback)p.homeId=fallback}});
  selectedIds.forEach(id=>{const p=residentById(id);p.homeId=homeId});
  const hid='household:'+homeId;households[hid]={...(households[hid]||{}),id:hid,homeId,residentIds:selectedIds};
- home.name=String(name||'').trim()||home.name||'住居';syncHomePlaces();saveGame(true);return true;
+ home.name=String(name||'').trim()||home.name||'住居';syncHomePlaces();new Set([...currentIds,...selectedIds]).forEach(id=>syncResidentHomeDestination(residentById(id)));renderResidentStatus();saveGame(true);return true;
 }
 function deleteHome(homeId){
  const home=homes[homeId];if(!home||Object.keys(homes).length<=1)return false;
  const fallback=Object.keys(homes).find(id=>id!==homeId),memberIds=new Set(households['household:'+homeId]?.residentIds||[]);
- chars.filter(p=>p.homeId===homeId||memberIds.has(p.id)).forEach(p=>{p.homeId=fallback});
+ const reassignedResidents=chars.filter(p=>p.homeId===homeId||memberIds.has(p.id));
+ reassignedResidents.forEach(p=>{p.homeId=fallback});
  const fallbackRooms=homes[fallback]?.rooms||[];
  furniture=furniture.filter(item=>{
   if(item.homeId!==homeId)return true;
@@ -110,7 +126,7 @@ function deleteHome(homeId){
  });
  (home.roomIds||home.rooms?.map(r=>r.id)||[]).forEach(id=>delete rooms[id]);
  delete households['household:'+homeId];delete homes[homeId];places=places.filter(p=>p.id!==homeId);
- syncHomePlaces();if(interiorHomeId===homeId)interiorHomeId='';saveGame(true);return true;
+ syncHomePlaces();reassignedResidents.forEach(syncResidentHomeDestination);if(interiorHomeId===homeId)interiorHomeId='';renderResidentStatus();saveGame(true);drawWorld();return true;
 }
 function renderHomeMenu(){
  const body=document.getElementById('panelBody');
