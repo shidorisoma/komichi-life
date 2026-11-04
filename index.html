@@ -428,6 +428,15 @@ function streetFurnitureBlocksMovement(x,y,p){
  if(pointInPolygon(x,y,WORLD_STREET_FURNITURE.sign.polygon.map(([px,py])=>({x:px,y:py}))))return true;
  return false;
 }
+// Restore a saved walker whose seat-departure permission was lost.
+function restoreBenchExitClearance(p){
+ if(!p||p.action==='bench'||p.phaseState!=='moving'||!Number.isFinite(p.x)||!Number.isFinite(p.y))return false;
+ const bench=WORLD_STREET_FURNITURE.benches.filter(b=>b.group!=='cafe')
+  .find(b=>p.x>=b.x-32&&p.x<=b.x+32&&p.y>=b.y-19&&p.y<=b.y+13);
+ if(!bench)return false;
+ if(p.benchExit?.id===bench.id&&Math.hypot(p.x-p.benchExit.x,p.y-p.benchExit.y)<50)return false;
+ p.benchExit={id:bench.id,x:p.x,y:p.y};return true;
+}
 function isBlockedAtPoint(x,y,p){
  // 街の外周を越えないようにし、住人の胴体にも余白を確保する。
  if(x<18||x>882||y<18||y>1382)return true;
@@ -1013,6 +1022,7 @@ function compactRoutePoints(points,resident){
  return compact;
 }
 function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
+ if(resident&&Math.hypot(resident.x-fromX,resident.y-fromY)<2)restoreBenchExitClearance(resident);
  const ownHome=resident?homes[householdForResident(resident).homeId]:null;
  const startHome=ownHome&&(()=>{
   const e=homeEntrance(ownHome),sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
@@ -1062,7 +1072,9 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
   points.push({x:goal.x,y:goal.y},{x:e.x,y:e.y+25});
  }
  points.push({x:toX,y:toY});
- return compactRoutePoints(points,resident);
+ const result=compactRoutePoints(points,resident);
+ if(resident&&result.some((q,i)=>i>0&&!movementSegmentClear(result[i-1].x,result[i-1].y,q.x,q.y,resident)))return [];
+ return result;
 }
 // 道路データと住人・住宅の初期化が完了してから保存済み経路を再構築する。
 chars.forEach(p=>{
@@ -1724,6 +1736,11 @@ function advanceGameClock(){
 setInterval(advanceGameClock,250);
 // Shared recovery for both kinds of blocked waypoint, keeping social partners in sync.
 function recoverResidentFromFailedRoute(p,i){
+ if(restoreBenchExitClearance(p)){
+  const home=(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null;
+  const repaired=roadRoute(p.x,p.y,p.tx,p.ty,home,p);
+  if(repaired.length>1){p.routePoints=repaired;p.routeIndex=1;p.stuckTime=0;p.routeRetries=0;return}
+ }
  const partner=p.action==='social'&&p.socialPartnerId?residentById(p.socialPartnerId):null;
  if(partner&&partner.socialPartnerId===p.id){
   partner.socialPartnerId=null;
@@ -1747,7 +1764,12 @@ function loop(t){
  // Ignore duplicate same-timestamp callbacks after Safari resumes drawing.
  if(t<=last)return;
  lastAnimationWallTime=Date.now();
- try{let dt=Math.max(0,Math.min((t-last)/1000,.08));last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;
+ try{let dt=Math.max(0,Math.min((t-last)/1000,.08));last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){
+ if(restoreBenchExitClearance(p)){
+  p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);
+  p.routeIndex=1;p.stuckTime=0;p.routeRetries=0;
+ }
+ const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;
  if(!route&&Math.hypot(p.tx-p.x,p.ty-p.y)>2){recoverResidentFromFailedRoute(p,i);return}
  const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?18:2;if(d>waypointTolerance){
  const oldX=p.x,oldY=p.y;
