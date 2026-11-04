@@ -393,8 +393,14 @@ function findMovementDetour(p,point){
  return best;
 }
 function natureBlocksMovement(x,y,p){
- const trees=[{x:690,y:575,r:25},{x:675,y:930,r:22},{x:575,y:710,r:20},{x:360,y:1110,r:21}];
- for(const tree of trees)if(Math.hypot(x-tree.x,y-tree.y)<tree.r)return true;
+ // 木の葉や影ではなく、描画されている幹の矩形だけを塞ぐ。
+ // 幹の幅・高さは drawWorld 内の tree() と同じ倍率で算出する。
+ const trees=[{x:690,y:575,scale:1.15},{x:675,y:930,scale:.9},{x:575,y:710,scale:.75},{x:360,y:1110,scale:.82}];
+ for(const tree of trees){
+  const halfWidth=5*tree.scale+3;
+  const top=tree.y-18*tree.scale-3,bottom=tree.y+24*tree.scale+3;
+  if(x>=tree.x-halfWidth&&x<=tree.x+halfWidth&&y>=top&&y<=bottom)return true;
+ }
  // 低い植え込みは景観用の地被として扱い、歩行を妨げない。
  // 木の幹と花壇のみを通行障害物にする。
  // 描画されている花壇の外周ポリゴンと同じ形で判定し、周囲に透明な四角形を作らない。
