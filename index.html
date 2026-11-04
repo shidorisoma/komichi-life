@@ -715,6 +715,15 @@ function townTexture(kind){
    t.fillStyle='rgba(255,252,232,.34)';t.fillRect(x+2,y+2,w-4,1);
    t.fillStyle='rgba(151,105,73,.10)';t.fillRect(x+2,y+h-3,w-4,1);
   }
+ }else if(kind.startsWith('roof')){
+  const palettes=[['#a47658','#c69a79','#805844'],['#71524c','#9b786a','#523e40'],['#a7734f','#d59a69','#86583f']],colors=palettes[Number(kind.slice(-1))%3];
+  t.fillStyle=colors[0];t.fillRect(0,0,128,128);
+  for(let row=-1;row<13;row++)for(let col=-2;col<10;col++){
+   const x=col*18+(row%2?9:0),y=row*11;
+   t.fillStyle=random()>.35?colors[1]:colors[0];t.globalAlpha=.55+random()*.35;t.fillRect(x+1,y+1,16,9);t.globalAlpha=1;
+   t.strokeStyle=colors[2];t.lineWidth=.8;t.strokeRect(x+.5,y+.5,17,10);
+   t.fillStyle='rgba(255,238,205,.25)';t.fillRect(x+2,y+1,13,1);
+  }
  }else if(kind==='grass'){
   t.fillStyle='#a8c877';t.fillRect(0,0,128,128);
   for(let i=0;i<190;i++){
@@ -840,36 +849,44 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // カフェと商店は住人と同じ奥行き順で描画する。
  // 登録されている住居を、それぞれの所在地に描画
  function drawHouseExterior(home,index){
- const x=home.x,y=home.y;
- const {w,h,left,right,front,back,roofY}=homeExteriorGeometry(home);
- const wallLeft='#ead9bd',wallRight='#d7bd98',trim='#a98c69';
- const roofColors=['#8c6b55','#9a765c','#7e6655','#98765c'];
- const roof=roofColors[index%roofColors.length];
+ const x=home.x,y=home.y,{w,h,left,right,front,back,roofY}=homeExteriorGeometry(home);
+ const cream=['#fff0d7','#ffe9c9','#f9eddf'][index%3],side=['#e2c9a7','#dcc4a4','#e4d4be'][index%3];
  ctx.save();ctx.translate(x,y);
- // 壁面と奥行きのある側面
- poly([[left,back],[0,back-22],[right,back],[right,front],[0,front+30],[left,front]],wallLeft,trim,1.5);
- poly([[0,back-22],[right,back],[right,front],[0,front+30]],wallRight,trim,1.5);
- // 間取り規模に応じた屋根。大きい住居は棟と翼屋根を追加。
- poly([[left-7,back-5],[0,roofY],[right+7,back-5],[0,back+32]],roof,'#6f5541',2);
- if(w>=128){
-  const ex=left+w*.22;
-  poly([[ex,-h*.08],[ex+w*.25,-h*.34],[right+w*.08,-h*.08],[ex+w*.25,h*.13]],'#a78361','#6f5541',1.5);
-  poly([[ex,-h*.08],[ex+w*.25,-h*.34],[ex+w*.25,-h*.12],[ex,h*.13]],'#e6d2b2',trim,1);
- }
- // 窓は左右の壁に配置
- const winY=back+22;
- poly([[left+14,winY],[left+34,winY+11],[left+34,winY+34],[left+14,winY+23]],'#9bb9b1','#6f8d86',1);
- poly([[right-34,winY+4],[right-14,winY-7],[right-14,winY+16],[right-34,winY+27]],'#9bb9b1','#6f8d86',1);
- // 玄関は正面中央。homeEntranceの座標と一致する位置に描画
- ctx.fillStyle='#66513d';ctx.fillRect(-7,front-3,14,34);
- ctx.fillStyle='#b9d0c2';ctx.fillRect(-4,front+1,8,12);
- ctx.strokeStyle='#8c704f';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-10,front-4);ctx.lineTo(10,front-4);ctx.stroke();
- // 間取り表示用の小さな屋根窓
- if(home.layoutKey==='2LDK'||home.layoutKey==='2K'){
-  ctx.fillStyle='#b9d0c2';ctx.fillRect(-8,roofY+19,16,11);
- }
- if(hour>=18||hour<6){ctx.fillStyle='#f6d98c';ctx.fillRect(left+19,winY+7,8,12);ctx.fillRect(right-27,winY+2,8,12)}
- ctx.fillStyle='#fff3d4';ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillText(home.name||'住居',0,roofY-9);
+ // Garden footprint and soft contact shadow.
+ ellipse(0,front+19,w*.58,26,'rgba(77,80,41,.22)');
+ poly([[left-13,back+9],[0,back-17],[right+13,back+9],[right+15,front+27],[0,front+45],[left-15,front+25]],'#c5d89c','#93aa73',1.5);
+ poly([[left-4,front+12],[0,front+22],[right+4,front+10],[0,front+41]],'#e6cba7','#ad9471',1);
+ // Foundation and two shaded walls.
+ poly([[left,front-1],[0,front+20],[right,front-1],[right,front+9],[0,front+33],[left,front+10]],'#b6a083','#93785c',1.5);
+ poly([[left,back],[0,back-22],[0,front+30],[left,front]],cream,'#bba17f',1.6);
+ poly([[0,back-22],[right,back],[right,front],[0,front+30]],side,'#bba17f',1.6);
+ // Clay chimney behind the roof.
+ const chimneyX=right*.37;
+ poly([[chimneyX,roofY+8],[chimneyX,roofY-29],[chimneyX+13,roofY-34],[chimneyX+15,roofY+8]],'#efd2ad','#9a7557',1);
+ poly([[chimneyX-3,roofY-29],[chimneyX+13,roofY-38],[chimneyX+19,roofY-32],[chimneyX+2,roofY-24]],'#fff0d4','#9f765c',1.1);
+ const roof=[[left-11,back-6],[0,roofY],[right+11,back-6],[0,back+35]];
+ poly(roof,'#986c53','#6b4f40',2.6);
+ ctx.save();ctx.beginPath();roof.forEach((pt,i)=>i?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1]));ctx.closePath();ctx.clip();
+ ctx.fillStyle=townTexture('roof'+index%3);ctx.fillRect(left-15,roofY-5,w+30,h+44);ctx.restore();
+ ctx.strokeStyle='#f0c79c';ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(left-12,back-7);ctx.lineTo(0,roofY-1);ctx.lineTo(right+12,back-7);ctx.stroke();
+ // Wood-framed windows and planter shelves.
+ poly([[left+13,back+16],[left+38,back+28],[left+38,back+53],[left+13,back+41]],'#835c45','#f9e8d0',2);
+ poly([[left+17,back+21],[left+34,back+29],[left+34,back+47],[left+17,back+39]],'#8ac6d0','#fff2dc',1);
+ poly([[right-38,back+28],[right-13,back+16],[right-13,back+41],[right-38,back+53]],'#835c45','#f9e8d0',2);
+ poly([[right-34,back+30],[right-17,back+22],[right-17,back+39],[right-34,back+47]],'#8ac6d0','#fff2dc',1);
+ poly([[left+11,back+43],[left+39,back+55],[left+39,back+61],[left+11,back+49]],'#bc8558','#855d44',.8);
+ poly([[right-39,back+52],[right-12,back+39],[right-12,back+46],[right-39,back+60]],'#bc8558','#855d44',.8);
+ // Door stays at the existing homeEntrance location.
+ ctx.fillStyle='#77523b';ctx.fillRect(-10,front-6,20,37);
+ ctx.fillStyle='#ba8958';ctx.fillRect(-7,front-4,14,34);
+ ctx.fillStyle='#efcca1';ctx.fillRect(-5,front-1,10,14);ellipse(4,front+14,1.8,1.8,'#fff1c9');
+ poly([[-14,front+29],[13,front+29],[18,front+35],[-18,front+35]],'#d3b38b','#94785c',1);
+ townGardenFence(0,front+36,left-15,right+15);
+ townFlowerPatch(left-4,front+22,.64,index%3);townFlowerPatch(right+4,front+21,.64,(index+1)%3);
+ townFlowerPatch(left+8,back+31,.45,(index+2)%3);townFlowerPatch(right-9,back+30,.45,index%3);
+ if(hour>=18||hour<6){ctx.fillStyle='rgba(255,226,147,.65)';ctx.fillRect(left+18,back+26,13,12);ctx.fillRect(right-30,back+26,13,12)}
+ ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#765a45';ctx.fillStyle='#fff7e5';
+ ctx.strokeText(home.name||'住居',0,roofY-11);ctx.fillText(home.name||'住居',0,roofY-11);
  ctx.restore();
 }
 // 住宅も住人と共通の奥行き順で描く。屋根を含む矩形で住人を隠さない。
