@@ -770,10 +770,32 @@ function drawCafe(x,y){
  townFlowerPatch(-93,36,.62,1);townFlowerPatch(83,35,.62,0);
  ctx.restore();
 }
-// Cached procedural materials: the town remains an interactive canvas map.
+// Illustration textures are real SVG image assets kept in the game repository.
+// Procedural textures below remain as a graceful offline/slow-load fallback.
 const townTextures={};
+const townMaterialSources={
+ grass:'assets/town-grass.svg?v=2',
+ brick:'assets/town-cobblestone.svg?v=2',
+ stone:'assets/town-limestone.svg?v=2',
+ water:'assets/town-water.svg?v=2'
+};
+const townMaterialImages={};
+for(const [kind,src] of Object.entries(townMaterialSources)){
+ const image=new Image();
+ townMaterialImages[kind]=image;
+ image.onload=()=>{delete townTextures[kind];};
+ image.onerror=()=>{townMaterialImages[kind]=null;};
+ image.src=src;
+}
 function townTexture(kind){
  if(townTextures[kind])return townTextures[kind];
+ const image=townMaterialImages[kind];
+ if(image&&image.complete&&image.naturalWidth>0){
+  try{
+   const material=ctx.createPattern(image,'repeat');
+   if(material){townTextures[kind]=material;return material;}
+  }catch(error){console.warn('街の画像素材を読み込めませんでした',kind,error);}
+ }
  const tile=document.createElement('canvas'),t=tile.getContext('2d');tile.width=128;tile.height=128;
  let seed=({grass:19,brick:31,stone:53,water:71})[kind]||3;
  const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
