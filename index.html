@@ -719,7 +719,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  ctx.fillStyle='#fff3d4';ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.fillText(home.name||'住居',0,roofY-9);
  ctx.restore();
 }
-Object.values(homes).forEach((home,index)=>drawHouseExterior(home,index));
+// 住宅も住人と共通の奥行き順で描く。屋根を含む矩形で住人を隠さない。
 
  // 西側住宅地の花壇は一旦撤去し、住宅と道路の見通しを優先。
  // 東側は川辺の公園。花壇、木陰、散歩道を集約する。
@@ -747,22 +747,15 @@ Object.values(homes).forEach((home,index)=>drawHouseExterior(home,index));
  // ベンチ、街灯、案内板
  // ベンチ・街灯は後段で奥行き順に描画する。
  poly(WORLD_STREET_FURNITURE.sign.polygon,'#8a6d4b');ctx.fillStyle='#fff3d4';ctx.font='bold 11px sans-serif';ctx.fillText('こみち',419,460);
- // キャラクターと住宅の前後関係を2.5Dで描画する。
- // 住宅より奥側にいる住人は先に描き、住宅を重ねて手前の壁・屋根で隠す。
+ // キャラクターと建物を共通の奥行き順で描画する。
+ // 建物の正面の接地位置が、前後の切り替え基準になる。
  const outdoorResidents=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
- const isBehindHouse=({p},home)=>{
-  const {w,h}=homeExteriorGeometry(home);
-  const withinDepth=p.x>=home.x-w/2-20&&p.x<=home.x+w/2+20&&p.y>=home.y-h*.78-18&&p.y<home.y+h*.52;
-  return withinDepth;
- };
- const behindResidents=outdoorResidents.filter(entry=>Object.values(homes||{}).some(home=>isBehindHouse(entry,home)));
- const frontResidents=outdoorResidents.filter(entry=>!behindResidents.includes(entry));
- behindResidents.forEach(({p,i})=>drawChar(p,i));
- Object.values(homes||{}).forEach((home,index)=>{
-  if(behindResidents.some(entry=>isBehindHouse(entry,home)))drawHouseExterior(home,index);
+ const houseDrawItems=Object.values(homes||{}).map((home,index)=>{
+  const geometry=homeExteriorGeometry(home);
+  return {y:home.y+geometry.front+18,draw:()=>drawHouseExterior(home,index)};
  });
- // 奥から手前へ描く。住宅で隠れる住人は従来の独立処理を維持する。
  const depthItems=[
+  ...houseDrawItems,
   // Facility fronts are roughly 30px below their anchor point. Residents behind
   // the storefront should disappear behind it; residents at the door stay visible.
   {y:WORLD_BUILDINGS.cafe.y+23,draw:()=>drawCafe(WORLD_BUILDINGS.cafe.x,WORLD_BUILDINGS.cafe.y)},
@@ -770,7 +763,7 @@ Object.values(homes).forEach((home,index)=>drawHouseExterior(home,index));
   ...WORLD_NATURE_OBJECTS.trees.map(item=>({y:item.y,draw:()=>tree(item.x,item.y,item.scale)})),
   ...WORLD_STREET_FURNITURE.benches.map(item=>({y:item.y,draw:()=>bench(item.x,item.y)})),
   ...WORLD_STREET_FURNITURE.lamps.map(item=>({y:item.y,draw:()=>lamp(item.x,item.y)})),
-  ...frontResidents.map(({p,i})=>({y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:0),draw:()=>drawChar(p,i)}))
+  ...outdoorResidents.map(({p,i})=>({y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:0),draw:()=>drawChar(p,i)}))
  ];
  depthItems.sort((a,b)=>a.y-b.y);
  depthItems.forEach(item=>item.draw());
