@@ -336,12 +336,43 @@ function pointInPolygon(x,y,polygon){
  }
  return inside;
 }
+ // 道路ネットワーク。中央幹線から北・西の住宅地へ接続。
+ const roadRoutes=[
+  // 一本の幅広い中央メインストリート
+  {main:true,start:[470,170],curves:[[[505,280],[525,430],[490,555]],[[455,700],[445,870],[445,1010]]]},
+  // カフェへはメインストリートから短く分岐
+  {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
+  // こみち商店へ向かう短い枝道
+  // 商店へは建物の南側を回り、正面入口へ南から近づく。
+  {start:[505,350],curves:[[[505,405],[505,490],[700,490]]]},
+  // 川辺の広場へは中央下側の幹線から東へ枝道を伸ばす。
+  {start:[465,790],curves:[[[510,780],[560,765],[610,760]]]},
+  // 住宅街の縦道と、各段の住宅前を通る横道。
+  {start:[90,558],curves:[[[90,615],[90,670],[90,728]],[[90,785],[90,842],[90,898]]]},
+  {start:[90,558],curves:[[[145,558],[195,558],[250,558]],[[310,558],[370,558],[430,558]]]},
+  {start:[90,728],curves:[[[145,728],[195,728],[250,728]],[[310,728],[370,728],[430,728]]]},
+  {start:[90,898],curves:[[[145,898],[195,898],[250,898]],[[310,898],[370,898],[430,898]]]},
+  // 各段の東端から中央の幹線へ接続。
+  {start:[430,558],curves:[[[455,558],[475,556],[490,555]]]},
+  {start:[430,728],curves:[[[445,748],[455,770],[465,790]]]},
+  {start:[430,898],curves:[[[440,935],[442,975],[445,1010]]]}
+ ];
+ const roadRendering={edge:'#a98d68',surface:'#ead5ad',mainEdgeWidth:112,mainSurfaceWidth:94,branchEdgeWidth:46,branchSurfaceWidth:34};
+ // 道路の描画と橋の歩行可能範囲は、このネットワーク定義を参照する。
+ const bridge={
+  base:[[690,760],[810,705],[842,725],[720,785]],
+  deck:[[690,747],[810,692],[842,712],[720,772]],
+  rails:[[[698,738],[817,684]],[[715,766],[835,711]]],
+  railColor:'#765b40',railWidth:5,
+  approaches:[
+   {start:[610,760],control:[650,760],end:[690,760],edgeWidth:34,surfaceWidth:23},
+   {start:[690,760],control:[733,770],end:[760,800],edgeWidth:30,surfaceWidth:20}
+  ]
+ };
+ const WORLD_ROAD_NETWORK={routes:roadRoutes,rendering:roadRendering,bridge};
 function riverBlocksMovement(x,y){
- // 橋の石畳部分だけは水面側へ踏み出せる。
- // 描画している橋の石畳デッキに合わせ、川を歩ける範囲を橋の幅に限定する。
- // 描画している橋の上面4頂点そのものを使い、水面側へ判定を広げない。
- const bridgeWalkway=[{x:690,y:747},{x:810,y:692},{x:842,y:712},{x:720,y:772}];
- if(pointInPolygon(x,y,bridgeWalkway))return false;
+ // 橋の描画データにあるデッキの輪郭だけを歩行可能範囲にする。
+ if(pointInPolygon(x,y,WORLD_ROAD_NETWORK.bridge.deck.map(([px,py])=>({x:px,y:py}))))return false;
  return x>riverEdgeX(y)-10;
 }
 // Shared placement data for street furniture. Rendering and collision use these same objects.
@@ -611,33 +642,14 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  for(let i=0;i<22;i++){let x=790+(i%4)*34+(i%2)*9,y=260+i*43;ellipse(x,y,5+(i%3)*2,2,'#d7e4d1')}
  // 街の広場と小道
  poly([[0,350],[480,180],[755,320],[760,1120],[430,1370],[0,1160]],'#d9c49d','#a58d68',3);
- // 道路ネットワーク。中央幹線から北・西の住宅地へ接続。
- const roadRoutes=[
-  // 一本の幅広い中央メインストリート
-  {main:true,start:[470,170],curves:[[[505,280],[525,430],[490,555]],[[455,700],[445,870],[445,1010]]]},
-  // カフェへはメインストリートから短く分岐
-  {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
-  // こみち商店へ向かう短い枝道
-  // 商店へは建物の南側を回り、正面入口へ南から近づく。
-  {start:[505,350],curves:[[[505,405],[505,490],[700,490]]]},
-  // 川辺の広場へは中央下側の幹線から東へ枝道を伸ばす。
-  {start:[465,790],curves:[[[510,780],[560,765],[610,760]]]},
-  // 住宅街の縦道と、各段の住宅前を通る横道。
-  {start:[90,558],curves:[[[90,615],[90,670],[90,728]],[[90,785],[90,842],[90,898]]]},
-  {start:[90,558],curves:[[[145,558],[195,558],[250,558]],[[310,558],[370,558],[430,558]]]},
-  {start:[90,728],curves:[[[145,728],[195,728],[250,728]],[[310,728],[370,728],[430,728]]]},
-  {start:[90,898],curves:[[[145,898],[195,898],[250,898]],[[310,898],[370,898],[430,898]]]},
-  // 各段の東端から中央の幹線へ接続。
-  {start:[430,558],curves:[[[455,558],[475,556],[490,555]]]},
-  {start:[430,728],curves:[[[445,748],[455,770],[465,790]]]},
-  {start:[430,898],curves:[[[440,935],[442,975],[445,1010]]]}
- ];
+ // 道路ネットワークは描画・橋の歩行判定で共有する定義を使用。
+ const roadStyle=WORLD_ROAD_NETWORK.rendering;
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
- roadRoutes.forEach(route=>{
+ WORLD_ROAD_NETWORK.routes.forEach(route=>{
   ctx.beginPath();ctx.moveTo(route.start[0],route.start[1]);
   route.curves.forEach(curve=>ctx.bezierCurveTo(curve[0][0],curve[0][1],curve[1][0],curve[1][1],curve[2][0],curve[2][1]));
-  ctx.strokeStyle='#a98d68';ctx.lineWidth=route.main?112:46;ctx.stroke();
-  ctx.strokeStyle='#ead5ad';ctx.lineWidth=route.main?94:34;ctx.stroke();
+  ctx.strokeStyle=roadStyle.edge;ctx.lineWidth=route.main?roadStyle.mainEdgeWidth:roadStyle.branchEdgeWidth;ctx.stroke();
+  ctx.strokeStyle=roadStyle.surface;ctx.lineWidth=route.main?roadStyle.mainSurfaceWidth:roadStyle.branchSurfaceWidth;ctx.stroke();
  });
  // 公園内への枝道・周回路は撤去。公園へは幹線道路から直接入る。
  ctx.restore();
@@ -717,14 +729,18 @@ Object.values(homes).forEach((home,index)=>drawHouseExterior(home,index));
  function tree(x,y,r=1){ellipse(x,y+20*r,34*r,12*r,'#82714e');ctx.fillStyle='#735d43';ctx.fillRect(x-5*r,y-18*r,10*r,42*r);for(let i=0;i<18;i++){let q=i*2.4;ellipse(x+Math.cos(q)*(i%5)*8*r,y-34*r+Math.sin(q)*(i%4)*8*r,15*r,14*r,['#63884c','#7fa451','#91ae5b'][i%3])}for(let i=0;i<5;i++)flower(x-18*r+(i*17*r),y-40*r+(i%2)*13*r,.7*r)}
  for(const treeData of WORLD_NATURE_OBJECTS.trees)tree(treeData.x,treeData.y,treeData.scale);
  for(let i=0;i<15;i++){let x=560+(i*47)%170,y=430+(i*83)%620;shrub(x,y,.38+(i%3)*.1)}
- // 河岸の小さな橋
- poly([[690,760],[810,705],[842,725],[720,785]],'#8b704f');poly([[690,747],[810,692],[842,712],[720,772]],'#c49a68');ctx.strokeStyle='#765b40';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(698,738);ctx.lineTo(817,684);ctx.moveTo(715,766);ctx.lineTo(835,711);ctx.stroke();
+ // 河岸の小さな橋。橋デッキ・欄干・接続路を共有データから描画。
+ const bridgeData=WORLD_ROAD_NETWORK.bridge;
+ poly(bridgeData.base,'#8b704f');poly(bridgeData.deck,'#c49a68');
+ ctx.strokeStyle=bridgeData.railColor;ctx.lineWidth=bridgeData.railWidth;ctx.beginPath();
+ bridgeData.rails.forEach(([a,b])=>{ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1])});ctx.stroke();
  // 広場から橋の陸側入口へまっすぐ接続。ベンチへは短い枝道で分岐。
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
- ctx.beginPath();ctx.moveTo(610,760);ctx.quadraticCurveTo(650,760,690,760);
- ctx.strokeStyle='#a98d68';ctx.lineWidth=34;ctx.stroke();ctx.strokeStyle='#ead5ad';ctx.lineWidth=23;ctx.stroke();
- ctx.beginPath();ctx.moveTo(690,760);ctx.quadraticCurveTo(733,770,760,800);
- ctx.strokeStyle='#a98d68';ctx.lineWidth=30;ctx.stroke();ctx.strokeStyle='#ead5ad';ctx.lineWidth=20;ctx.stroke();
+ bridgeData.approaches.forEach(path=>{
+  ctx.beginPath();ctx.moveTo(path.start[0],path.start[1]);ctx.quadraticCurveTo(path.control[0],path.control[1],path.end[0],path.end[1]);
+  ctx.strokeStyle=roadStyle.edge;ctx.lineWidth=path.edgeWidth;ctx.stroke();
+  ctx.strokeStyle=roadStyle.surface;ctx.lineWidth=path.surfaceWidth;ctx.stroke();
+ });
  ctx.restore();
  // ベンチ、街灯、案内板
  for(const benchData of WORLD_STREET_FURNITURE.benches.filter(item=>item.group!=='cafe'))bench(benchData.x,benchData.y);
