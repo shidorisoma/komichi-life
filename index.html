@@ -1400,8 +1400,19 @@ function relationshipPriority(r){
 function isSleeping(p){return p.action==='sleep'&&(p.phaseState==='moving'||p.phaseState==='staying')}
 function isSocialBusy(p){return p.action==='social'&&(p.phaseState==='moving'||p.phaseState==='staying')}
 // Select two nearby, walkable rendezvous points before scheduling either resident.
+// A valid meeting spot must also be reachable from both residents' current positions.
+function socialDestinationReachable(p,point){
+ if(movementSegmentClear(p.x,p.y,point.x,point.y,p))return true;
+ const route=roadRoute(p.x,p.y,point.x,point.y,null,p);
+ if(route.length<2)return false;
+ for(let i=1;i<route.length;i++){
+  if(!movementSegmentClear(route[i-1].x,route[i-1].y,route[i].x,route[i].y,p))return false;
+ }
+ return Math.hypot(route[route.length-1].x-point.x,route[route.length-1].y-point.y)<2;
+}
 function findSocialMeetingPoints(a,b){
  const centerX=(a.x+b.x)/2,centerY=(a.y+b.y)/2;
+ let checkedRoutes=0;
  // Prefer the actual midpoint; search nearby land if it overlaps a wall, river or furniture.
  for(const radius of [0,24,48,72,104,144,192]){
   for(let step=0;step<(radius===0?1:12);step++){
@@ -1414,6 +1425,9 @@ function findSocialMeetingPoints(a,b){
     const first={x:cx+dx,y:cy+dy},second={x:cx-dx,y:cy-dy};
     if(isBlockedByStructure(first.x,first.y,a)||isBlockedByStructure(second.x,second.y,b))continue;
     if(!movementSegmentClear(first.x,first.y,second.x,second.y,a))continue;
+    // Bound route searches so periodic social scheduling cannot stall animation.
+    if(++checkedRoutes>8)return null;
+    if(!socialDestinationReachable(a,first)||!socialDestinationReachable(b,second))continue;
     return {first,second};
    }
   }
