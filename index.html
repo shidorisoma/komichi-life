@@ -1787,6 +1787,27 @@ function recoverResidentFromFailedRoute(p,i){
  chooseRoutine(p,i);
  if(partner&&partner.action==='idle')chooseRoutine(partner,chars.indexOf(partner));
 }
+// Right-hand passing keeps pedestrians moving instead of pushing face-to-face.
+function residentWalkDirection(p){
+ const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;
+ const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};
+ let vx=point.x-p.x,vy=point.y-p.y,len=Math.hypot(vx,vy);
+ if(len<5){vx=p.tx-p.x;vy=p.ty-p.y;len=Math.hypot(vx,vy)}
+ return len>=5?{x:vx/len,y:vy/len}:null;
+}
+function sidestepPastResident(moving,other,amount){
+ const heading=residentWalkDirection(moving);
+ if(!heading)return false;
+ const distance=Math.hypot(moving.x-other.x,moving.y-other.y);
+ // Prefer the pedestrian's right, but try the left if the sidewalk is blocked.
+ for(const sign of [1,-1]){
+  const x=moving.x-heading.y*amount*sign,y=moving.y+heading.x*amount*sign;
+  if(Math.hypot(x-other.x,y-other.y)<=distance+.15)continue;
+  if(!movementSegmentClear(moving.x,moving.y,x,y,moving))continue;
+  moving.x=x;moving.y=y;return true;
+ }
+ return false;
+}
 function loop(t){
  // Ignore duplicate same-timestamp callbacks after Safari resumes drawing.
  if(t<=last)return;
@@ -1842,6 +1863,22 @@ function loop(t){
  let dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy),minGap=24;
  if(d<minGap){
   if(d<.01){dx=((a+b)%2?1:-1);dy=0;d=1}
+  // Walk around oncoming or stationary pedestrians before applying separation.
+  // Purely pushing backwards causes a permanent deadlock on straight paths.
+  const passingStep=Math.min(5,Math.max(2,(minGap-d)*.5+1.5));
+  if(p.phaseState==='moving'&&q.phaseState==='moving'){
+   const hp=residentWalkDirection(p),hq=residentWalkDirection(q);
+   if(hp&&hq&&hp.x*hq.x+hp.y*hq.y<-.55){
+    sidestepPastResident(p,q,passingStep);
+    sidestepPastResident(q,p,passingStep);
+   }
+  }else if(p.phaseState==='staying'&&q.phaseState==='moving'){
+   sidestepPastResident(q,p,passingStep);
+  }else if(q.phaseState==='staying'&&p.phaseState==='moving'){
+   sidestepPastResident(p,q,passingStep);
+  }
+  dx=q.x-p.x;dy=q.y-p.y;d=Math.max(.01,Math.hypot(dx,dy));
+  if(d>=minGap)continue;
   const ux=dx/d,uy=dy/d;
   // Resting residents keep their assigned seat; only the passerby gives way.
   if(p.phaseState==='staying'&&q.phaseState==='staying')continue;
