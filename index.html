@@ -609,7 +609,7 @@ function updateResidentDiagnostics(){
   node.textContent='状態 '+(p.action||'?')+' / '+(p.phaseState||'?')+'・位置 '+p.x.toFixed(1)+','+p.y.toFixed(1)+' → 目的地 '+Math.round(p.tx)+','+Math.round(p.ty)+'・次地点 '+Math.round(point.x)+','+Math.round(point.y)+' ('+distance.toFixed(1)+'px)・経路 '+(route.length?index+1:0)+'/'+route.length+'・停滞 '+(Number(p.stuckTime)||0).toFixed(1)+'秒・次地点障害物 '+(blocked?'あり':'なし')+'・次区間障害物 '+(segmentBlocked?'あり':'なし')+'・現在地障害物 '+(currentBlocked?'あり':'なし');
  });
  const runtime=document.getElementById('runtimeDiagnostic');
- if(runtime)runtime.textContent='ゲーム稼働 '+(paused?'停止中':'動作中')+' / 最終フレーム '+(typeof last==='number'?last.toFixed(0):'不明')+' / 時刻 '+hour+':'+String(minute).padStart(2,'0')+(lastFrameErrorCount?' / 更新エラー '+lastFrameErrorCount+'回: '+lastFrameError:'');
+ if(runtime)runtime.textContent='ゲーム稼働 '+(paused?'停止中':Date.now()-lastAnimationWallTime>2500?'描画停止の疑い':'動作中')+' / 最終フレーム '+(typeof last==='number'?last.toFixed(0):'不明')+' / 描画経過 '+Math.round((Date.now()-lastAnimationWallTime)/1000)+'秒 / 時刻 '+hour+':'+String(minute).padStart(2,'0')+(lastFrameErrorCount?' / 更新エラー '+lastFrameErrorCount+'回: '+lastFrameError:'');
 }
 function openPlaceResidents(){
  const panel=document.getElementById('panel'),title=document.getElementById('panelTitle'),body=document.getElementById('panelBody');
@@ -625,7 +625,7 @@ renderResidentStatus();
 function addResident(definition){const id=definition.id||'resident-'+Date.now();if(chars.some(p=>p.id===id))return null;const offset=chars.length%5;const resident={id,name:definition.name||'新しい住人',money:Number.isFinite(definition.money)?Math.max(0,definition.money):5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},sociability:Number.isFinite(definition.sociability)?Math.max(0,Math.min(100,definition.sociability)):50,curiosity:Number.isFinite(definition.curiosity)?Math.max(0,Math.min(100,definition.curiosity)):50,activityLevel:Number.isFinite(definition.activityLevel)?Math.max(0,Math.min(100,definition.activityLevel)):50,walkPreference:Number.isFinite(definition.walkPreference)?Math.max(0,Math.min(100,definition.walkPreference)):50,naturePreference:Number.isFinite(definition.naturePreference)?Math.max(0,Math.min(100,definition.naturePreference)):50,cafePreference:Number.isFinite(definition.cafePreference)?Math.max(0,Math.min(100,definition.cafePreference)):50,lastInitiatedSocialStamp:-1,lastSocialStamp:-1,x:420+offset*28,y:700+offset*32,tx:420+offset*28,ty:700+offset*32,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame(true);return resident;}
 window.addResident=addResident;
 window.addEventListener('pagehide',saveGame);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveGame()});
+document.addEventListener('visibilitychange',()=>{lastClockSample=performance.now();if(document.visibilityState==='hidden')saveGame()});
 
 function resize(){dpr=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=c.clientHeight;c.width=W*dpr;c.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}new ResizeObserver(resize).observe(c);resize();
 function poly(points,fill,stroke='#9e8b6c',lw=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke()}}
@@ -1580,7 +1580,41 @@ function tickLife(){
  updateRelationshipPanel();
 }
 let lastFrameError='',lastFrameErrorAt=0,lastFrameErrorCount=0;
-function loop(t){try{let dt=Math.max(0,Math.min((t-last)/1000,.08));last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;calendarDay++;updateWeather();addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?18:2;if(d>waypointTolerance){
+let lastClockSample=performance.now(),lastAnimationWallTime=Date.now(),lastWatchdogAttempt=0;
+function advanceGameClock(){
+ const now=performance.now(),seconds=Math.max(0,Math.min((now-lastClockSample)/1000,3));
+ lastClockSample=now;
+ if(paused||document.hidden)return;
+ elapsed+=seconds;
+ let advances=0;
+ while(elapsed>=1&&advances<3){
+  elapsed-=1;advances++;
+  minute++;
+  if(minute>=60){
+   minute=0;hour++;
+   if(hour>=24){
+    hour=0;day=day%7+1;calendarDay++;updateWeather();
+    addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。');
+   }
+  }
+  try{tickLife()}catch(error){
+   lastFrameError=error instanceof Error?error.message:String(error);
+   lastFrameErrorCount++;
+   console.error('ゲーム内時計の更新エラー',error);
+  }
+ }
+ // If Safari stops drawing while intervals still run, request a fresh frame.
+ const wall=Date.now();
+ if(wall-lastAnimationWallTime>2500&&wall-lastWatchdogAttempt>2500){
+  lastWatchdogAttempt=wall;requestAnimationFrame(loop);
+ }
+}
+setInterval(advanceGameClock,250);
+function loop(t){
+ // Ignore duplicate same-timestamp callbacks after Safari resumes drawing.
+ if(t<=last)return;
+ lastAnimationWallTime=Date.now();
+ try{let dt=Math.max(0,Math.min((t-last)/1000,.08));last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?18:2;if(d>waypointTolerance){
  const oldX=p.x,oldY=p.y;
  let step=Math.min(d,dt*42),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
  // 目標地点だけでなく、現在地からの移動線全体を検査して壁抜けを防ぐ。
