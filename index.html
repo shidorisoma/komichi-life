@@ -586,7 +586,11 @@ function resetResidentPosition(p,i){
    }
   }
  }
- if(!destination)destination=center;
+ if(!destination){
+  destination=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p))
+   .sort((a,b)=>Math.hypot(a.x-center.x,a.y-center.y)-Math.hypot(b.x-center.x,b.y-center.y))[0];
+  if(!destination){console.warn('住人の安全な復旧地点を確保できませんでした',p.id);return}
+ }
  p.x=destination.x;p.y=destination.y;p.tx=p.x;p.ty=p.y;
  p.routePoints=[];p.routeIndex=0;p.stuckTime=0;p.routeRetries=0;
  p.action='idle';p.phaseState='idle';p.stay=0;p.stayText='';
@@ -1032,7 +1036,19 @@ chars.forEach(p=>{
 });
 saveGame();
 function resolveOpenDestination(x,y,p){if(!isBlockedByStructure(x,y,p))return {x,y};let best=null,bestDistance=Infinity;for(let radius=12;radius<=120;radius+=12){for(let i=0;i<24;i++){const angle=Math.PI*2*i/24,candidate={x:x+Math.cos(angle)*radius,y:y+Math.sin(angle)*radius};if(isBlockedByStructure(candidate.x,candidate.y,p))continue;const distance=Math.hypot(candidate.x-x,candidate.y-y);if(distance<bestDistance){best=candidate;bestDistance=distance}}if(best)return best}return {x,y}}
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=resolveOpenDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}p.phaseState='moving';p.stuckTime=0;p.routeRetries=0;p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.stay=duration;renderResidentStatus()}
+function interruptSocialForNewAction(p){
+ if(p.action!=='social'||!p.socialPartnerId)return;
+ const partner=residentById(p.socialPartnerId);
+ p.socialPartnerId=null;
+ if(!partner||partner.socialPartnerId!==p.id)return;
+ partner.socialPartnerId=null;
+ if(partner.action==='social'){
+  partner.action='idle';partner.phaseState='idle';partner.routePoints=[];partner.routeIndex=0;
+  partner.tx=partner.x;partner.ty=partner.y;partner.stay=0;partner.stuckTime=0;partner.routeRetries=0;
+  partner.activity='街で過ごしている';partner.stayText='';partner.pose='stand';
+ }
+}
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='social')interruptSocialForNewAction(p);if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=resolveOpenDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}p.phaseState='moving';p.stuckTime=0;p.routeRetries=0;p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.stay=duration;renderResidentStatus()}
 function chooseFreshSpot(p,spots){
  const recent=Array.isArray(p.recentSpots)?p.recentSpots:[];
  const fresh=spots.filter(s=>!recent.includes(s.id));
@@ -1086,7 +1102,8 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
  }
  function workPlaceFor(p){
   const name=String(p.workplace||'');
-  const matched=places.find(q=>name&&(name.includes(q.name)||q.name.includes(name)));
+  const usablePlaces=places.filter(q=>q.type==='home'?!!homes[q.id]:['cafe','shop','plaza'].includes(q.id));
+  const matched=usablePlaces.find(q=>name&&(name.includes(q.name)||q.name.includes(name)));
   if(matched)return matched;
   if(/喫茶|カフェ|飲食|店/.test(name))return getPlace('cafe');
   return getPlace('plaza');
@@ -1112,6 +1129,7 @@ function startWork(p,i,plan){
   const travel=plan.urgent?'急な呼び出しで仕事に向かっている':title+'の仕事に向かっている';
   const stay=plan.urgent?'急な仕事に対応している':title+'の仕事をしている';
   if(p.workOutside){
+   interruptSocialForNewAction(p);
    p.action='workOutside';p.socialPartnerId=null;p.homeHobby=null;p.benchSeat=null;
    p.activity='街の外で仕事中';p.stayText='街の外で'+stay;
    p.phaseState='staying';p.stay=plan.duration;p.pose='stand';p.tx=p.x;p.ty=p.y;
