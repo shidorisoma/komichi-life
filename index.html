@@ -1485,8 +1485,9 @@ function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(sa
     route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route;
    }else if((p.routeRetries||0)>=2){
     // 通常の迂回と経路再計算でも進めない場合は、通行可能な道路ノードへ退避する。
-    const safeNodes=roadNodes.filter(n=>!n.facility&&!isBlockedByStructure(n.x,n.y,p));
+    const safeNodes=roadNodes.filter(n=>!n.facility&&!isBlockedByStructure(n.x,n.y,p)&&movementSegmentClear(p.x,p.y,n.x,n.y,p));
     const safe=safeNodes.sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
+    // 壁や川を越えた道路ノードへ強制移動しない。現在地から見通せる場所だけを退避先にする。
     if(safe){p.x=safe.x;p.y=safe.y}
     if(p.action==='date'&&sharedGoal){sharedGoal='';goalTicks=0}
     p.action='idle';p.phaseState='idle';p.stay=0;p.routePoints=[];p.routeIndex=0;p.tx=p.x;p.ty=p.y;
