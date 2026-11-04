@@ -406,7 +406,7 @@ const WORLD_STREET_FURNITURE={
  lamps:[
   {id:'plaza-lamp',x:650,y:730},
   {id:'residential-lamp',x:310,y:520},
-  {id:'riverside-lamp',x:860,y:1000}
+  {id:'riverside-lamp',x:785,y:1000}
  ],
  sign:{
   id:'town-sign',
@@ -1260,8 +1260,8 @@ function hobbyChoicesFor(p){
   else if(/散歩|ウォーキング|walking|ランニング|ジョギング|running/.test(t)){kind='walk';mode='walk';label=name+'をしている';pose='stand';spot={id:'hobby-walk-'+index,x:420,y:650,label:'こみちの途中'}}
   else if(/写真|撮影|photography|camera/.test(t)){kind='photography';mode='walk';label='写真を撮っている';pose='stand';spot={id:'hobby-photo-'+index,x:770,y:540,label:'川沿い'}}
   else if(/買い物|ショッピング|shopping/.test(t)){kind='shopping';mode='walk';label='買い物をしている';pose='stand';spot={id:'hobby-shop-'+index,x:500,y:500,label:'街のお店'}}
-  else if(/園芸|ガーデニング|植物|gardening/.test(t)){kind='gardening';mode='flowers';label='植物の手入れをしている';pose='look';spot={id:'hobby-garden-'+index,x:610,y:510}}
-  else if(/釣り|fishing/.test(t)){kind='fishing';mode='walk';label='釣りをしている';pose='sit';spot={id:'hobby-fishing-'+index,x:790,y:760,label:'川辺'}}
+  else if(/園芸|ガーデニング|植物|gardening/.test(t)){kind='gardening';mode='flowers';label='植物の手入れをしている';pose='look';spot={id:'hobby-garden-'+index,x:700,y:720}}
+  else if(/釣り|fishing/.test(t)){kind='fishing';mode='walk';label='釣りをしている';pose='sit';spot={id:'hobby-fishing-'+index,x:755,y:900,label:'川辺'}}
   else if(/カフェ巡り|喫茶店巡り/.test(t)){kind='cafe';mode='cafe';label='喫茶店で過ごしている';pose='sit'}
   const timeRule=/朝|午前|昼|午後|夕方|夜|深夜/.test(name)?(/朝|午前/.test(name)?'morning':/昼/.test(name)?'noon':/午後/.test(name)?'afternoon':/夕方/.test(name)?'evening':/深夜/.test(name)?'lateNight':'night'):'any';
    const weatherRule=/雨/.test(name)?'rainy':/晴れ/.test(name)?'sunny':/曇り/.test(name)?'cloudy':/雪/.test(name)?'snowy':'any';
