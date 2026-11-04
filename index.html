@@ -663,7 +663,7 @@ function openPlaceResidents(){
 renderResidentStatus();
 function addResident(definition){const id=definition.id||'resident-'+Date.now();if(chars.some(p=>p.id===id))return null;const offset=chars.length%5;const resident={id,name:definition.name||'新しい住人',money:Number.isFinite(definition.money)?Math.max(0,definition.money):5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},sociability:Number.isFinite(definition.sociability)?Math.max(0,Math.min(100,definition.sociability)):50,curiosity:Number.isFinite(definition.curiosity)?Math.max(0,Math.min(100,definition.curiosity)):50,activityLevel:Number.isFinite(definition.activityLevel)?Math.max(0,Math.min(100,definition.activityLevel)):50,walkPreference:Number.isFinite(definition.walkPreference)?Math.max(0,Math.min(100,definition.walkPreference)):50,naturePreference:Number.isFinite(definition.naturePreference)?Math.max(0,Math.min(100,definition.naturePreference)):50,cafePreference:Number.isFinite(definition.cafePreference)?Math.max(0,Math.min(100,definition.cafePreference)):50,lastInitiatedSocialStamp:-1,lastSocialStamp:-1,x:420+offset*28,y:700+offset*32,tx:420+offset*28,ty:700+offset*32,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame(true);return resident;}
 window.addResident=addResident;
-window.addEventListener('pagehide',saveGame);
+window.addEventListener('pagehide',()=>saveGame());
 document.addEventListener('visibilitychange',()=>{lastClockSample=performance.now();if(document.visibilityState==='hidden')saveGame()});
 
 function resize(){dpr=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=c.clientHeight;c.width=W*dpr;c.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}new ResizeObserver(resize).observe(c);resize();
@@ -1179,7 +1179,15 @@ function startWork(p,i,plan){
   }
   const place=workPlaceFor(p);
   p.workHomeShift=false;
-  setAction(p,i,'work',place.x,place.y,travel,stay,'stand',plan.duration);
+  // Work destinations need usable street-side entrances, not a building's roof center.
+  let workTarget={x:place.x,y:place.y};
+  const building=WORLD_BUILDINGS[place.id];
+  if(building)workTarget={x:building.door.x,y:building.door.maxY-14};
+  else if(place.type==='home'&&homes[place.id]){
+   const entrance=homeEntrance(homes[place.id]);
+   workTarget={x:entrance.x,y:entrance.y+32};
+  }
+  setAction(p,i,'work',workTarget.x,workTarget.y,travel,stay,'stand',plan.duration);
  }
  function weatherLabel(){return weatherType==='rainy'?'雨':weatherType==='cloudy'?'くもり':'晴れ'}
  function updateWeather(){if(weatherDay!==calendarDay){weatherDay=calendarDay;const previous=weatherType;if(Math.random()<.42){const roll=Math.random();weatherType=roll<.48?'sunny':roll<.76?'cloudy':'rainy'}if(weatherType!==previous)addDiary('天気が'+weatherLabel()+'に変わった。');}}
