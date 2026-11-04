@@ -348,13 +348,13 @@ function pointInPolygon(x,y,polygon){
   // 川辺の広場へは中央下側の幹線から東へ枝道を伸ばす。
   {start:[465,790],curves:[[[510,780],[560,765],[610,760]]]},
   // 住宅街の縦道と、各段の住宅前を通る横道。
-  {start:[90,558],curves:[[[90,615],[90,670],[90,728]],[[90,785],[90,842],[90,898]]]},
-  {start:[90,558],curves:[[[145,558],[195,558],[250,558]],[[310,558],[370,558],[430,558]]]},
-  {start:[90,728],curves:[[[145,728],[195,728],[250,728]],[[310,728],[370,728],[430,728]]]},
+  {start:[90,535],curves:[[[90,592],[90,647],[90,705]],[[90,770],[90,834],[90,898]]]},
+  {start:[90,535],curves:[[[145,535],[195,535],[250,535]],[[310,535],[370,535],[430,535]]]},
+  {start:[90,705],curves:[[[145,705],[195,705],[250,705]],[[310,705],[370,705],[430,705]]]},
   {start:[90,898],curves:[[[145,898],[195,898],[250,898]],[[310,898],[370,898],[430,898]]]},
   // 各段の東端から中央の幹線へ接続。
-  {start:[430,558],curves:[[[455,558],[475,556],[490,555]]]},
-  {start:[430,728],curves:[[[445,748],[455,770],[465,790]]]},
+  {start:[430,535],curves:[[[455,535],[475,535],[490,555]]]},
+  {start:[430,705],curves:[[[445,735],[455,765],[465,790]]]},
   {start:[430,898],curves:[[[440,935],[442,975],[445,1010]]]}
  ];
  const roadRendering={edge:'#a98d68',surface:'#ead5ad',mainEdgeWidth:112,mainSurfaceWidth:94,branchEdgeWidth:46,branchSurfaceWidth:34};
@@ -868,13 +868,13 @@ const roadNodes=[
  {id:'main-plaza',x:445,y:1010,links:['main-lower','plaza-center','res-row3-east']},
  {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
  // 住宅街は西側の縦道と、各段の横道でつなぐ。
- {id:'west-north',x:90,y:558,links:['west-mid','res-row1-center']},
- {id:'west-mid',x:90,y:728,links:['west-north','west-south','res-row2-center','bench-path-entry']},
+ {id:'west-north',x:90,y:535,links:['west-mid','res-row1-center']},
+ {id:'west-mid',x:90,y:705,links:['west-north','west-south','res-row2-center','bench-path-entry']},
  {id:'west-south',x:90,y:898,links:['west-mid','res-row3-center']},
- {id:'res-row1-center',x:250,y:558,links:['west-north','res-row1-east']},
- {id:'res-row1-east',x:430,y:558,links:['res-row1-center','main-mid']},
- {id:'res-row2-center',x:250,y:728,links:['west-mid','res-row2-east']},
- {id:'res-row2-east',x:430,y:728,links:['res-row2-center','main-lower']},
+ {id:'res-row1-center',x:250,y:535,links:['west-north','res-row1-east']},
+ {id:'res-row1-east',x:430,y:535,links:['res-row1-center','main-mid']},
+ {id:'res-row2-center',x:250,y:705,links:['west-mid','res-row2-east']},
+ {id:'res-row2-east',x:430,y:705,links:['res-row2-center','main-lower']},
  {id:'res-row3-center',x:250,y:898,links:['west-south','res-row3-east']},
  {id:'res-row3-east',x:430,y:898,links:['res-row3-center','main-plaza']},
  {id:'cafe-entry',x:250,y:330,links:['main-upper'],facility:true},
@@ -888,7 +888,7 @@ function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function homeSouthRoadNode(home){
  if(!home)return roadNodes[0];
  const row=home.y<520?'row1':home.y<700?'row2':'row3';
- const entrance=homeEntrance(home),roadY=entrance.y+50;
+ const entrance=homeEntrance(home),roadY=entrance.y+(row==='row3'?50:27);
  // 上段・中段の住宅裏側は、ひとつ下の住宅の接地判定が道路へ張り出す。
  // 道路上のアクセス点を住宅同士の隙間へ寄せ、玄関からは斜めに接続する。
  const accessX=row==='row3'?entrance.x:(home.x<230?entrance.x+73:entrance.x-73);
