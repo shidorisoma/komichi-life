@@ -1582,10 +1582,19 @@ function startSocialVisit(a,b,r,initiator){
  const weatherPrefix=weatherType==='rainy'?'雨音を聞きながら、':weatherType==='sunny'?'日差しの差し込む場所で、':weatherType==='cloudy'?'涼しい風を感じながら、':'';
  const weatherDiary=weatherType==='rainy'?'雨音の聞こえる中で':weatherType==='sunny'?'日差しの中で':weatherType==='cloudy'?'涼しい風の中で':'';
  const stayText=weatherPrefix+scene.text;
- setAction(a,chars.indexOf(a),'social',meeting.first.x,meeting.first.y,
+ // Both residents must be able to start the visit. Never register a half-started pair.
+ const startedA=setAction(a,chars.indexOf(a),'social',meeting.first.x,meeting.first.y,
   b.name+'のところへ向かっている',stayText,'stand',duration);
- setAction(b,chars.indexOf(b),'social',meeting.second.x,meeting.second.y,
+ if(!startedA)return false;
+ const startedB=setAction(b,chars.indexOf(b),'social',meeting.second.x,meeting.second.y,
   a.name+'のところへ向かっている',stayText,'stand',duration);
+ if(!startedB){
+  a.action='idle';a.phaseState='idle';a.routePoints=[];a.routeIndex=0;
+  a.tx=a.x;a.ty=a.y;a.stay=0;a.stayText='';a.pose='stand';
+  a.activity='街で過ごしている';a.socialPartnerId=null;a.nextActionRetrySeconds=3;
+  renderResidentStatus();
+  return false;
+ }
  a.socialPartnerId=b.id;b.socialPartnerId=a.id;
  const stamp=calendarDay*1440+hour*60+minute;
  r.lastSocialVisitStamp=stamp;
