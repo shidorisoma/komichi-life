@@ -972,6 +972,57 @@ const roadNodes=[
  {id:'bridge-entry',x:690,y:760,links:['park-entry','river-bench'],facility:true},
  {id:'river-bench',x:735,y:745,links:['bridge-entry'],facility:true}
 ];
+// Match navigation segments to the Bézier centerlines used by street painting.
+const WALK_CURVES=[
+ [0,0,'main-north main-upper main-curve-upper main-curve-mid main-mid'],
+ [0,1,'main-mid main-lower-curve-1 main-lower main-lower-curve-2 main-plaza'],
+ [1,0,'main-upper cafe-approach-1 cafe-approach-2 cafe-entry'],
+ [2,0,'main-upper shop-approach-1 shop-approach-2 shop-approach-3 shop-entry'],
+ [3,0,'main-lower park-entry'],
+ [8,0,'res-row1-east main-mid'],
+ [9,0,'res-row2-east row2-approach-1 row2-approach-2 main-lower'],
+ [10,0,'res-row3-east row3-approach-1 row3-approach-2 main-plaza']
+].map(([r,c,ids])=>({r,c,ids:ids.split(' ')}));
+function roadCurvePosition(curve,t){
+ const u=1-t;
+ return {x:u*u*u*curve[0][0]+3*u*u*t*curve[1][0]+3*u*t*t*curve[2][0]+t*t*t*curve[3][0],
+  y:u*u*u*curve[0][1]+3*u*u*t*curve[1][1]+3*u*t*t*curve[2][1]+t*t*t*curve[3][1]};
+}
+function nearestRoadCurveTime(curve,point){
+ let best=Infinity,found=0;
+ for(let k=0;k<=64;k++){
+  const t=k/64,q=roadCurvePosition(curve,t),d=(q.x-point.x)**2+(q.y-point.y)**2;
+  if(d<best){best=d;found=t}
+ }
+ return found;
+}
+function curvedRoadEdge(a,b,resident){
+ const spec=WALK_CURVES.find(g=>{
+  const i=g.ids.indexOf(a.id);
+  return i>=0&&(g.ids[i-1]===b.id||g.ids[i+1]===b.id)
+ });
+ if(!spec)return [{x:b.x,y:b.y}];
+ const road=WORLD_ROAD_NETWORK.routes[spec.r];
+ const cubic=[spec.c?road.curves[spec.c-1][2]:road.start,...road.curves[spec.c]];
+ const ta=nearestRoadCurveTime(cubic,a),tb=nearestRoadCurveTime(cubic,b);
+ const ca=roadCurvePosition(cubic,ta),cb=roadCurvePosition(cubic,tb);
+ const count=Math.max(2,Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/32));
+ let maxDeviation=0;const samples=[];
+ for(let i=1;i<count;i++){
+  const fraction=i/count,center=roadCurvePosition(cubic,ta+(tb-ta)*fraction);
+  const p={x:center.x+(a.x-ca.x)*(1-fraction)+(b.x-cb.x)*fraction,
+   y:center.y+(a.y-ca.y)*(1-fraction)+(b.y-cb.y)*fraction,curve:true};
+  const dx=b.x-a.x,dy=b.y-a.y;
+  maxDeviation=Math.max(maxDeviation,Math.abs(dx*(p.y-a.y)-dy*(p.x-a.x))/Math.max(1,Math.hypot(dx,dy)));
+  samples.push(p);
+ }
+ if(maxDeviation<2.2)return [{x:b.x,y:b.y}];
+ const refined=[...samples,{x:b.x,y:b.y}];
+ const connected=[a,...refined];
+ if(connected.some((p,i)=>i>0&&!movementSegmentClear(connected[i-1].x,connected[i-1].y,p.x,p.y,resident)))
+  return [{x:b.x,y:b.y}];
+ return refined;
+}
 function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function homeSouthRoadNode(home){
  if(!home)return roadNodes[0];
@@ -1035,7 +1086,7 @@ function compactRoutePoints(points,resident){
    if(length<1)continue;
    const deviation=Math.abs(abx*acy-aby*acx)/length;
    const forward=abx*acx+aby*acy;
-   if(deviation<=5&&forward>0&&movementSegmentClear(a.x,a.y,c.x,c.y,resident)){
+   if(!b.curve&&!c.curve&&deviation<=5&&forward>0&&movementSegmentClear(a.x,a.y,c.x,c.y,resident)){
     compact.splice(i,1);changed=true;break;
    }
   }
@@ -1086,7 +1137,7 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
   // 玄関から正面の横道へ、描画と一致する短い縦道を進む。
   points.push({x:fixedStart.x,y:fixedStart.y});
  }
- points.push(...nodes.map(n=>({x:n.x,y:n.y})));
+ nodes.forEach((node,i)=>{if(i===0)points.push({x:node.x,y:node.y});else points.push(...curvedRoadEdge(nodes[i-1],node,resident));});
  if(destinationHome){
   const e=homeEntrance(destinationHome);
   // 帰宅時も家の正面に伸びた通路からまっすぐ玄関へ向かう。
@@ -1861,7 +1912,7 @@ function loop(t){
  }
  const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;
  if(!route&&Math.hypot(p.tx-p.x,p.ty-p.y)>2){recoverResidentFromFailedRoute(p,i);return}
- const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?18:2;if(d>waypointTolerance){
+ const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?(point.curve?3:6):2;if(d>waypointTolerance){
  const oldX=p.x,oldY=p.y;
  let step=Math.min(d,dt*42),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
  // 目標地点だけでなく、現在地からの移動線全体を検査して壁抜けを防ぐ。
