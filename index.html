@@ -834,6 +834,30 @@ function roadNodePath(start,goal,resident=null){
  ids.reverse();
  return ids.map(id=>graphNodes.find(n=>n.id===id)).filter(Boolean);
 }
+function compactRoutePoints(points,resident){
+ const compact=[];
+ points.forEach(point=>{
+  const previous=compact[compact.length-1];
+  if(!previous||Math.hypot(point.x-previous.x,point.y-previous.y)>1.5)compact.push(point);
+ });
+ // ほぼ一直線に並ぶ中間点だけを省き、道路の角はそのまま残す。
+ let changed=true;
+ while(changed&&compact.length>2){
+  changed=false;
+  for(let i=1;i<compact.length-1;i++){
+   const a=compact[i-1],b=compact[i],c=compact[i+1];
+   const abx=b.x-a.x,aby=b.y-a.y,acx=c.x-a.x,acy=c.y-a.y;
+   const length=Math.hypot(acx,acy);
+   if(length<1)continue;
+   const deviation=Math.abs(abx*acy-aby*acx)/length;
+   const forward=abx*acx+aby*acy;
+   if(deviation<=5&&forward>0&&movementSegmentClear(a.x,a.y,c.x,c.y,resident)){
+    compact.splice(i,1);changed=true;break;
+   }
+  }
+ }
+ return compact;
+}
 function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const ownHome=resident?homes[householdForResident(resident).homeId]:null;
  const startHome=ownHome&&(()=>{
@@ -874,7 +898,7 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
   points.push({x:goal.x,y:goal.y},{x:e.x,y:approachY},{x:e.x,y:e.y+25});
  }
  points.push({x:toX,y:toY});
- return points;
+ return compactRoutePoints(points,resident);
 }
 // 道路データと住人・住宅の初期化が完了してから保存済み経路を再構築する。
 chars.forEach(p=>{
