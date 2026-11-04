@@ -609,7 +609,7 @@ function updateResidentDiagnostics(){
   node.textContent='状態 '+(p.action||'?')+' / '+(p.phaseState||'?')+'・位置 '+p.x.toFixed(1)+','+p.y.toFixed(1)+' → 目的地 '+Math.round(p.tx)+','+Math.round(p.ty)+'・次地点 '+Math.round(point.x)+','+Math.round(point.y)+' ('+distance.toFixed(1)+'px)・経路 '+(route.length?index+1:0)+'/'+route.length+'・停滞 '+(Number(p.stuckTime)||0).toFixed(1)+'秒・次地点障害物 '+(blocked?'あり':'なし')+'・次区間障害物 '+(segmentBlocked?'あり':'なし')+'・現在地障害物 '+(currentBlocked?'あり':'なし');
  });
  const runtime=document.getElementById('runtimeDiagnostic');
- if(runtime)runtime.textContent='ゲーム稼働 '+(paused?'停止中':'動作中')+' / 最終フレーム '+(typeof last==='number'?last.toFixed(0):'不明')+' / 時刻 '+hour+':'+String(minute).padStart(2,'0');
+ if(runtime)runtime.textContent='ゲーム稼働 '+(paused?'停止中':'動作中')+' / 最終フレーム '+(typeof last==='number'?last.toFixed(0):'不明')+' / 時刻 '+hour+':'+String(minute).padStart(2,'0')+(lastFrameErrorCount?' / 更新エラー '+lastFrameErrorCount+'回: '+lastFrameError:'');
 }
 function openPlaceResidents(){
  const panel=document.getElementById('panel'),title=document.getElementById('panelTitle'),body=document.getElementById('panelBody');
@@ -1649,7 +1649,7 @@ function loop(t){try{let dt=Math.max(0,Math.min((t-last)/1000,.08));last=t;saveE
   if(t-lastFrameErrorAt>5000){lastFrameErrorAt=t;console.error('街の更新に失敗。次のフレームで再試行します。',error)}
  }finally{requestAnimationFrame(loop)}
 }requestAnimationFrame(loop);
-const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）';const night=hour>=20||hour<6;document.querySelector('.sun').textContent=weatherType==='rainy'?'☂':weatherType==='cloudy'?'☁':night?'☾':hour>=17?'🌇':'☀';{const subtitle=document.getElementById('placeSubtitle');if(subtitle)subtitle.textContent='春・'+weatherLabel()}}updateClock();setInterval(updateClock,500);
+const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）'+(lastFrameErrorCount?' ⚠':'');const night=hour>=20||hour<6;document.querySelector('.sun').textContent=weatherType==='rainy'?'☂':weatherType==='cloudy'?'☁':night?'☾':hour>=17?'🌇':'☀';{const subtitle=document.getElementById('placeSubtitle');if(subtitle)subtitle.textContent='春・'+weatherLabel()}}updateClock();setInterval(updateClock,500);
 function select(i){if(!chars[i])return;selected=i;if(!interiorHomeId){panX=450-chars[i].x;panY=720-chars[i].y}renderResidentStatus();drawWorld()};document.getElementById('residentStatus').addEventListener('click',e=>{
  const person=e.target.closest('.person');if(!person)return;
  const i=Number(person.dataset.index),p=chars[i];if(!p)return;
