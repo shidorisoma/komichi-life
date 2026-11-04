@@ -334,7 +334,7 @@ function streetFurnitureBlocksMovement(x,y,p){
  }
  // 街灯は描画上の支柱とランプ部分をまとめて障害物にする。
  const lamps=[{x:650,y:730},{x:310,y:520},{x:860,y:1000}];
- if(lamps.some(l=>x>=l.x-7&&x<=l.x+7&&y>=l.y-55&&y<=l.y+4))return true;
+ if(lamps.some(l=>x>=l.x-10&&x<=l.x+10&&y>=l.y-58&&y<=l.y+5))return true;
  // 案内板の支柱と板面は歩行者が通り抜けないようにする。
  if(pointInPolygon(x,y,[{x:420,y:450},{x:456,y:432},{x:456,y:475},{x:420,y:493}]))return true;
  return false;
