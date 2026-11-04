@@ -602,7 +602,8 @@ function updateResidentDiagnostics(){
   const distance=Math.hypot(point.x-p.x,point.y-p.y);
   const blocked=isBlockedByStructure(point.x,point.y,p);
   const currentBlocked=isBlockedByStructure(p.x,p.y,p);
-  node.textContent='状態 '+(p.action||'?')+' / '+(p.phaseState||'?')+'・位置 '+p.x.toFixed(1)+','+p.y.toFixed(1)+' → 目的地 '+Math.round(p.tx)+','+Math.round(p.ty)+'・次地点 '+Math.round(point.x)+','+Math.round(point.y)+' ('+distance.toFixed(1)+'px)・経路 '+(route.length?index+1:0)+'/'+route.length+'・停滞 '+(Number(p.stuckTime)||0).toFixed(1)+'秒・次地点障害物 '+(blocked?'あり':'なし')+'・現在地障害物 '+(currentBlocked?'あり':'なし');
+  const segmentBlocked=!movementSegmentClear(p.x,p.y,point.x,point.y,p);
+  node.textContent='状態 '+(p.action||'?')+' / '+(p.phaseState||'?')+'・位置 '+p.x.toFixed(1)+','+p.y.toFixed(1)+' → 目的地 '+Math.round(p.tx)+','+Math.round(p.ty)+'・次地点 '+Math.round(point.x)+','+Math.round(point.y)+' ('+distance.toFixed(1)+'px)・経路 '+(route.length?index+1:0)+'/'+route.length+'・停滞 '+(Number(p.stuckTime)||0).toFixed(1)+'秒・次地点障害物 '+(blocked?'あり':'なし')+'・次区間障害物 '+(segmentBlocked?'あり':'なし')+'・現在地障害物 '+(currentBlocked?'あり':'なし');
  });
  const runtime=document.getElementById('runtimeDiagnostic');
  if(runtime)runtime.textContent='ゲーム稼働 '+(paused?'停止中':'動作中')+' / 最終フレーム '+(typeof last==='number'?last.toFixed(0):'不明')+' / 時刻 '+hour+':'+String(minute).padStart(2,'0');
