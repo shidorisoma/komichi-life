@@ -732,8 +732,8 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // 住宅の南玄関から、同じ段の横道へ短く接続。
  homes&&Object.values(homes).forEach(home=>{
   const entrance=homeEntrance(home);if(!entrance)return;
-  const approachY=entrance.y+50;
-  // 玄関の真下へ短い縦道を伸ばし、家の前の横道へT字接続する。
+  const approachY=homeSouthRoadNode(home).y;
+  // 通路は横道とのT字接続点で止め、住宅の敷地へ突き出さない。
   ctx.beginPath();ctx.moveTo(entrance.x,entrance.y);ctx.lineTo(entrance.x,approachY);
   ctx.strokeStyle='#a98d68';ctx.lineWidth=38;ctx.stroke();
   ctx.strokeStyle='#ead5ad';ctx.lineWidth=26;ctx.stroke();
@@ -967,10 +967,9 @@ function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function homeSouthRoadNode(home){
  if(!home)return roadNodes[0];
  const row=home.y<520?'row1':home.y<700?'row2':'row3';
- const entrance=homeEntrance(home),roadY=entrance.y+(row==='row3'?50:27);
- // 上段・中段の住宅裏側は、ひとつ下の住宅の接地判定が道路へ張り出す。
- // 道路上のアクセス点を住宅同士の隙間へ寄せ、玄関からは斜めに接続する。
- const accessX=row==='row3'?entrance.x:(home.x<230?entrance.x+73:entrance.x-73);
+ const entrance=homeEntrance(home),roadY=row==='row1'?535:row==='row2'?705:898;
+ // Connect directly below the front door to the matching rendered horizontal road.
+ const accessX=entrance.x;
  const rowNodes={
   row1:[{id:'west-north',x:60},{id:'res-row1-center',x:250},{id:'res-row1-east',x:430}],
   row2:[{id:'west-mid',x:60},{id:'res-row2-center',x:250},{id:'res-row2-east',x:430}],
@@ -1075,13 +1074,13 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  }
  const points=[{x:fromX,y:fromY}];
  if(startHome){
-  // 住宅裏の道路へは、住宅同士の隙間に置いたアクセス点から接続する。
+  // 玄関から正面の横道へ、描画と一致する短い縦道を進む。
   points.push({x:fixedStart.x,y:fixedStart.y});
  }
  points.push(...nodes.map(n=>({x:n.x,y:n.y})));
  if(destinationHome){
   const e=homeEntrance(destinationHome);
-  // 帰宅時も道路上の安全なアクセス点から玄関へ直接斜めに接続する。
+  // 帰宅時も家の正面に伸びた通路からまっすぐ玄関へ向かう。
   points.push({x:goal.x,y:goal.y},{x:e.x,y:e.y+25});
  }
  points.push({x:toX,y:toY});
