@@ -856,10 +856,14 @@ function recordMemory(id,title,text,pairId=null){
 const roadNodes=[
  // 中央メインストリート
  {id:'main-north',x:470,y:170,links:['main-upper']},
- {id:'main-upper',x:505,y:350,links:['main-north','main-mid','cafe-entry']},
+ {id:'main-upper',x:505,y:350,links:['main-north','main-mid','cafe-entry','shop-approach-1']},
  {id:'main-mid',x:490,y:555,links:['main-upper','main-lower','res-row1-east']},
- {id:'shop-south-turn',x:505,y:490,links:['main-upper','shop-entry']},
- {id:'shop-entry',x:700,y:490,links:['shop-south-turn'],facility:true},
+ {id:'shop-south-turn',x:505,y:490,links:['main-upper']},
+ // 商店への曲線枝道に沿って中継ノードを置き、直線ショートカットを防ぐ。
+ {id:'shop-approach-1',x:508,y:395,links:['main-upper','shop-approach-2']},
+ {id:'shop-approach-2',x:529,y:441,links:['shop-approach-1','shop-approach-3']},
+ {id:'shop-approach-3',x:587,y:476,links:['shop-approach-2','shop-entry']},
+ {id:'shop-entry',x:700,y:490,links:['shop-approach-3'],facility:true},
  {id:'main-lower',x:465,y:790,links:['main-mid','main-plaza','res-row2-east']},
  {id:'main-plaza',x:445,y:1010,links:['main-lower','plaza-center','res-row3-east']},
  {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
