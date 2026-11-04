@@ -919,7 +919,8 @@ function roadNodePath(start,goal,resident=null){
    if(candidate<distance.get(next.id)){distance.set(next.id,candidate);previous.set(next.id,currentId)}
   });
  }
- if(!Number.isFinite(distance.get(goal.id)))return [start];
+ // 到達不能な場合は偽の「startだけの経路」を返さず、呼び出し側に失敗を伝える。
+ if(!Number.isFinite(distance.get(goal.id)))return [];
  const ids=[goal.id];let cursor=goal.id;
  while(cursor!==start.id){cursor=previous.get(cursor);if(!cursor)return [start];ids.push(cursor)}
  ids.reverse();
