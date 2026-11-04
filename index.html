@@ -236,29 +236,30 @@ function pairIdFor(a,b){const ids=[typeof a==='string'?a:a.id,typeof b==='string
 function residentById(id){return chars.find(p=>p.id===id)||null}
 // 屋外にいる住人だけを街の描画・物理判定・屋外での交流対象にする。
 function isOutdoorResident(p){return !!p&&p.action!=='workOutside'&&!((p.action==='home'||p.action==='sleep')&&p.phaseState==='staying')}
-function pointInHouseFootprint(home,x,y,w,h){
- // 壁の接地範囲は屋根幅より小さい。左右の通路を確保し、屋根の張り出しは塞がない。
- const wallW=w*.76,back=-h*.25,front=h*.40;
- const left=-wallW/2,right=wallW/2;
- const polygon=[
-  {x:home.x+left,y:home.y+back},
-  {x:home.x,y:home.y+back-14},
-  {x:home.x+right,y:home.y+back},
-  {x:home.x+right,y:home.y+front},
-  {x:home.x,y:home.y+front+18},
-  {x:home.x+left,y:home.y+front}
+// 住宅の外観寸法・壁の接地形状を一つの計算結果として共有する。
+function homeExteriorGeometry(home){
+ const sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
+ const [w,h]=sizes[home?.layoutKey]||[116,100];
+ const left=-w/2,right=w/2,front=h*.52,back=-h*.34,roofY=-h*.72;
+ const wallW=w*.76,collisionBack=-h*.25,collisionFront=h*.40;
+ const collisionLeft=-wallW/2,collisionRight=wallW/2;
+ const footprint=[
+  {x:home.x+collisionLeft,y:home.y+collisionBack},
+  {x:home.x,y:home.y+collisionBack-14},
+  {x:home.x+collisionRight,y:home.y+collisionBack},
+  {x:home.x+collisionRight,y:home.y+collisionFront},
+  {x:home.x,y:home.y+collisionFront+18},
+  {x:home.x+collisionLeft,y:home.y+collisionFront}
  ];
- let inside=false;
- for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
-  const a=polygon[i],b=polygon[j];
-  if(((a.y>y)!==(b.y>y))&&(x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x))inside=!inside;
- }
- return inside;
+ return {w,h,left,right,front,back,roofY,footprint};
+}
+function pointInHouseFootprint(home,x,y){
+ // 描画用の住宅データから生成した壁の接地形状を判定に使用する。
+ return pointInPolygon(x,y,homeExteriorGeometry(home).footprint);
 }
 function homeBlocksMovement(home,x,y,p){
  if(!home)return false;
- const sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
- const [w,h]=sizes[home.layoutKey]||[116,100];
+ const geometry=homeExteriorGeometry(home),{w,h}=geometry;
  const left=home.x-w/2-9,right=home.x+w/2+9,top=home.y-h*.34-24,bottom=home.y+h*.52+31;
  const entrance=homeEntrance(home),front=home.y+h*.52;
  const doorLane=Math.abs(x-entrance.x)<18&&y>=front-18&&y<=entrance.y+27;
@@ -270,7 +271,7 @@ function homeBlocksMovement(home,x,y,p){
  const candidateInsideOwnHome=exitingOwnHome&&x>=left&&x<=right&&y>=top&&y<=bottom;
  if(candidateInsideOwnHome)return false;
  // 建物の接地面だけを塞ぎ、裏側・屋根の張り出し部分は通行可能にする。
- if(!pointInHouseFootprint(home,x,y,w,h))return false;
+ if(!pointInHouseFootprint(home,x,y))return false;
  return !(doorLane&&(entering||nearDoor||exitingOwnHome));
 }
 function isBlockedByHome(x,y,p){
@@ -673,9 +674,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // 登録されている住居を、それぞれの所在地に描画
  function drawHouseExterior(home,index){
  const x=home.x,y=home.y;
- const sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
- const [w,h]=sizes[home.layoutKey]||[116,100];
- const left=-w/2,right=w/2,front=h*.52,back=-h*.34,roofY=-h*.72;
+ const {w,h,left,right,front,back,roofY}=homeExteriorGeometry(home);
  const wallLeft='#ead9bd',wallRight='#d7bd98',trim='#a98c69';
  const roofColors=['#8c6b55','#9a765c','#7e6655','#98765c'];
  const roof=roofColors[index%roofColors.length];
@@ -756,9 +755,8 @@ Object.values(homes).forEach((home,index)=>drawHouseExterior(home,index));
  // キャラクターと住宅の前後関係を2.5Dで描画する。
  // 住宅より奥側にいる住人は先に描き、住宅を重ねて手前の壁・屋根で隠す。
  const outdoorResidents=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
- const houseSizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
  const isBehindHouse=({p},home)=>{
-  const [w,h]=houseSizes[home.layoutKey]||[116,100];
+  const {w,h}=homeExteriorGeometry(home);
   const withinDepth=p.x>=home.x-w/2-20&&p.x<=home.x+w/2+20&&p.y>=home.y-h*.78-18&&p.y<home.y+h*.52;
   return withinDepth;
  };
