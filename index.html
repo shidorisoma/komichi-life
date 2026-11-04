@@ -322,7 +322,10 @@ const riverEdgeSamples=(()=>{
  return samples.sort((a,b)=>a.y-b.y);
 })();
 function riverEdgeX(y){
- if(y<180||y>1170)return Infinity;
+ if(y<180||y>1300)return Infinity;
+ // The painted river continues diagonally from (790,1170) to (1030,1300).
+ // Keep the southern tip collision aligned with that visible shoreline.
+ if(y>1170)return 790+(y-1170)*240/130;
  let lo=0,hi=riverEdgeSamples.length-1;
  while(hi-lo>1){const mid=(lo+hi)>>1;if(riverEdgeSamples[mid].y<y)lo=mid;else hi=mid}
  const a=riverEdgeSamples[lo],b=riverEdgeSamples[hi],t=(y-a.y)/Math.max(.001,b.y-a.y);
