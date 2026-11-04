@@ -486,7 +486,8 @@ const WORLD_NATURE_OBJECTS={
   {id:'tree-east-north',x:690,y:575,scale:1.15,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
   {id:'tree-east-middle',x:675,y:930,scale:.9,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
   {id:'tree-riverside',x:575,y:710,scale:.75,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
-  {id:'tree-southwest',x:360,y:1110,scale:.82,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}}
+  {id:'tree-southwest',x:360,y:1110,scale:.82,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
+  {id:'tree-plaza-center',x:430,y:1150,scale:.88,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}}
  ],
  flowerbeds:[
   {id:'flowerbed-east-north',soil:[[650,700],[700,670],[745,695],[695,725]],top:[[650,684],[700,654],[745,679],[695,709]]},
@@ -914,7 +915,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  ctx.save();ctx.beginPath();ctx.ellipse(430,1107,230,170,0,0,Math.PI*2);ctx.clip();
  ctx.fillStyle=townTexture('brick');ctx.fillRect(195,928,470,360);ctx.restore();
  ctx.strokeStyle='#f8e9cb';ctx.lineWidth=9;ctx.beginPath();ctx.ellipse(430,1107,235,176,0,0,Math.PI*2);ctx.stroke();
- ellipse(430,1112,60,31,'#9e8568');ellipse(430,1104,59,28,'#e9d8b8');ellipse(430,1102,51,21,'#84aa64');
+ ellipse(430,1160,66,35,'#9e8568');ellipse(430,1152,64,31,'#e9d8b8');ellipse(430,1148,55,22,'#84aa64');
  // 円形広場のレンガ目地
  ctx.save();ctx.strokeStyle='rgba(166,139,99,.38)';ctx.lineWidth=2;
  for(let ring=1;ring<=5;ring++){ctx.beginPath();ctx.ellipse(430,1100,ring*38,ring*27,0,0,Math.PI*2);ctx.stroke()}
@@ -996,8 +997,8 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // 木は屋外の住人と同じ奥行き順で描画する。
  for(let i=0;i<11;i++){let x=570+(i*47)%145,y=505+(i*83)%560;shrub(x,y,.30+(i%3)*.09)}
  // A planted square plaza centerpiece. It is decorative; walking routes remain unchanged.
- ellipse(430,1110,44,19,'#dbc8a1');
- townFlowerPatch(411,1092,.62,1);townFlowerPatch(446,1098,.62,0);
+ ellipse(430,1153,44,20,'#dbc8a1');
+ townFlowerPatch(403,1145,.65,1);townFlowerPatch(454,1150,.65,0);
  // Small riverside flower baskets, beside rather than across walking paths.
  townFlowerPatch(739,850,.6,2);townFlowerPatch(719,961,.56,1);
  // 河岸の小さな橋。橋デッキ・欄干・接続路を共有データから描画。
