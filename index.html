@@ -384,7 +384,7 @@ const WORLD_STREET_FURNITURE={
   {id:'cafe-bench-west',x:110,y:365,group:'cafe'},
   {id:'cafe-bench-center',x:175,y:365,group:'cafe'},
   {id:'cafe-bench-east',x:240,y:365,group:'cafe'},
-  {id:'plaza-bench',x:760,y:800},
+  {id:'plaza-bench',x:730,y:800},
   {id:'south-bench',x:360,y:1180}
  ],
  lamps:[
@@ -1300,8 +1300,8 @@ function walkSceneFor(p,spot){
 function availableBenchSeats(i){
  const benches=WORLD_STREET_FURNITURE.benches.filter(item=>item.group!=='cafe');
  const seats=benches.flatMap((bench,index)=>[
-  {bench:index,slot:0,x:bench.x+(index===0?-25:-20),y:bench.y+35},
-  {bench:index,slot:1,x:bench.x+(index===0?0:20),y:bench.y+35}
+  {bench:index,slot:0,x:bench.x-17,y:bench.y-10},
+  {bench:index,slot:1,x:bench.x+17,y:bench.y-10}
  ]);
  const occupied=new Set(chars.filter((q,j)=>j!==i&&q.action==='bench'&&q.benchSeat).map(q=>q.benchSeat.bench+':'+q.benchSeat.slot));
  const free=seats.filter(seat=>!occupied.has(seat.bench+':'+seat.slot));
