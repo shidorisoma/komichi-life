@@ -684,9 +684,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  ctx.restore();
   // 小さな石畳
  ctx.save();ctx.globalAlpha=.28;ctx.strokeStyle='#aa946e';ctx.lineWidth=1;for(let y=330;y<1350;y+=38){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(770,y-100);ctx.stroke()}for(let x=10;x<760;x+=48){ctx.beginPath();ctx.moveTo(x,300);ctx.lineTo(x+180,1320);ctx.stroke()}ctx.restore();
- // カフェと住宅
- drawCafe(WORLD_BUILDINGS.cafe.x,WORLD_BUILDINGS.cafe.y);
- drawShop(WORLD_BUILDINGS.shop.x,WORLD_BUILDINGS.shop.y);
+ // カフェと商店は住人と同じ奥行き順で描画する。
  // 登録されている住居を、それぞれの所在地に描画
  function drawHouseExterior(home,index){
  const x=home.x,y=home.y;
@@ -765,6 +763,10 @@ Object.values(homes).forEach((home,index)=>drawHouseExterior(home,index));
  });
  // 奥から手前へ描く。住宅で隠れる住人は従来の独立処理を維持する。
  const depthItems=[
+  // Facility fronts are roughly 30px below their anchor point. Residents behind
+  // the storefront should disappear behind it; residents at the door stay visible.
+  {y:WORLD_BUILDINGS.cafe.y+23,draw:()=>drawCafe(WORLD_BUILDINGS.cafe.x,WORLD_BUILDINGS.cafe.y)},
+  {y:WORLD_BUILDINGS.shop.y+20,draw:()=>drawShop(WORLD_BUILDINGS.shop.x,WORLD_BUILDINGS.shop.y)},
   ...WORLD_NATURE_OBJECTS.trees.map(item=>({y:item.y,draw:()=>tree(item.x,item.y,item.scale)})),
   ...WORLD_STREET_FURNITURE.benches.map(item=>({y:item.y,draw:()=>bench(item.x,item.y)})),
   ...WORLD_STREET_FURNITURE.lamps.map(item=>({y:item.y,draw:()=>lamp(item.x,item.y)})),
