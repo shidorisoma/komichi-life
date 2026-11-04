@@ -682,7 +682,19 @@ function poly(points,fill,stroke='#9e8b6c',lw=1){ctx.beginPath();points.forEach(
 function ellipse(x,y,rx,ry,fill){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill()}
 function flower(x,y,s=1){const colors=['#fff7dd','#f4a6a0','#f4cf59','#e9d9f3'];for(let j=0;j<5;j++){let a=j*Math.PI*2/5;ellipse(x+Math.cos(a)*3*s,y+Math.sin(a)*3*s,2.5*s,3*s,colors[(Math.floor(x+y)+j)%colors.length])}ellipse(x,y,2*s,2*s,'#d9a947')}
 function shrub(x,y,s=1){ellipse(x,y+5*s,23*s,10*s,'#8d7951');for(let i=0;i<13;i++){let a=i*2.4,r=(i%4)*5*s;ellipse(x+Math.cos(a)*r,y+Math.sin(a)*r,9*s,8*s,['#63834e','#789955','#91ad5c','#547b4c'][i%4])}for(let i=0;i<6;i++)flower(x+Math.sin(i*8)*13*s,y+Math.cos(i*5)*8*s,.7*s)}
-function bench(x,y){ctx.save();ctx.translate(x,y);poly([[-27,-7],[27,-7],[24,1],[-30,1]],'#a87948');poly([[-27,-17],[27,-17],[27,-9],[-27,-9]],'#c4935b');ctx.fillStyle='#5e5545';ctx.fillRect(-21,0,4,12);ctx.fillRect(18,0,4,12);ctx.restore()}
+// Draw the backrest behind seated residents and the front rail/legs in front.
+function bench(x,y,layer='all'){
+ ctx.save();ctx.translate(x,y);
+ if(layer!=='front'){
+  poly([[-27,-7],[27,-7],[24,1],[-30,1]],'#a87948');
+  poly([[-27,-17],[27,-17],[27,-9],[-27,-9]],'#c4935b');
+ }
+ if(layer!=='back'){
+  ctx.fillStyle='#5e5545';ctx.fillRect(-21,0,4,12);ctx.fillRect(18,0,4,12);
+  poly([[-30,-1],[24,-1],[24,3],[-30,3]],'#9e7044',null);
+ }
+ ctx.restore();
+}
 function lamp(x,y){ctx.strokeStyle='#4e554b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-49);ctx.stroke();ctx.fillStyle='#333e38';ctx.fillRect(x-8,y-53,16,18);ellipse(x,y-53,9,5,'#f4df9a');ellipse(x,y-53,4,3,'#fff4c8')}
 function drawShop(x,y){ctx.save();ctx.translate(x,y);poly([[-57,-20],[0,-48],[58,-20],[0,8]],'#b88b5c','#806044',2);poly([[-57,-20],[-57,28],[0,55],[0,8]],'#ead9bd','#8c7051',2);poly([[0,8],[58,-20],[58,28],[0,55]],'#d9c09b','#8c7051',2);poly([[-64,-25],[0,-57],[65,-25],[0,10]],'#7e6652','#594b3c',2);poly([[-47,-20],[-47,-8],[47,-8],[47,-20]],'#d8b477','#806044',1);ctx.fillStyle='#5e4937';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText('こみち商店',0,-26);ctx.fillStyle='#6a503b';ctx.fillRect(20,13,17,34);ctx.fillStyle='#b9d0c2';ctx.fillRect(-36,1,20,19);ctx.strokeStyle='#8c704f';ctx.lineWidth=2;ctx.strokeRect(-36,1,20,19);ctx.restore()}
 function drawCafe(x,y){poly([[x-105,y-28],[x-20,y-70],[x+85,y-28],[x,y+18]],'#b78c60','#8c6c4c',2);poly([[x-105,y-28],[x-20,y-70],[x-20,y-8],[x-105,y+33]],'#e9d6b5');poly([[x-20,y-70],[x+85,y-28],[x+85,y+30],[x-20,y-8]],'#f4e4c7');poly([[x-110,y-33],[x-20,y-80],[x+93,y-36],[x-10,y+11]],'#9a7550','#75593e',2);poly([[x-75,y-33],[x-20,y-58],[x+38,y-34],[x-20,y-8]],'#d8a66f');ctx.fillStyle='#6b5846';ctx.fillRect(x+20,y-2,28,31);ctx.fillStyle='#b9d0c2';ctx.fillRect(x+25,y+2,18,20);ctx.fillStyle='#4e4639';ctx.font='bold 13px sans-serif';ctx.fillText('CAFE',x-5,y-25);/* カフェ前のベンチも住人との奥行き順で描く */}
@@ -811,7 +823,8 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   {y:WORLD_BUILDINGS.cafe.y+23,draw:()=>drawCafe(WORLD_BUILDINGS.cafe.x,WORLD_BUILDINGS.cafe.y)},
   {y:WORLD_BUILDINGS.shop.y+20,draw:()=>drawShop(WORLD_BUILDINGS.shop.x,WORLD_BUILDINGS.shop.y)},
   ...WORLD_NATURE_OBJECTS.trees.map(item=>({y:item.y,draw:()=>tree(item.x,item.y,item.scale)})),
-  ...WORLD_STREET_FURNITURE.benches.map(item=>({y:item.y,draw:()=>bench(item.x,item.y)})),
+  ...WORLD_STREET_FURNITURE.benches.map(item=>({y:item.y-8,draw:()=>bench(item.x,item.y,'back')})),
+   ...WORLD_STREET_FURNITURE.benches.map(item=>({y:item.y+16,draw:()=>bench(item.x,item.y,'front')})),
   ...WORLD_STREET_FURNITURE.lamps.map(item=>({y:item.y,draw:()=>lamp(item.x,item.y)})),
   ...outdoorResidents.map(({p,i})=>({y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:0),draw:()=>drawChar(p,i)}))
  ];
