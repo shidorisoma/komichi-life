@@ -1010,8 +1010,9 @@ function curvedRoadEdge(a,b,resident){
  let maxDeviation=0;const samples=[];
  for(let i=1;i<count;i++){
   const fraction=i/count,center=roadCurvePosition(cubic,ta+(tb-ta)*fraction);
-  const p={x:center.x+(a.x-ca.x)*(1-fraction)+(b.x-cb.x)*fraction,
-   y:center.y+(a.y-ca.y)*(1-fraction)+(b.y-cb.y)*fraction,curve:true};
+  // Fade node offsets quickly so walkers return to the painted centerline between junctions.
+  const p={x:center.x+(a.x-ca.x)*(1-fraction)**3+(b.x-cb.x)*fraction**3,
+   y:center.y+(a.y-ca.y)*(1-fraction)**3+(b.y-cb.y)*fraction**3,curve:true};
   const dx=b.x-a.x,dy=b.y-a.y;
   maxDeviation=Math.max(maxDeviation,Math.abs(dx*(p.y-a.y)-dy*(p.x-a.x))/Math.max(1,Math.hypot(dx,dy)));
   samples.push(p);
