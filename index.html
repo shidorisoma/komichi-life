@@ -796,8 +796,10 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // 河岸の小さな橋。橋デッキ・欄干・接続路を共有データから描画。
  const bridgeData=WORLD_ROAD_NETWORK.bridge;
  poly(bridgeData.base,'#8b704f');poly(bridgeData.deck,'#c49a68');
+ // The far-side rail belongs behind pedestrians; the near rail is drawn in depth order.
  ctx.strokeStyle=bridgeData.railColor;ctx.lineWidth=bridgeData.railWidth;ctx.beginPath();
- bridgeData.rails.forEach(([a,b])=>{ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1])});ctx.stroke();
+ const farRail=bridgeData.rails[0];
+ ctx.moveTo(farRail[0][0],farRail[0][1]);ctx.lineTo(farRail[1][0],farRail[1][1]);ctx.stroke();
  // 広場から橋の陸側入口へまっすぐ接続。ベンチへは短い枝道で分岐。
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
  bridgeData.approaches.forEach(path=>{
@@ -806,9 +808,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   ctx.strokeStyle=roadStyle.surface;ctx.lineWidth=path.surfaceWidth;ctx.stroke();
  });
  ctx.restore();
- // ベンチ、街灯、案内板
- // ベンチ・街灯は後段で奥行き順に描画する。
- poly(WORLD_STREET_FURNITURE.sign.polygon,'#8a6d4b');ctx.fillStyle='#fff3d4';ctx.font='bold 11px sans-serif';ctx.fillText('こみち',419,460);
+ // 案内板も住人やベンチと同じ奥行き順で描く。
  // キャラクターと建物を共通の奥行き順で描画する。
  // 建物の正面の接地位置が、前後の切り替え基準になる。
  const outdoorResidents=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
@@ -823,6 +823,15 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   {y:WORLD_BUILDINGS.cafe.y+23,draw:()=>drawCafe(WORLD_BUILDINGS.cafe.x,WORLD_BUILDINGS.cafe.y)},
   {y:WORLD_BUILDINGS.shop.y+20,draw:()=>drawShop(WORLD_BUILDINGS.shop.x,WORLD_BUILDINGS.shop.y)},
   ...WORLD_NATURE_OBJECTS.trees.map(item=>({y:item.y,draw:()=>tree(item.x,item.y,item.scale)})),
+  {y:Math.max(...WORLD_STREET_FURNITURE.sign.polygon.map(p=>p[1])),draw:()=>{
+   poly(WORLD_STREET_FURNITURE.sign.polygon,'#8a6d4b');
+   ctx.fillStyle='#fff3d4';ctx.font='bold 11px sans-serif';ctx.fillText('こみち',419,460);
+  }},
+  {y:Math.max(...bridgeData.deck.map(p=>p[1]))+15,draw:()=>{
+   const nearRail=bridgeData.rails[1];
+   ctx.strokeStyle=bridgeData.railColor;ctx.lineWidth=bridgeData.railWidth;ctx.beginPath();
+   ctx.moveTo(nearRail[0][0],nearRail[0][1]);ctx.lineTo(nearRail[1][0],nearRail[1][1]);ctx.stroke();
+  }},
   ...WORLD_STREET_FURNITURE.benches.map(item=>({y:item.y-8,draw:()=>bench(item.x,item.y,'back')})),
    ...WORLD_STREET_FURNITURE.benches.map(item=>({y:item.y+16,draw:()=>bench(item.x,item.y,'front')})),
   ...WORLD_STREET_FURNITURE.lamps.map(item=>({y:item.y,draw:()=>lamp(item.x,item.y)})),
