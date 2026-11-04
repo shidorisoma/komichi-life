@@ -590,7 +590,7 @@ function shrub(x,y,s=1){ellipse(x,y+5*s,23*s,10*s,'#8d7951');for(let i=0;i<13;i+
 function bench(x,y){ctx.save();ctx.translate(x,y);poly([[-27,-7],[27,-7],[24,1],[-30,1]],'#a87948');poly([[-27,-17],[27,-17],[27,-9],[-27,-9]],'#c4935b');ctx.fillStyle='#5e5545';ctx.fillRect(-21,0,4,12);ctx.fillRect(18,0,4,12);ctx.restore()}
 function lamp(x,y){ctx.strokeStyle='#4e554b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-49);ctx.stroke();ctx.fillStyle='#333e38';ctx.fillRect(x-8,y-53,16,18);ellipse(x,y-53,9,5,'#f4df9a');ellipse(x,y-53,4,3,'#fff4c8')}
 function drawShop(x,y){ctx.save();ctx.translate(x,y);poly([[-57,-20],[0,-48],[58,-20],[0,8]],'#b88b5c','#806044',2);poly([[-57,-20],[-57,28],[0,55],[0,8]],'#ead9bd','#8c7051',2);poly([[0,8],[58,-20],[58,28],[0,55]],'#d9c09b','#8c7051',2);poly([[-64,-25],[0,-57],[65,-25],[0,10]],'#7e6652','#594b3c',2);poly([[-47,-20],[-47,-8],[47,-8],[47,-20]],'#d8b477','#806044',1);ctx.fillStyle='#5e4937';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText('こみち商店',0,-26);ctx.fillStyle='#6a503b';ctx.fillRect(20,13,17,34);ctx.fillStyle='#b9d0c2';ctx.fillRect(-36,1,20,19);ctx.strokeStyle='#8c704f';ctx.lineWidth=2;ctx.strokeRect(-36,1,20,19);ctx.restore()}
-function drawCafe(x,y){poly([[x-105,y-28],[x-20,y-70],[x+85,y-28],[x,y+18]],'#b78c60','#8c6c4c',2);poly([[x-105,y-28],[x-20,y-70],[x-20,y-8],[x-105,y+33]],'#e9d6b5');poly([[x-20,y-70],[x+85,y-28],[x+85,y+30],[x-20,y-8]],'#f4e4c7');poly([[x-110,y-33],[x-20,y-80],[x+93,y-36],[x-10,y+11]],'#9a7550','#75593e',2);poly([[x-75,y-33],[x-20,y-58],[x+38,y-34],[x-20,y-8]],'#d8a66f');ctx.fillStyle='#6b5846';ctx.fillRect(x+20,y-2,28,31);ctx.fillStyle='#b9d0c2';ctx.fillRect(x+25,y+2,18,20);ctx.fillStyle='#4e4639';ctx.font='bold 13px sans-serif';ctx.fillText('CAFE',x-5,y-25);/* カフェ前のベンチは住宅玄関から離した小さなテラスに配置 */bench(x-130,y+75);bench(x-65,y+75);bench(x,y+75)}
+function drawCafe(x,y){poly([[x-105,y-28],[x-20,y-70],[x+85,y-28],[x,y+18]],'#b78c60','#8c6c4c',2);poly([[x-105,y-28],[x-20,y-70],[x-20,y-8],[x-105,y+33]],'#e9d6b5');poly([[x-20,y-70],[x+85,y-28],[x+85,y+30],[x-20,y-8]],'#f4e4c7');poly([[x-110,y-33],[x-20,y-80],[x+93,y-36],[x-10,y+11]],'#9a7550','#75593e',2);poly([[x-75,y-33],[x-20,y-58],[x+38,y-34],[x-20,y-8]],'#d8a66f');ctx.fillStyle='#6b5846';ctx.fillRect(x+20,y-2,28,31);ctx.fillStyle='#b9d0c2';ctx.fillRect(x+25,y+2,18,20);ctx.fillStyle='#4e4639';ctx.font='bold 13px sans-serif';ctx.fillText('CAFE',x-5,y-25);/* カフェ前のベンチは共有配置データから描画 */for(const benchData of WORLD_STREET_FURNITURE.benches.filter(item=>item.group==='cafe'))bench(benchData.x,benchData.y)}
 function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(interiorHomeId);return}ctx.save();const fit=Math.min(W/900,H/1400)*1.04;ctx.translate(W/2,H/2);ctx.scale(fit*zoom,fit*zoom);ctx.translate(-450+panX,-720+panY);
  // 草地の地面
  let g=ctx.createLinearGradient(0,0,900,1400);g.addColorStop(0,'#9eaf78');g.addColorStop(.48,'#b8bd83');g.addColorStop(1,'#8fa879');ctx.fillStyle=g;ctx.fillRect(-200,-200,1300,1800);
@@ -719,8 +719,9 @@ Object.values(homes).forEach((home,index)=>drawHouseExterior(home,index));
  ctx.strokeStyle='#a98d68';ctx.lineWidth=30;ctx.stroke();ctx.strokeStyle='#ead5ad';ctx.lineWidth=20;ctx.stroke();
  ctx.restore();
  // ベンチ、街灯、案内板
- bench(760,800);bench(360,1180);lamp(650,730);lamp(310,520);lamp(860,1000);
- poly([[420,450],[456,432],[456,475],[420,493]],'#8a6d4b');ctx.fillStyle='#fff3d4';ctx.font='bold 11px sans-serif';ctx.fillText('こみち',419,460);
+ for(const benchData of WORLD_STREET_FURNITURE.benches.filter(item=>item.group!=='cafe'))bench(benchData.x,benchData.y);
+ for(const lampData of WORLD_STREET_FURNITURE.lamps)lamp(lampData.x,lampData.y);
+ poly(WORLD_STREET_FURNITURE.sign.polygon,'#8a6d4b');ctx.fillStyle='#fff3d4';ctx.font='bold 11px sans-serif';ctx.fillText('こみち',419,460);
  // 時刻に合わせた街の明るさ
  const nightFactor=hour>=22||hour<5?1:hour>=20?((hour-20)/2):hour>=5&&hour<7?((7-hour)/2):hour>=18?((hour-18)/2):0;
  if(nightFactor>0){
