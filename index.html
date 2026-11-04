@@ -399,6 +399,10 @@ const WORLD_NATURE_OBJECTS={
   {id:'tree-east-middle',x:675,y:930,scale:.9},
   {id:'tree-riverside',x:575,y:710,scale:.75},
   {id:'tree-southwest',x:360,y:1110,scale:.82}
+ ],
+ flowerbeds:[
+  {id:'flowerbed-east-north',soil:[[650,700],[700,670],[745,695],[695,725]],top:[[650,684],[700,654],[745,679],[695,709]]},
+  {id:'flowerbed-east-south',soil:[[625,1080],[675,1050],[720,1075],[670,1105]],top:[[625,1064],[675,1034],[720,1059],[670,1089]]}
  ]
 };
 function natureBlocksMovement(x,y,p){
@@ -413,11 +417,7 @@ function natureBlocksMovement(x,y,p){
  // 低い植え込みは景観用の地被として扱い、歩行を妨げない。
  // 木の幹と花壇のみを通行障害物にする。
  // 描画されている花壇の外周ポリゴンと同じ形で判定し、周囲に透明な四角形を作らない。
- const beds=[
-  [{x:650,y:684},{x:700,y:654},{x:745,y:679},{x:695,y:709}],
-  [{x:625,y:1064},{x:675,y:1034},{x:720,y:1059},{x:670,y:1089}]
- ];
- if(beds.some(polygon=>pointInPolygon(x,y,polygon)))return true;
+ if(WORLD_NATURE_OBJECTS.flowerbeds.some(bed=>pointInPolygon(x,y,bed.top.map(([px,py])=>({x:px,y:py})))))return true;
  return false;
 }
 
@@ -682,8 +682,11 @@ Object.values(homes).forEach((home,index)=>drawHouseExterior(home,index));
 
  // 西側住宅地の花壇は一旦撤去し、住宅と道路の見通しを優先。
  // 東側は川辺の公園。花壇、木陰、散歩道を集約する。
- poly([[650,700],[700,670],[745,695],[695,725]],'#a88a62');poly([[650,684],[700,654],[745,679],[695,709]],'#dfc59b');for(let i=0;i<16;i++)flower(663+(i*15)%70,670+(i*9)%30,.85);
- poly([[625,1080],[675,1050],[720,1075],[670,1105]],'#a88a62');poly([[625,1064],[675,1034],[720,1059],[670,1089]],'#dfc59b');for(let i=0;i<13;i++)flower(638+(i*15)%70,1050+(i*9)%30,.8);
+ for(const bed of WORLD_NATURE_OBJECTS.flowerbeds){
+  poly(bed.soil,'#a88a62');poly(bed.top,'#dfc59b');
+ }
+ for(let i=0;i<16;i++)flower(663+(i*15)%70,670+(i*9)%30,.85);
+ for(let i=0;i<13;i++)flower(638+(i*15)%70,1050+(i*9)%30,.8);
  function tree(x,y,r=1){ellipse(x,y+20*r,34*r,12*r,'#82714e');ctx.fillStyle='#735d43';ctx.fillRect(x-5*r,y-18*r,10*r,42*r);for(let i=0;i<18;i++){let q=i*2.4;ellipse(x+Math.cos(q)*(i%5)*8*r,y-34*r+Math.sin(q)*(i%4)*8*r,15*r,14*r,['#63884c','#7fa451','#91ae5b'][i%3])}for(let i=0;i<5;i++)flower(x-18*r+(i*17*r),y-40*r+(i%2)*13*r,.7*r)}
  for(const treeData of WORLD_NATURE_OBJECTS.trees)tree(treeData.x,treeData.y,treeData.scale);
  for(let i=0;i<15;i++){let x=560+(i*47)%170,y=430+(i*83)%620;shrub(x,y,.38+(i%3)*.1)}
