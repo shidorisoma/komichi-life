@@ -1453,7 +1453,8 @@ function tickLife(){
 function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){elapsed+=dt;if(elapsed>1){elapsed=0;minute++;if(minute>=60){minute=0;hour++;if(hour>=24){hour=0;day=day%7+1;calendarDay++;updateWeather();addDiary(day===7?'新しい週が始まった。日曜日。':'新しい一日が始まった。')}}tickLife()}chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?18:2;if(d>waypointTolerance){
  const oldX=p.x,oldY=p.y;
  let step=Math.min(d,dt*42),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
- if(!isBlockedByStructure(nx,ny,p)){p.x=nx;p.y=ny}
+ // 目標地点だけでなく、現在地からの移動線全体を検査して壁抜けを防ぐ。
+ if(movementSegmentClear(p.x,p.y,nx,ny,p)){p.x=nx;p.y=ny}
  else{
   const detour=route&&!point.detourTried&&!point.isDetour&&route.length<40?findMovementDetour(p,point):null;
   if(detour){
@@ -1461,7 +1462,7 @@ function loop(t){let dt=Math.min((t-last)/1000,.08);last=t;saveElapsed+=dt;if(sa
    route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);
    p.routePoints=route;
   }else{
-   const canX=!isBlockedByStructure(nx,p.y,p),canY=!isBlockedByStructure(p.x,ny,p);
+   const canX=movementSegmentClear(p.x,p.y,nx,p.y,p),canY=movementSegmentClear(p.x,p.y,p.x,ny,p);
    if(canX&&canY){if(Math.abs(mx)>=Math.abs(my))p.x=nx;else p.y=ny}
    else if(canX)p.x=nx;
    else if(canY)p.y=ny;
