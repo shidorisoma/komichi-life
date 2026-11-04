@@ -811,9 +811,15 @@ function homeSouthRoadNode(home){
  if(!home)return roadNodes[0];
  const row=home.y<520?'row1':home.y<700?'row2':'row3';
  const entrance=homeEntrance(home),roadY=entrance.y+50;
- // 玄関直下の縦道の先端そのものを道路グラフの分岐点にする。
- // 左右の既存道路ノードへ接続するため、どちら向きにも最短で出られる。
- const links=['west-'+(row==='row1'?'north':row==='row2'?'mid':'south'),'res-'+row+'-center','res-'+row+'-east'];
+ // 玄関前の縦道は、同じ高さにある横道の左右隣接ノードだけへ接続する。
+ // 遠いノードへ斜めにショートカットして、道のない芝生を横切る経路を防ぐ。
+ const rowNodes={
+  row1:[{id:'west-north',x:90},{id:'res-row1-center',x:250},{id:'res-row1-east',x:430}],
+  row2:[{id:'west-mid',x:90},{id:'res-row2-center',x:250},{id:'res-row2-east',x:430}],
+  row3:[{id:'west-south',x:90},{id:'res-row3-center',x:250},{id:'res-row3-east',x:430}]
+ }[row];
+ const rightIndex=Math.max(1,Math.min(rowNodes.length-1,rowNodes.findIndex(node=>node.x>=entrance.x)));
+ const links=[rowNodes[rightIndex-1].id,rowNodes[rightIndex].id];
  return {id:'home-access-'+home.id,x:entrance.x,y:roadY,links};
 }
 function roadNodePath(start,goal,resident=null){
