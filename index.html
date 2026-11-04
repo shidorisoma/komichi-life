@@ -877,7 +877,10 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const candidates=(x,y,p)=>{
   const visible=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p)&&movementSegmentClear(x,y,n.x,n.y,p))
    .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y)).slice(0,7);
-  return visible.length?visible:[nearest(x,y)];
+  // 直線で届く道路がない場合も、塞がれていない近隣ノードを複数残して迂回経路を比較する。
+  if(visible.length)return visible;
+  return roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p))
+   .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y)).slice(0,7);
  };
  const starts=fixedStart?[fixedStart]:candidates(fromX,fromY,resident);
  const goals=fixedGoal?[fixedGoal]:candidates(toX,toY,resident);
