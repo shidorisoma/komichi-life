@@ -1399,10 +1399,30 @@ function relationshipPriority(r){
 }
 function isSleeping(p){return p.action==='sleep'&&(p.phaseState==='moving'||p.phaseState==='staying')}
 function isSocialBusy(p){return p.action==='social'&&(p.phaseState==='moving'||p.phaseState==='staying')}
+// Select two nearby, walkable rendezvous points before scheduling either resident.
+function findSocialMeetingPoints(a,b){
+ const centerX=(a.x+b.x)/2,centerY=(a.y+b.y)/2;
+ // Prefer the actual midpoint; search nearby land if it overlaps a wall, river or furniture.
+ for(const radius of [0,24,48,72,104,144,192]){
+  for(let step=0;step<(radius===0?1:12);step++){
+   const turn=radius===0?0:step*Math.PI/6;
+   const cx=Math.max(55,Math.min(845,centerX+Math.cos(turn)*radius));
+   const cy=Math.max(55,Math.min(1345,centerY+Math.sin(turn)*radius));
+   for(let direction=0;direction<8;direction++){
+    const angle=direction*Math.PI/4;
+    const dx=Math.cos(angle)*24,dy=Math.sin(angle)*24;
+    const first={x:cx+dx,y:cy+dy},second={x:cx-dx,y:cy-dy};
+    if(isBlockedByStructure(first.x,first.y,a)||isBlockedByStructure(second.x,second.y,b))continue;
+    if(!movementSegmentClear(first.x,first.y,second.x,second.y,a))continue;
+    return {first,second};
+   }
+  }
+ }
+ return null;
+}
 function startSocialVisit(a,b,r,initiator){
- const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
- const angle=Math.random()*Math.PI*2,dist=24;
- const ax=ySafe(my+Math.sin(angle)*dist),by=ySafe(my-Math.sin(angle)*dist);
+ const meeting=findSocialMeetingPoints(a,b);
+ if(!meeting)return false;
  const sharedHome=!!(a.homeId&&a.homeId===b.homeId);
  const duration=sharedHome?26+Math.random()*12:18+Math.random()*10;
  const hobbiesA=hobbyChoicesFor(a),hobbiesB=hobbyChoicesFor(b);
@@ -1440,9 +1460,9 @@ function startSocialVisit(a,b,r,initiator){
  const weatherPrefix=weatherType==='rainy'?'雨音を聞きながら、':weatherType==='sunny'?'日差しの差し込む場所で、':weatherType==='cloudy'?'涼しい風を感じながら、':'';
  const weatherDiary=weatherType==='rainy'?'雨音の聞こえる中で':weatherType==='sunny'?'日差しの中で':weatherType==='cloudy'?'涼しい風の中で':'';
  const stayText=weatherPrefix+scene.text;
- setAction(a,chars.indexOf(a),'social',Math.max(90,Math.min(810,mx+Math.cos(angle)*dist)),ax,
+ setAction(a,chars.indexOf(a),'social',meeting.first.x,meeting.first.y,
   b.name+'のところへ向かっている',stayText,'stand',duration);
- setAction(b,chars.indexOf(b),'social',Math.max(90,Math.min(810,mx-Math.cos(angle)*dist)),by,
+ setAction(b,chars.indexOf(b),'social',meeting.second.x,meeting.second.y,
   a.name+'のところへ向かっている',stayText,'stand',duration);
  a.socialPartnerId=b.id;b.socialPartnerId=a.id;
  const stamp=day*1440+hour*60+minute;
@@ -1457,6 +1477,7 @@ function startSocialVisit(a,b,r,initiator){
   const memoryId='shared_hobby_'+encodeURIComponent(r.id)+'_'+encodeURIComponent(sharedHobby.kind);
   recordMemory(memoryId,'趣味がつないだ時間',a.name+'と'+b.name+'は、共通の趣味「'+sharedHobby.name+'」の話をしながら過ごした。'+scene.diary+'。',r.id);
  }
+ return true;
 }
 function scheduleSocialVisits(nowStamp){
  if(sharedGoal||chars.length<2||nowStamp%30!==0)return;
