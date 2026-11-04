@@ -277,12 +277,21 @@ function isBlockedByHome(x,y,p){
  return Object.values(homes||{}).some(home=>homeBlocksMovement(home,x,y,p));
 }
 function facilityBlocksMovement(x,y,p){
+ // 建物の屋根全体を四角く塞がず、実際に見えている壁面の接地形状で判定する。
+ const cafeFootprint=[
+  {x:135,y:262},{x:220,y:220},{x:325,y:262},
+  {x:325,y:320},{x:220,y:282},{x:135,y:323}
+ ];
+ const shopFootprint=[
+  {x:563,y:370},{x:620,y:342},{x:678,y:370},
+  {x:678,y:418},{x:620,y:445},{x:563,y:418}
+ ];
  const cafeDoor=Math.abs(x-270)<19&&y>=286&&y<=344;
  const shopDoor=Math.abs(x-649)<20&&y>=410&&y<=440;
  const atCafeTarget=p.action==='cafe'&&Math.hypot(x-p.tx,y-p.ty)<28;
  const atShopTarget=p.shoppingTrip&&Math.hypot(x-p.tx,y-p.ty)<28;
- if(x>=126&&x<=338&&y>=202&&y<=317&&!cafeDoor&&!atCafeTarget)return true;
- if(x>=548&&x<=692&&y>=329&&y<=444&&!shopDoor&&!atShopTarget)return true;
+ if(pointInPolygon(x,y,cafeFootprint)&&!cafeDoor&&!atCafeTarget)return true;
+ if(pointInPolygon(x,y,shopFootprint)&&!shopDoor&&!atShopTarget)return true;
  return false;
 }
 // 川の岸線を描画と同じベジェ曲線からサンプリングし、水面への侵入を防ぐ。
