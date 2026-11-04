@@ -395,10 +395,10 @@ function findMovementDetour(p,point){
 // Static nature layout is the single source for tree placement and trunk collision.
 const WORLD_NATURE_OBJECTS={
  trees:[
-  {id:'tree-east-north',x:690,y:575,scale:1.15},
-  {id:'tree-east-middle',x:675,y:930,scale:.9},
-  {id:'tree-riverside',x:575,y:710,scale:.75},
-  {id:'tree-southwest',x:360,y:1110,scale:.82}
+  {id:'tree-east-north',x:690,y:575,scale:1.15,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
+  {id:'tree-east-middle',x:675,y:930,scale:.9,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
+  {id:'tree-riverside',x:575,y:710,scale:.75,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
+  {id:'tree-southwest',x:360,y:1110,scale:.82,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}}
  ],
  flowerbeds:[
   {id:'flowerbed-east-north',soil:[[650,700],[700,670],[745,695],[695,725]],top:[[650,684],[700,654],[745,679],[695,709]]},
@@ -410,8 +410,10 @@ function natureBlocksMovement(x,y,p){
  // 幹の幅・高さは drawWorld 内の tree() と同じ倍率で算出する。
  const trees=WORLD_NATURE_OBJECTS.trees;
  for(const tree of trees){
-  const halfWidth=5*tree.scale+3;
-  const top=tree.y-18*tree.scale-3,bottom=tree.y+24*tree.scale+3;
+  const hit=tree.collision;
+  const halfWidth=hit.trunkWidth*tree.scale/2+hit.padding;
+  const top=tree.y+hit.top*tree.scale-hit.padding;
+  const bottom=tree.y+hit.bottom*tree.scale+hit.padding;
   if(x>=tree.x-halfWidth&&x<=tree.x+halfWidth&&y>=top&&y<=bottom)return true;
  }
  // 低い植え込みは景観用の地被として扱い、歩行を妨げない。
