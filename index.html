@@ -329,7 +329,8 @@ function pointInPolygon(x,y,polygon){
 function riverBlocksMovement(x,y){
  // 橋の石畳部分だけは水面側へ踏み出せる。
  // 描画している橋の石畳デッキに合わせ、川を歩ける範囲を橋の幅に限定する。
- const bridgeWalkway=[{x:686,y:744},{x:811,y:687},{x:847,y:714},{x:719,y:779}];
+ // 描画している橋の上面4頂点そのものを使い、水面側へ判定を広げない。
+ const bridgeWalkway=[{x:690,y:747},{x:810,y:692},{x:842,y:712},{x:720,y:772}];
  if(pointInPolygon(x,y,bridgeWalkway))return false;
  return x>riverEdgeX(y)-10;
 }
