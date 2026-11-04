@@ -367,10 +367,10 @@ function pointInPolygon(x,y,polygon){
   // 川辺の広場へは中央下側の幹線から東へ枝道を伸ばす。
   {start:[465,790],curves:[[[510,780],[560,765],[610,760]]]},
   // 住宅街の縦道と、各段の住宅前を通る横道。
-  {start:[90,535],curves:[[[90,592],[90,647],[90,705]],[[90,770],[90,834],[90,898]]]},
-  {start:[90,535],curves:[[[145,535],[195,535],[250,535]],[[310,535],[370,535],[430,535]]]},
-  {start:[90,705],curves:[[[145,705],[195,705],[250,705]],[[310,705],[370,705],[430,705]]]},
-  {start:[90,898],curves:[[[145,898],[195,898],[250,898]],[[310,898],[370,898],[430,898]]]},
+  {start:[60,535],curves:[[[60,592],[60,647],[60,705]],[[60,770],[60,834],[60,898]]]},
+  {start:[60,535],curves:[[[145,535],[195,535],[250,535]],[[310,535],[370,535],[430,535]]]},
+  {start:[60,705],curves:[[[145,705],[195,705],[250,705]],[[310,705],[370,705],[430,705]]]},
+  {start:[60,898],curves:[[[145,898],[195,898],[250,898]],[[310,898],[370,898],[430,898]]]},
   // 各段の東端から中央の幹線へ接続。
   {start:[430,535],curves:[[[455,535],[475,535],[490,555]]]},
   {start:[430,705],curves:[[[445,735],[455,765],[465,790]]]},
@@ -405,7 +405,7 @@ const WORLD_STREET_FURNITURE={
  ],
  lamps:[
   {id:'plaza-lamp',x:650,y:730},
-  {id:'residential-lamp',x:310,y:520},
+  {id:'residential-lamp',x:390,y:520},
   {id:'riverside-lamp',x:785,y:1000}
  ],
  sign:{
@@ -418,10 +418,12 @@ function streetFurnitureBlocksMovement(x,y,p){
  // カフェ前のテラス3台も含め、表示と当たり判定の数を一致させる。
  for(const bench of WORLD_STREET_FURNITURE.benches){
   const atSeat=p.action==='bench'&&Math.hypot(x-p.tx,y-p.ty)<42;
-  if(!atSeat&&x>=bench.x-32&&x<=bench.x+32&&y>=bench.y-19&&y<=bench.y+13)return true;
+  // 立ち上がった直後だけ、座っていたベンチから安全に歩き出せるようにする。
+   const leavingSeat=p.benchExit?.id===bench.id&&Math.hypot(p.x-p.benchExit.x,p.y-p.benchExit.y)<85&&Math.hypot(x-p.benchExit.x,y-p.benchExit.y)<95;
+   if(!atSeat&&!leavingSeat&&x>=bench.x-32&&x<=bench.x+32&&y>=bench.y-19&&y<=bench.y+13)return true;
  }
- // 街灯は描画上の支柱とランプ部分をまとめて障害物にする。
- if(WORLD_STREET_FURNITURE.lamps.some(l=>x>=l.x-10&&x<=l.x+10&&y>=l.y-58&&y<=l.y+5))return true;
+ // 街灯の上部は歩行を塞がず、足元の支柱だけを障害物にする。
+ if(WORLD_STREET_FURNITURE.lamps.some(l=>x>=l.x-7&&x<=l.x+7&&y>=l.y-12&&y<=l.y+6))return true;
  // 案内板の支柱と板面は歩行者が通り抜けないようにする。
  if(pointInPolygon(x,y,WORLD_STREET_FURNITURE.sign.polygon.map(([px,py])=>({x:px,y:py}))))return true;
  return false;
@@ -923,9 +925,9 @@ const roadNodes=[
  {id:'row3-approach-2',x:442,y:975,links:['row3-approach-1','main-plaza']},
  {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
  // 住宅街は西側の縦道と、各段の横道でつなぐ。
- {id:'west-north',x:90,y:535,links:['west-mid','res-row1-center']},
- {id:'west-mid',x:90,y:705,links:['west-north','west-south','res-row2-center','bench-path-entry']},
- {id:'west-south',x:90,y:898,links:['west-mid','res-row3-center']},
+ {id:'west-north',x:60,y:535,links:['west-mid','res-row1-center']},
+ {id:'west-mid',x:60,y:705,links:['west-north','west-south','res-row2-center','bench-path-entry']},
+ {id:'west-south',x:60,y:898,links:['west-mid','res-row3-center']},
  {id:'res-row1-center',x:250,y:535,links:['west-north','res-row1-east']},
  {id:'res-row1-east',x:430,y:535,links:['res-row1-center','main-mid']},
  {id:'res-row2-center',x:250,y:705,links:['west-mid','res-row2-east']},
@@ -933,11 +935,11 @@ const roadNodes=[
  {id:'res-row3-center',x:250,y:898,links:['west-south','res-row3-east']},
  {id:'res-row3-east',x:430,y:898,links:['res-row3-center','row3-approach-1']},
  {id:'cafe-entry',x:250,y:330,links:['cafe-approach-2'],facility:true},
- {id:'bench-path-entry',x:105,y:755,links:['west-mid'],facility:true},
+ {id:'bench-path-entry',x:60,y:755,links:['west-mid'],facility:true},
  // 公園への接続は中央メインストリートの一点のみ。
  {id:'park-entry',x:610,y:760,links:['main-lower','bridge-entry']},
  {id:'bridge-entry',x:690,y:760,links:['park-entry','river-bench'],facility:true},
- {id:'river-bench',x:760,y:800,links:['bridge-entry'],facility:true}
+ {id:'river-bench',x:735,y:745,links:['bridge-entry'],facility:true}
 ];
 function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function homeSouthRoadNode(home){
@@ -948,9 +950,9 @@ function homeSouthRoadNode(home){
  // 道路上のアクセス点を住宅同士の隙間へ寄せ、玄関からは斜めに接続する。
  const accessX=row==='row3'?entrance.x:(home.x<230?entrance.x+73:entrance.x-73);
  const rowNodes={
-  row1:[{id:'west-north',x:90},{id:'res-row1-center',x:250},{id:'res-row1-east',x:430}],
-  row2:[{id:'west-mid',x:90},{id:'res-row2-center',x:250},{id:'res-row2-east',x:430}],
-  row3:[{id:'west-south',x:90},{id:'res-row3-center',x:250},{id:'res-row3-east',x:430}]
+  row1:[{id:'west-north',x:60},{id:'res-row1-center',x:250},{id:'res-row1-east',x:430}],
+  row2:[{id:'west-mid',x:60},{id:'res-row2-center',x:250},{id:'res-row2-east',x:430}],
+  row3:[{id:'west-south',x:60},{id:'res-row3-center',x:250},{id:'res-row3-east',x:430}]
  }[row];
  const rightIndex=Math.max(1,Math.min(rowNodes.length-1,rowNodes.findIndex(node=>node.x>=accessX)));
  const links=[rowNodes[rightIndex-1].id,rowNodes[rightIndex].id];
@@ -1044,8 +1046,9 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  }));
  if(!nodes){
   // No complete road connection was found: never append unrelated fragments as a pretend route.
-  // A blocked direct attempt is handled by the existing stuck/recovery logic without teleporting.
-  return compactRoutePoints([{x:fromX,y:fromY},{x:toX,y:toY}],resident);
+  // If roads are disconnected, allow only a short collision-free local step.
+  return Math.hypot(toX-fromX,toY-fromY)<=85&&movementSegmentClear(fromX,fromY,toX,toY,resident)
+   ?compactRoutePoints([{x:fromX,y:fromY},{x:toX,y:toY}],resident):[];
  }
  const points=[{x:fromX,y:fromY}];
  if(startHome){
@@ -1083,7 +1086,19 @@ function interruptSocialForNewAction(p){
   partner.activity='街で過ごしている';partner.stayText='';partner.pose='stand';
  }
 }
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='social')interruptSocialForNewAction(p);if(kind!=='bench')p.benchSeat=null;if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=resolveOpenDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}p.phaseState='moving';p.stuckTime=0;p.routeRetries=0;p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);p.routeIndex=1;p.activity=travelText;p.stayText=stayText;p.pose='stand';p.stay=duration;renderResidentStatus()}
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind!=='social')interruptSocialForNewAction(p);
+ if(kind!=='bench'){
+  const previousBench=p.action==='bench'&&p.benchSeat?WORLD_STREET_FURNITURE.benches.filter(b=>b.group!=='cafe')[p.benchSeat.bench]:null;
+  p.benchExit=previousBench&&Math.hypot(p.x-previousBench.x,p.y-previousBench.y)<55?{id:previousBench.id,x:p.x,y:p.y}:null;
+  p.benchSeat=null;
+ }else p.benchExit=null;
+ if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=resolveOpenDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}p.phaseState='moving';p.stuckTime=0;p.routeRetries=0;p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);p.routeIndex=1;
+ if(p.routePoints.length<2&&Math.hypot(targetX-p.x,targetY-p.y)>2){
+  p.action='idle';p.phaseState='idle';p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;
+  p.activity='次の行き先を探している';p.stayText='';p.pose='stand';p.stay=0;
+  renderResidentStatus();return false;
+ }
+ p.activity=travelText;p.stayText=stayText;p.pose='stand';p.stay=duration;renderResidentStatus();return true}
 function chooseFreshSpot(p,spots){
  const recent=Array.isArray(p.recentSpots)?p.recentSpots:[];
  const fresh=spots.filter(s=>!recent.includes(s.id));
@@ -1182,7 +1197,7 @@ function startWork(p,i,plan){
   // Work destinations need usable street-side entrances, not a building's roof center.
   let workTarget={x:place.x,y:place.y};
   const building=WORLD_BUILDINGS[place.id];
-  if(building)workTarget={x:building.door.x,y:building.door.maxY-14};
+  if(building)workTarget={x:building.door.x,y:building.id==='shop'?building.door.maxY+22:building.door.maxY-14};
   else if(place.type==='home'&&homes[place.id]){
    const entrance=homeEntrance(homes[place.id]);
    workTarget={x:entrance.x,y:entrance.y+32};
@@ -1409,7 +1424,7 @@ function chooseRoutine(p,i){
    if(hobby.mode==='cafe'){const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている',hobby.label,'sit',16+Math.random()*20);return}
    const q=hobby.mode==='flowers'?chooseFreshSpot(p,[{id:'garden-east',x:700,y:720,label:'東の花壇'},{id:'garden-south',x:670,y:1115,label:'南の花壇'}]):(hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:740,y:540,label:'川沿い'},{id:'hobby-path-'+hobby.priority,x:420,y:650,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:600,y:760,label:'川辺の広場'}]));
    if(hobby.mode==='flowers'){p.flowerScene={kind:'gardening',stay:hobby.label,diary:hobby.label+'を楽しんだ'};}
-   const shoppingPlace=hobby.kind==='shopping'?getPlace('shop'):null;if(shoppingPlace)p.shoppingTrip=true;setAction(p,i,hobby.mode==='flowers'?'flowers':'walk',shoppingPlace?649:q.x,ySafe(shoppingPlace?425:q.y),shoppingPlace?shoppingPlace.name+'へ向かっている':q.label?(q.label+'へ向かっている'):'趣味の場所へ向かっている',hobby.label,hobby.pose,14+Math.random()*22);if(hobby.kind==='fishing')p.fishingTrip=true;if(hobby.kind==='photography')p.photoTrip=true;
+   const shoppingPlace=hobby.kind==='shopping'?getPlace('shop'):null;if(shoppingPlace)p.shoppingTrip=true;setAction(p,i,hobby.mode==='flowers'?'flowers':'walk',shoppingPlace?649:q.x,ySafe(shoppingPlace?462:q.y),shoppingPlace?shoppingPlace.name+'へ向かっている':q.label?(q.label+'へ向かっている'):'趣味の場所へ向かっている',hobby.label,hobby.pose,14+Math.random()*22);if(hobby.kind==='fishing')p.fishingTrip=true;if(hobby.kind==='photography')p.photoTrip=true;
   }})});
  });
  if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=[{id:'flower-east',x:700,y:720},{id:'flower-southeast',x:670,y:1115}];const q=chooseFreshSpot(p,spots);const scene=flowerSceneFor(p);p.flowerScene=scene;setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている',scene.stay,'look',12+Math.random()*18)}});
@@ -1732,7 +1747,9 @@ function loop(t){
  // Ignore duplicate same-timestamp callbacks after Safari resumes drawing.
  if(t<=last)return;
  lastAnimationWallTime=Date.now();
- try{let dt=Math.max(0,Math.min((t-last)/1000,.08));last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?18:2;if(d>waypointTolerance){
+ try{let dt=Math.max(0,Math.min((t-last)/1000,.08));last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;
+ if(!route&&Math.hypot(p.tx-p.x,p.ty-p.y)>2){recoverResidentFromFailedRoute(p,i);return}
+ const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?18:2;if(d>waypointTolerance){
  const oldX=p.x,oldY=p.y;
  let step=Math.min(d,dt*42),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
  // 目標地点だけでなく、現在地からの移動線全体を検査して壁抜けを防ぐ。
