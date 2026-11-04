@@ -1404,6 +1404,7 @@ function startSocialVisit(a,b,r,initiator){
  const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
  const angle=Math.random()*Math.PI*2,dist=24;
  const ax=ySafe(my+Math.sin(angle)*dist),by=ySafe(my-Math.cos(angle)*dist);
+ const sharedHome=!!(a.homeId&&a.homeId===b.homeId);
  const duration=sharedHome?26+Math.random()*12:18+Math.random()*10;
  const hobbiesA=hobbyChoicesFor(a),hobbiesB=hobbyChoicesFor(b);
  const shared=hobbiesA.filter(ha=>hobbiesB.some(hb=>hb.kind===ha.kind&&ha.kind!=='relax'));
@@ -1435,7 +1436,6 @@ function startSocialVisit(a,b,r,initiator){
    :sociability<=32
     ?{text:'静かな時間を一緒に過ごし、ゆっくり言葉を交わしている',diary:'静かな時間を一緒に過ごした'}
     :{text:'近況を話しながら一緒に過ごしている',diary:'近況を話しながら一緒に過ごした'};
- const sharedHome=a.homeId&&a.homeId===b.homeId;
  const homeyScene=sharedHome?{text:'家で一緒にくつろぎながら、何気ない話をしている',diary:'同じ家でくつろぎながら、何気ない話をした'}:null;
  const scene=sharedScene||relationshipScene||homeyScene||personalityScene;
  const weatherPrefix=weatherType==='rainy'?'雨音を聞きながら、':weatherType==='sunny'?'日差しの差し込む場所で、':weatherType==='cloudy'?'涼しい風を感じながら、':'';
