@@ -336,6 +336,8 @@ function streetFurnitureBlocksMovement(x,y,p){
  return false;
 }
 function isBlockedAtPoint(x,y,p){
+ // 街の外周を越えないようにし、住人の胴体にも余白を確保する。
+ if(x<18||x>882||y<18||y>1382)return true;
  return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p)||natureBlocksMovement(x,y,p)||riverBlocksMovement(x,y)||streetFurnitureBlocksMovement(x,y,p);
 }
 // 住人の胴体を中心とした複数点で当たり判定し、斜め・上下方向のすり抜けも防ぐ。
