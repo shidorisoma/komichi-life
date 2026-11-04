@@ -276,22 +276,31 @@ function homeBlocksMovement(home,x,y,p){
 function isBlockedByHome(x,y,p){
  return Object.values(homes||{}).some(home=>homeBlocksMovement(home,x,y,p));
 }
+// Shared placement and collision geometry for fixed public buildings.
+const WORLD_BUILDINGS={
+ cafe:{
+  id:'cafe',x:240,y:290,
+  footprint:[[135,262],[220,220],[325,262],[325,320],[220,282],[135,323]].map(([x,y])=>({x,y})),
+  door:{x:270,halfWidth:19,minY:286,maxY:344},
+  targetAction:'cafe'
+ },
+ shop:{
+  id:'shop',x:620,y:390,
+  footprint:[[563,370],[620,398],[678,370],[678,418],[620,445],[563,418]].map(([x,y])=>({x,y})),
+  door:{x:649,halfWidth:20,minY:410,maxY:440},
+  targetAction:'shoppingTrip'
+ }
+};
 function facilityBlocksMovement(x,y,p){
- // 建物の屋根全体を四角く塞がず、実際に見えている壁面の接地形状で判定する。
- const cafeFootprint=[
-  {x:135,y:262},{x:220,y:220},{x:325,y:262},
-  {x:325,y:320},{x:220,y:282},{x:135,y:323}
- ];
- const shopFootprint=[
-  {x:563,y:370},{x:620,y:398},{x:678,y:370},
-  {x:678,y:418},{x:620,y:445},{x:563,y:418}
- ];
- const cafeDoor=Math.abs(x-270)<19&&y>=286&&y<=344;
- const shopDoor=Math.abs(x-649)<20&&y>=410&&y<=440;
- const atCafeTarget=p.action==='cafe'&&Math.hypot(x-p.tx,y-p.ty)<28;
- const atShopTarget=p.shoppingTrip&&Math.hypot(x-p.tx,y-p.ty)<28;
- if(pointInPolygon(x,y,cafeFootprint)&&!cafeDoor&&!atCafeTarget)return true;
- if(pointInPolygon(x,y,shopFootprint)&&!shopDoor&&!atShopTarget)return true;
+ // 建物の接地面・入口・行動目標は共通の建物データから判定する。
+ for(const building of Object.values(WORLD_BUILDINGS)){
+  const door=building.door;
+  const inDoor=Math.abs(x-door.x)<door.halfWidth&&y>=door.minY&&y<=door.maxY;
+  const atTarget=building.targetAction==='cafe'
+   ?p.action==='cafe'&&Math.hypot(x-p.tx,y-p.ty)<28
+   :p.shoppingTrip&&Math.hypot(x-p.tx,y-p.ty)<28;
+  if(pointInPolygon(x,y,building.footprint)&&!inDoor&&!atTarget)return true;
+ }
  return false;
 }
 // 川の岸線を描画と同じベジェ曲線からサンプリングし、水面への侵入を防ぐ。
@@ -659,8 +668,8 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   // 小さな石畳
  ctx.save();ctx.globalAlpha=.28;ctx.strokeStyle='#aa946e';ctx.lineWidth=1;for(let y=330;y<1350;y+=38){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(770,y-100);ctx.stroke()}for(let x=10;x<760;x+=48){ctx.beginPath();ctx.moveTo(x,300);ctx.lineTo(x+180,1320);ctx.stroke()}ctx.restore();
  // カフェと住宅
- drawCafe(240,290);
- drawShop(620,390);
+ drawCafe(WORLD_BUILDINGS.cafe.x,WORLD_BUILDINGS.cafe.y);
+ drawShop(WORLD_BUILDINGS.shop.x,WORLD_BUILDINGS.shop.y);
  // 登録されている住居を、それぞれの所在地に描画
  function drawHouseExterior(home,index){
  const x=home.x,y=home.y;
