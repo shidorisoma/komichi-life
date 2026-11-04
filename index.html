@@ -1340,8 +1340,9 @@ function chooseRoutine(p,i){
    }
    p.homeHobby=null;
    if(variant==='outdoor'){
-    const benches=[{x:735,y:835,label:'川辺のベンチ'},{x:340,y:1215,label:'広場のベンチ'},{x:720,y:840,label:'川沿い'}];const q=benches[(Math.random()*benches.length)|0];
-    setAction(p,i,'walk',q.x,q.y,q.label+'へ向かっている',hobby.label,'sit',14+Math.random()*22);return
+    const seats=availableBenchSeats(i);const seat=seats[(Math.random()*seats.length)|0];
+    p.benchScene={diary:hobby.label};setAction(p,i,'bench',seat.x,seat.y,'ベンチへ向かっている',hobby.label,'sit',14+Math.random()*22);
+    p.benchSeat={bench:seat.bench,slot:seat.slot};return
    }
    if(hobby.mode==='cafe'){const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている',hobby.label,'sit',16+Math.random()*20);return}
    const q=hobby.mode==='flowers'?chooseFreshSpot(p,[{id:'garden-east',x:700,y:720,label:'東の花壇'},{id:'garden-south',x:670,y:1115,label:'南の花壇'}]):(hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:740,y:540,label:'川沿い'},{id:'hobby-path-'+hobby.priority,x:420,y:650,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:600,y:760,label:'川辺の広場'}]));
