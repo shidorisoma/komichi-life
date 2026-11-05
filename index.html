@@ -509,6 +509,10 @@ function natureBlocksMovement(x,y,p){
   const bottom=tree.y+hit.bottom*tree.scale+hit.padding;
   if(x>=tree.x-halfWidth&&x<=tree.x+halfWidth&&y>=top&&y<=bottom)return true;
  }
+ // Arbor and flower-arch posts occupy only their small footings; the canopy
+ // and open passage beneath either arch remain walkable.
+ if([[669,893],[747,893],[385,1313],[475,1313]]
+   .some(([px,py])=>Math.hypot(x-px,y-py)<9))return true;
  // 低い植え込みは景観用の地被として扱い、歩行を妨げない。
  // 木の幹と花壇のみを通行障害物にする。
  // 描画されている花壇の外周ポリゴンと同じ形で判定し、周囲に透明な四角形を作らない。
@@ -1201,11 +1205,18 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  strokeHomeAccess(21,townTexture('stone'));
  strokeRoadGroup('branch',roadStyle.branchSurfaceWidth-5,townTexture('brick'));
  strokeRoadGroup('main',roadStyle.mainSurfaceWidth-5,townTexture('brick'));
+ // The reference artwork uses pale apricot stone, not the old deep-red bricks.
+ // A translucent glaze retains every painted joint without losing texture.
+ ctx.save();ctx.globalAlpha=.24;
+ strokeRoadGroup('branch',roadStyle.branchSurfaceWidth-5,'#ffe3c6');
+ strokeRoadGroup('main',roadStyle.mainSurfaceWidth-5,'#ffe3c6');
+ ctx.restore();
  ctx.restore();
  // 南側は枝道を設けず、幹線の先をレンガ敷きの広場にする。
  ellipse(430,1118,245,180,'#aa8964');ellipse(430,1107,235,176,'#f2ddbd');
  ctx.save();ctx.beginPath();ctx.ellipse(430,1107,230,170,0,0,Math.PI*2);ctx.clip();
- ctx.fillStyle=townTexture('brick');ctx.fillRect(195,928,470,360);ctx.restore();
+ ctx.fillStyle=townTexture('brick');ctx.fillRect(195,928,470,360);
+ ctx.globalAlpha=.24;ctx.fillStyle='#ffe5c9';ctx.fillRect(195,928,470,360);ctx.restore();
  ctx.strokeStyle='#f8e9cb';ctx.lineWidth=9;ctx.beginPath();ctx.ellipse(430,1107,235,176,0,0,Math.PI*2);ctx.stroke();
  ellipse(430,1160,66,35,'#9e8568');ellipse(430,1152,64,31,'#e9d8b8');ellipse(430,1148,55,22,'#84aa64');
  // 円形広場のレンガ目地
