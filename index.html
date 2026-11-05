@@ -2252,7 +2252,7 @@ function residentWalkDirection(p){
   const oh=residentWalkDirection(other)||{x:0,y:0},cross=type==='yield'&&Math.abs(h.x*oh.x+h.y*oh.y)<.5;
   const plan={type,otherId:other.id,stage:'side',ready:false,age:0,startX:p.x,startY:p.y,goX:oh.x,goY:oh.y};
   if(cross&&Math.abs((p.x-other.x)*oh.y-(p.y-other.y)*oh.x)>30)return {...plan,stage:'wait',ready:true};
-  for(const sign of [1,-1])for(const width of [34,29,38]){
+  for(const sign of [1,-1])for(const width of [28,31,35]){
    const sx=-h.y*sign*width,sy=h.x*sign*width,x=p.x+sx,y=p.y+sy;
    if(!movementSegmentClear(p.x,p.y,x,y,p)||!residentBodyClear(p,x,y))continue;
    if(cross&&Math.abs((x-other.x)*oh.y-(y-other.y)*oh.x)<28)continue;
@@ -2302,7 +2302,9 @@ function residentWalkDirection(p){
    }
    if(t.stage==='wait'){
     const passed=(other.x-t.startX)*t.goX+(other.y-t.startY)*t.goY;
-    if((passed>17&&Math.hypot(other.x-p.x,other.y-p.y)>30)||(other.phaseState!=='moving'&&t.age>3)){
+    if((passed>17&&Math.hypot(other.x-p.x,other.y-p.y)>30)||
+       (t.age>1.4&&Math.hypot(other.x-p.x,other.y-p.y)>84)||
+       (other.phaseState!=='moving'&&t.age>2.2)){
      finishPassing(p);return true;
     }
     p.stuckTime=0;p.routeRetries=0;return true;
@@ -2313,7 +2315,7 @@ function residentWalkDirection(p){
    p.stuckTime=0;p.routeRetries=0;return true;
   }
   const heading=residentWalkDirection(p);if(!heading)return false;
-  const neighbors=chars.filter(q=>q!==p&&isOutdoorResident(q)&&['moving','staying'].includes(q.phaseState)&&Math.hypot(q.x-p.x,q.y-p.y)<78)
+  const neighbors=chars.filter(q=>q!==p&&isOutdoorResident(q)&&['moving','staying','idle'].includes(q.phaseState)&&Math.hypot(q.x-p.x,q.y-p.y)<78)
    .sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y));
   for(const q of neighbors){
    // Do not steal a pedestrian who has already committed to another encounter.
@@ -2321,7 +2323,7 @@ function residentWalkDirection(p){
    if(q.passing?.type==='yield'&&q.passing.otherId===p.id)continue;
    const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy);
    const forward=dx*heading.x+dy*heading.y,across=Math.abs(dx*heading.y-dy*heading.x);
-   if(q.phaseState==='staying'){
+   if(q.phaseState!=='moving'){
     if(forward < -4||across>28||d>59)continue;
     if((p.phase||0)>=(p.passingCooldown||0)){
      const plan=preparePassing(p,q,'bypass');
