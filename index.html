@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#f6eedf">
 <title>川辺のこみち</title>
 <style>
-:root{--cream:rgba(255,251,241,.93);--ink:#655b4c;--muted:#938875;--green:#778768;--line:rgba(126,111,83,.18)}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f1dfb4;font-family:ui-rounded,"Hiragino Maru Gothic ProN","Yu Gothic",system-ui,sans-serif;color:var(--ink)}#app{position:relative;width:100%;height:100%;overflow:hidden;background:#f1dfb4}.lower-ui-hidden .status,.lower-ui-hidden .nav{display:none!important}canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}.top{position:absolute;top:calc(env(safe-area-inset-top) + 12px);left:9%;width:82%;height:76px;padding:8px 12px;border-radius:27px;background:var(--cream);box-shadow:0 5px 22px #67563a25;backdrop-filter:blur(8px);display:flex;align-items:center;gap:12px}.topInfo{min-width:0;flex:1;padding-right:0}.top:has(.placeActions.show) .topInfo{padding-right:122px}.placeActions{display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);gap:5px;flex-wrap:nowrap;justify-content:flex-end;max-width:122px;margin:0}.placeActions.show{display:flex}.placeActions button{border:0;border-radius:12px;padding:8px 9px;background:#edf0e5;color:var(--ink);font:inherit;font-size:12px;white-space:nowrap}.placeActions .placeMap{background:#edf0e5;color:var(--ink)}.placeActions .placeBack{background:var(--green);color:white}.sun{font-size:34px;color:#d4a844}.place{font-size:clamp(15px,4vw,20px);font-weight:800;letter-spacing:.04em;white-space:nowrap}.weather{font-size:10px;color:#998b74;margin-top:1px;white-space:nowrap}.clock{font-size:12px;color:#93856e;margin-top:2px}.speaker{position:absolute;right:3.5%;top:calc(env(safe-area-inset-top) + 12px);width:62px;height:62px;border:0;border-radius:50%;background:var(--cream);font-size:26px;color:var(--ink);box-shadow:0 4px 16px #67563a22}.zoom{position:absolute;right:4%;top:25%;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 8px;border-radius:26px;background:var(--cream);box-shadow:0 4px 16px #67563a22}.zoom button{border:0;background:transparent;color:var(--ink);font-size:23px;width:32px;height:32px;padding:0}.zoom .minus{border-top:1px solid var(--line);font-size:21px}.zoom .center{font-size:19px;border-top:1px solid var(--line);padding-top:5px}.zoom .uiToggle{font-size:19px;border-top:1px solid var(--line);padding-top:4px;font-weight:700}.zoom .uiToggle.active{color:var(--green);background:#e9eddf;border-radius:12px}.zoom .mapIcon{font-size:23px;border-top:1px solid var(--line);padding-top:7px;height:39px;width:36px}.zoom .mapIcon.returnCity{font-size:27px;font-weight:600;padding-top:3px}.zoom .mapIcon.active{background:#e9eddf;border-radius:14px;color:#708064}.tag{position:absolute;top:49%;left:50%;transform:translate(-50%,-50%);padding:5px 15px;background:#fffaf0e8;border-radius:20px;font-size:12px;box-shadow:0 2px 8px #55452b22;pointer-events:none}.status{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 91px);left:9%;width:82%;min-height:76px;border-radius:28px;background:var(--cream);box-shadow:0 5px 20px #67563a25;display:flex;align-items:center;justify-content:flex-start;overflow-x:auto;overscroll-behavior-x:contain;padding:8px 9px;gap:3px}.status .person{flex:0 0 48%}.person{display:flex;align-items:center;gap:5px;min-width:0;flex:1;padding:5px 5px;border-radius:18px;cursor:pointer;overflow:hidden}.person>div{min-width:0;flex:1;overflow:hidden}.person.selected{background:#e9eddf;border:1px solid #a9b69a}.avatar{width:34px;height:39px;flex:none}.pname{font-weight:700;font-size:14px;white-space:nowrap}.activity{font-size:11px;color:#918873;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.3;max-width:100%;overflow-wrap:anywhere}.midtime{font-size:12px;color:#9a8e79;white-space:nowrap;flex:none;width:39px;text-align:center}.nav{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 12px);left:9%;width:82%;height:76px;border-radius:27px;background:var(--cream);box-shadow:0 5px 20px #67563a25;display:flex;justify-content:space-around;align-items:center;padding:6px}.nav button{border:0;background:transparent;color:#968a77;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:1;height:100%;border-radius:20px;font-size:12px}.nav button.active{background:#e9eddf;color:#708064}.nav .ico{font-size:23px;line-height:1}.panel{position:absolute;left:7%;right:7%;bottom:calc(env(safe-area-inset-bottom) + 180px);max-height:42%;overflow:auto;background:var(--cream);border-radius:22px;padding:16px;box-shadow:0 8px 25px #55452b35;display:none}.panel.show{display:block}.panel.mapPanel{left:50%;right:auto;width:68%;max-width:520px;transform:translateX(-50%);padding:13px}.mapGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.mapGrid .homeMenuButtons{display:grid;gap:12px;padding:8px 0}.homeMenuButtons .actionBtn{min-height:58px;font-size:15px}.homeResidentChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0 14px}.homeResidentOption{display:flex;align-items:center;gap:7px;padding:9px;background:#f1eee4;border-radius:10px;font-size:13px;min-width:0}.homeResidentOption input{accent-color:#778768;width:17px;height:17px;flex:none}.homeEditCard{padding:12px;margin:10px 0;border:1px solid var(--line);border-radius:14px;background:#fffaf0;display:flex;flex-direction:column;gap:7px}.homeEditLabel{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted)}.homeNameInput{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--ink);font:inherit}.homeSelect{width:100%;padding:11px;border:1px solid var(--line);border-radius:12px;background:#fffaf0;color:var(--ink);font:inherit}.homePreview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:10px;background:#b99b76;border-radius:12px}.homePreviewRoom{min-height:62px;display:grid;place-items:center;background:#f5eddd;border:2px solid #a58a68;border-radius:4px;font-size:12px;font-weight:700}.actionBtn{width:100%;min-width:0;margin:0;padding:9px 8px;border-radius:12px;font-size:12px;line-height:1.2;white-space:nowrap;overflow-wrap:normal;min-height:44px}.panel h3{margin:0 0 10px;font-size:16px}.entry{font-size:12px;line-height:1.65;padding:7px 0;border-bottom:1px solid var(--line)}.relationSummary{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:12px 10px;border:0;border-radius:13px;background:#edf0e5;color:var(--ink);font:inherit;text-align:left}.relationPageHeader{position:sticky;top:-16px;z-index:2;display:flex;align-items:center;gap:12px;margin:0 -16px 10px;padding:8px 16px 11px;background:var(--cream);border-bottom:1px solid var(--line);font-size:15px}.relationBack{width:34px;height:34px;flex:none;border:0;border-radius:50%;background:#edf0e5;color:var(--green);font-size:28px;line-height:1;padding:0 0 3px}.relationSummary b{font-size:13px}.relationChevron{color:var(--green);font-size:18px}.relationDetail{padding:4px 8px 8px}.eventTrigger{margin-top:16px}.actionBtn{display:block;width:100%;border:0;border-radius:14px;padding:12px;margin:10px 0 4px;background:#778768;color:white;font:inherit;font-weight:700}.meter{display:grid;grid-template-columns:52px 1fr 32px;gap:8px;align-items:center;font-size:11px;margin:7px 0}.track{height:8px;border-radius:9px;background:#e7e0d2;overflow:hidden}.fill{height:100%;border-radius:9px;background:#91a17d}.metricTitle{font-size:13px;font-weight:700;margin:12px 0 5px}.subtle{font-size:11px;color:#988b77;line-height:1.6}.residentTools{display:flex;gap:7px;margin:8px 0}.residentTools button,.residentRow button{border:0;border-radius:11px;padding:8px 10px;background:#edf0e5;color:var(--ink);font:inherit;font-size:12px}.residentRow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.residentRow .avatar{width:30px;height:34px}.residentRow .residentInfo{flex:1;min-width:0}.residentRow .residentResetBtn{flex:none;min-width:58px;padding:8px 9px;background:#778768;color:#fff;font-weight:700;font-size:11px}.residentForm{display:grid;gap:8px;margin-top:10px;padding:11px;border-radius:14px;background:#f4f0e6}.residentForm label{display:grid;gap:4px;font-size:11px;color:var(--muted)}.residentForm input,.residentForm textarea{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px;background:#fffdf7;color:var(--ink);font:inherit;font-size:13px}.residentForm textarea{resize:vertical;min-height:54px}.residentForm .colorFields{display:grid;grid-template-columns:1fr 1fr;gap:8px}.residentForm input[type=color]{height:38px;padding:3px}.residentForm .formActions{display:flex;gap:7px}.residentForm button{flex:1;border:0;border-radius:10px;padding:9px;background:var(--green);color:white;font:inherit;font-size:12px;font-weight:700}.relationSummary{justify-content:flex-start}.relationFaces{display:flex;align-items:center;flex:none}.relationFaces .avatar{width:27px;height:32px;margin-right:-5px}.relationSummary .relationNames{flex:1;min-width:0}.residentNameButton{border:0;padding:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;text-align:left}.residentPageHeader{position:sticky;top:-16px;z-index:8;display:flex;align-items:center;gap:10px;margin:0 -16px 12px;padding:10px 16px 10px;background:var(--cream);border-bottom:1px solid var(--line)}.residentProfileHero{display:flex;align-items:center;gap:12px;padding:10px 4px}.residentProfileHero .avatar{width:58px;height:66px}.residentProfileHero h3{margin:0;font-size:17px}.residentProfileText{font-size:12px;line-height:1.7;padding:8px 2px}.entry small{color:#a2937b;margin-right:8px}.pill{display:inline-block;background:#edf0e5;border-radius:12px;padding:3px 8px;margin:3px;font-size:11px}.hint{display:none!important;position:absolute;top:calc(env(safe-area-inset-top) + 102px);left:50%;transform:translateX(-50%);background:#fffaf0d9;padding:5px 12px;border-radius:20px;font-size:10px;color:#97896f;white-space:nowrap}
+:root{--cream:rgba(255,251,241,.93);--ink:#655b4c;--muted:#938875;--green:#778768;--line:rgba(126,111,83,.18)}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fadca9;font-family:ui-rounded,"Hiragino Maru Gothic ProN","Yu Gothic",system-ui,sans-serif;color:var(--ink)}#app{position:relative;width:100%;height:100%;overflow:hidden;background:#fadca9}.lower-ui-hidden .status,.lower-ui-hidden .nav{display:none!important}canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}.top{position:absolute;top:calc(env(safe-area-inset-top) + 12px);left:9%;width:82%;height:76px;padding:8px 12px;border-radius:27px;background:var(--cream);box-shadow:0 5px 22px #67563a25;backdrop-filter:blur(8px);display:flex;align-items:center;gap:12px}.topInfo{min-width:0;flex:1;padding-right:0}.top:has(.placeActions.show) .topInfo{padding-right:122px}.placeActions{display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);gap:5px;flex-wrap:nowrap;justify-content:flex-end;max-width:122px;margin:0}.placeActions.show{display:flex}.placeActions button{border:0;border-radius:12px;padding:8px 9px;background:#edf0e5;color:var(--ink);font:inherit;font-size:12px;white-space:nowrap}.placeActions .placeMap{background:#edf0e5;color:var(--ink)}.placeActions .placeBack{background:var(--green);color:white}.sun{font-size:34px;color:#d4a844}.place{font-size:clamp(15px,4vw,20px);font-weight:800;letter-spacing:.04em;white-space:nowrap}.weather{font-size:10px;color:#998b74;margin-top:1px;white-space:nowrap}.clock{font-size:12px;color:#93856e;margin-top:2px}.speaker{position:absolute;right:3.5%;top:calc(env(safe-area-inset-top) + 12px);width:62px;height:62px;border:0;border-radius:50%;background:var(--cream);font-size:26px;color:var(--ink);box-shadow:0 4px 16px #67563a22}.zoom{position:absolute;right:4%;top:25%;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 8px;border-radius:26px;background:var(--cream);box-shadow:0 4px 16px #67563a22}.zoom button{border:0;background:transparent;color:var(--ink);font-size:23px;width:32px;height:32px;padding:0}.zoom .minus{border-top:1px solid var(--line);font-size:21px}.zoom .center{font-size:19px;border-top:1px solid var(--line);padding-top:5px}.zoom .uiToggle{font-size:19px;border-top:1px solid var(--line);padding-top:4px;font-weight:700}.zoom .uiToggle.active{color:var(--green);background:#e9eddf;border-radius:12px}.zoom .mapIcon{font-size:23px;border-top:1px solid var(--line);padding-top:7px;height:39px;width:36px}.zoom .mapIcon.returnCity{font-size:27px;font-weight:600;padding-top:3px}.zoom .mapIcon.active{background:#e9eddf;border-radius:14px;color:#708064}.tag{position:absolute;top:49%;left:50%;transform:translate(-50%,-50%);padding:5px 15px;background:#fffaf0e8;border-radius:20px;font-size:12px;box-shadow:0 2px 8px #55452b22;pointer-events:none}.status{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 91px);left:9%;width:82%;min-height:76px;border-radius:28px;background:var(--cream);box-shadow:0 5px 20px #67563a25;display:flex;align-items:center;justify-content:flex-start;overflow-x:auto;overscroll-behavior-x:contain;padding:8px 9px;gap:3px}.status .person{flex:0 0 48%}.person{display:flex;align-items:center;gap:5px;min-width:0;flex:1;padding:5px 5px;border-radius:18px;cursor:pointer;overflow:hidden}.person>div{min-width:0;flex:1;overflow:hidden}.person.selected{background:#e9eddf;border:1px solid #a9b69a}.avatar{width:34px;height:39px;flex:none}.pname{font-weight:700;font-size:14px;white-space:nowrap}.activity{font-size:11px;color:#918873;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.3;max-width:100%;overflow-wrap:anywhere}.midtime{font-size:12px;color:#9a8e79;white-space:nowrap;flex:none;width:39px;text-align:center}.nav{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 12px);left:9%;width:82%;height:76px;border-radius:27px;background:var(--cream);box-shadow:0 5px 20px #67563a25;display:flex;justify-content:space-around;align-items:center;padding:6px}.nav button{border:0;background:transparent;color:#968a77;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:1;height:100%;border-radius:20px;font-size:12px}.nav button.active{background:#e9eddf;color:#708064}.nav .ico{font-size:23px;line-height:1}.panel{position:absolute;left:7%;right:7%;bottom:calc(env(safe-area-inset-bottom) + 180px);max-height:42%;overflow:auto;background:var(--cream);border-radius:22px;padding:16px;box-shadow:0 8px 25px #55452b35;display:none}.panel.show{display:block}.panel.mapPanel{left:50%;right:auto;width:68%;max-width:520px;transform:translateX(-50%);padding:13px}.mapGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.mapGrid .homeMenuButtons{display:grid;gap:12px;padding:8px 0}.homeMenuButtons .actionBtn{min-height:58px;font-size:15px}.homeResidentChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0 14px}.homeResidentOption{display:flex;align-items:center;gap:7px;padding:9px;background:#f1eee4;border-radius:10px;font-size:13px;min-width:0}.homeResidentOption input{accent-color:#778768;width:17px;height:17px;flex:none}.homeEditCard{padding:12px;margin:10px 0;border:1px solid var(--line);border-radius:14px;background:#fffaf0;display:flex;flex-direction:column;gap:7px}.homeEditLabel{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted)}.homeNameInput{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--ink);font:inherit}.homeSelect{width:100%;padding:11px;border:1px solid var(--line);border-radius:12px;background:#fffaf0;color:var(--ink);font:inherit}.homePreview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:10px;background:#b99b76;border-radius:12px}.homePreviewRoom{min-height:62px;display:grid;place-items:center;background:#f5eddd;border:2px solid #a58a68;border-radius:4px;font-size:12px;font-weight:700}.actionBtn{width:100%;min-width:0;margin:0;padding:9px 8px;border-radius:12px;font-size:12px;line-height:1.2;white-space:nowrap;overflow-wrap:normal;min-height:44px}.panel h3{margin:0 0 10px;font-size:16px}.entry{font-size:12px;line-height:1.65;padding:7px 0;border-bottom:1px solid var(--line)}.relationSummary{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:12px 10px;border:0;border-radius:13px;background:#edf0e5;color:var(--ink);font:inherit;text-align:left}.relationPageHeader{position:sticky;top:-16px;z-index:2;display:flex;align-items:center;gap:12px;margin:0 -16px 10px;padding:8px 16px 11px;background:var(--cream);border-bottom:1px solid var(--line);font-size:15px}.relationBack{width:34px;height:34px;flex:none;border:0;border-radius:50%;background:#edf0e5;color:var(--green);font-size:28px;line-height:1;padding:0 0 3px}.relationSummary b{font-size:13px}.relationChevron{color:var(--green);font-size:18px}.relationDetail{padding:4px 8px 8px}.eventTrigger{margin-top:16px}.actionBtn{display:block;width:100%;border:0;border-radius:14px;padding:12px;margin:10px 0 4px;background:#778768;color:white;font:inherit;font-weight:700}.meter{display:grid;grid-template-columns:52px 1fr 32px;gap:8px;align-items:center;font-size:11px;margin:7px 0}.track{height:8px;border-radius:9px;background:#e7e0d2;overflow:hidden}.fill{height:100%;border-radius:9px;background:#91a17d}.metricTitle{font-size:13px;font-weight:700;margin:12px 0 5px}.subtle{font-size:11px;color:#988b77;line-height:1.6}.residentTools{display:flex;gap:7px;margin:8px 0}.residentTools button,.residentRow button{border:0;border-radius:11px;padding:8px 10px;background:#edf0e5;color:var(--ink);font:inherit;font-size:12px}.residentRow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.residentRow .avatar{width:30px;height:34px}.residentRow .residentInfo{flex:1;min-width:0}.residentRow .residentResetBtn{flex:none;min-width:58px;padding:8px 9px;background:#778768;color:#fff;font-weight:700;font-size:11px}.residentForm{display:grid;gap:8px;margin-top:10px;padding:11px;border-radius:14px;background:#f4f0e6}.residentForm label{display:grid;gap:4px;font-size:11px;color:var(--muted)}.residentForm input,.residentForm textarea{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px;background:#fffdf7;color:var(--ink);font:inherit;font-size:13px}.residentForm textarea{resize:vertical;min-height:54px}.residentForm .colorFields{display:grid;grid-template-columns:1fr 1fr;gap:8px}.residentForm input[type=color]{height:38px;padding:3px}.residentForm .formActions{display:flex;gap:7px}.residentForm button{flex:1;border:0;border-radius:10px;padding:9px;background:var(--green);color:white;font:inherit;font-size:12px;font-weight:700}.relationSummary{justify-content:flex-start}.relationFaces{display:flex;align-items:center;flex:none}.relationFaces .avatar{width:27px;height:32px;margin-right:-5px}.relationSummary .relationNames{flex:1;min-width:0}.residentNameButton{border:0;padding:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;text-align:left}.residentPageHeader{position:sticky;top:-16px;z-index:8;display:flex;align-items:center;gap:10px;margin:0 -16px 12px;padding:10px 16px 10px;background:var(--cream);border-bottom:1px solid var(--line)}.residentProfileHero{display:flex;align-items:center;gap:12px;padding:10px 4px}.residentProfileHero .avatar{width:58px;height:66px}.residentProfileHero h3{margin:0;font-size:17px}.residentProfileText{font-size:12px;line-height:1.7;padding:8px 2px}.entry small{color:#a2937b;margin-right:8px}.pill{display:inline-block;background:#edf0e5;border-radius:12px;padding:3px 8px;margin:3px;font-size:11px}.hint{display:none!important;position:absolute;top:calc(env(safe-area-inset-top) + 102px);left:50%;transform:translateX(-50%);background:#fffaf0d9;padding:5px 12px;border-radius:20px;font-size:10px;color:#97896f;white-space:nowrap}
 @media(min-width:700px){.top{width:82%;left:9%}.speaker{right:auto;left:430px}.status,.nav{width:430px;left:50%;transform:translateX(-50%)}.zoom{right:25px}.panel{width:430px;left:50%;right:auto;transform:translateX(-50%)}}
 .panel{z-index:5;top:calc(env(safe-area-inset-top) + 150px);bottom:calc(env(safe-area-inset-bottom) + 96px);left:4%;right:4%;width:auto;max-width:none;max-height:none;transform:none;overflow-y:auto;overscroll-behavior:contain;padding:16px} .panel.mapPanel{left:4%;right:4%;width:auto;max-width:none;transform:none;padding:16px}.panel.homePanel{display:none!important}.homeHeader{display:flex;align-items:center;gap:6px}.homeHeader h3{margin:0 auto 0 0;font-size:15px}.homeHeader button{border:0;border-radius:10px;padding:7px 9px;background:#edf0e5;color:var(--ink);font:inherit;font-size:11px;white-space:nowrap}.homeResidents{display:none;margin-top:8px}.homeResidents.open{display:block}.homeResidents .entry{font-size:11px;padding:5px 0}.homeBack{background:var(--green)!important;color:white!important}.residentEditHeader{position:sticky;top:-16px;z-index:8;margin:-16px -16px 10px;padding:10px 14px;background:var(--cream);min-height:56px}.residentEditHeader b{white-space:nowrap}.headerActions{margin-left:auto;display:flex;gap:6px}.residentEditHeader .headerActions button{border:0;border-radius:10px;padding:8px 10px;font:inherit;font-size:11px;font-weight:700;white-space:nowrap}.residentEditHeader .headerSave{background:var(--green);color:white}.residentEditHeader .headerCancel{background:#e9e4d8;color:var(--ink)}.residentForm{margin-top:0}.fixedWorkTimes{display:none}.timeRange{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:8px}.timeRange>span{padding-bottom:12px;font-size:14px}.timeRange label{min-width:0}.checkSetting{display:flex!important;flex-direction:row;align-items:center;gap:9px!important;padding:8px 2px}.residentForm .checkSetting input[type=checkbox]{width:20px;height:20px;flex:none;margin:0;accent-color:var(--green)}.residentForm .checkSetting span{font-size:12px;color:var(--ink)}.residentForm .formActions{display:none}.timeRange{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;justify-content:center;gap:5px}.timeRange>span{padding:0 1px 11px;font-size:14px;white-space:nowrap;pointer-events:none}.timeRange label{min-width:0;width:calc(100% - 2ch)}.timeRange input{width:100%;min-width:0;padding:7px 3px;text-align:center;font-size:12px}.workTwoCols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.workTwoCols label{min-width:0}.callSettingRow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:8px}.callSettingRow .checkSetting{min-width:0}.callFrequencyField{min-width:0}.callFrequencyField select{width:100%;border:1px solid var(--line);border-radius:9px;padding:8px;background:#fffdf7;color:var(--ink);font:inherit;font-size:13px}
 .zoom .mapIcon{display:none}.zoom .mapIcon.returnCity{display:block}.residentNameLine{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.residentMoney{font-size:13px;color:#8a795f;background:rgba(235,228,209,.75);border-radius:12px;padding:4px 8px;white-space:nowrap}.residentInfo{min-width:0;flex:1}.historyToggle{width:100%;margin:8px 0 4px;padding:11px 12px;border:0;border-radius:12px;background:#edf0e5;color:var(--ink);font:inherit;font-size:12px;text-align:left}.moneyHistory.collapsed{display:none}.moneyHistory{margin:4px 0 10px}button:active{transform:scale(.97);filter:brightness(.94)}
@@ -16,24 +16,81 @@
 <div class="panel" id="panel"><h3 id="panelTitle">街の地図</h3><div id="panelBody"></div></div>
 <div class="status" id="residentStatus"></div><nav class="nav"><button class="active" data-tab="walk"><span class="ico">⌁</span>さんぽ</button><button data-tab="residents"><span class="ico">♙</span>住人</button><button data-tab="relations"><span class="ico">♡</span>関係</button><button data-tab="homes"><span class="ico">⌂</span>家</button><button data-tab="memories"><span class="ico">▤</span>ログ</button></nav></div>
 <script>
-(()=>{const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,residentDiagnosticTimer=null,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
+(()=>{
+// The painted scene and its interaction geometry share the reference's native
+// 1122 x 1402 coordinate system. Only this conversion enters world coordinates.
+const PAINTED_TOWN={width:1122,height:1402,left:-50,top:100,scale:1000/1122};
+function artPoint(x,y){return {x:PAINTED_TOWN.left+x*PAINTED_TOWN.scale,y:PAINTED_TOWN.top+y*PAINTED_TOWN.scale}}
+function artPolygon(points){return points.map(([x,y])=>artPoint(x,y))}
+function nativePoint(x,y){return {x:(x-PAINTED_TOWN.left)/PAINTED_TOWN.scale,y:(y-PAINTED_TOWN.top)/PAINTED_TOWN.scale}}
+const paintedTownArt=new Image(),paintedOccluderTiles=new Map();
+paintedTownArt.src='assets/town-painted-v10.webp';
+paintedTownArt.onload=()=>paintedOccluderTiles.clear();
+const PAINTED_PLOTS=[
+ {id:'north-west',label:'北西の花庭の家',anchor:[475,204],approach:[[531,225],[541,241],[552,251]],footprint:[[397,169],[465,145],[556,176],[555,220],[474,239],[397,214]]},
+ {id:'north-center',label:'北東の花庭の家',anchor:[682,224],approach:[[704,245],[711,260],[710,282]],footprint:[[610,194],[673,173],[752,206],[751,244],[681,268],[610,239]]},
+ {id:'south-west',label:'川を望む東の家',anchor:[868,278],approach:[[908,309],[914,323],[906,338]],footprint:[[799,245],[863,223],[941,254],[941,294],[864,317],[799,288]]},
+ {id:'south-center',label:'石段の上の家',anchor:[405,487],approach:[[424,511],[430,542],[438,560]],footprint:[[311,459],[403,430],[506,473],[504,516],[412,545],[311,511]]},
+ {id:'south-east',label:'広場から離れた花庭の家',anchor:[285,805],approach:[[328,838],[339,855],[385,872],[418,870]],footprint:[[191,769],[282,737],[389,777],[389,823],[291,858],[191,824]]},
+ {id:'center-west-home',label:'北の木陰の家',anchor:[270,125],approach:[[300,174],[322,196],[374,231]],footprint:[[208,121],[270,99],[328,124],[329,161],[273,181],[208,161]],extra:true}
+];
+const PAINTED_LAND=artPolygon([[1090,145],[1016,300],[1020,550],[1000,690],[944,750],[840,847],[806,950],[824,1100],[768,1190],[699,1267],[586,1352],[528,1374],[365,1334],[160,1240],[50,1160],[20,1010],[32,800],[20,665],[45,405],[44,296],[171,207],[341,142],[535,42],[740,116]]);
+const PAINTED_SHORE=[[1090,145],[1016,245],[1008,400],[1014,565],[1000,690],[944,750],[840,847],[806,950],[824,1100],[768,1190],[699,1267],[586,1352],[528,1374]].map(([x,y])=>artPoint(x,y));
+const PAINTED_WALK_SPOTS=[
+ {id:'main-street',label:'こみちの途中',...artPoint(593,514)},
+ {id:'plaza',label:'川辺の広場',...artPoint(350,1150)},
+ {id:'garden-wisteria',label:'藤棚の小径',...artPoint(774,519)},
+ {id:'garden-cherry',label:'桜のそば',...artPoint(801,592)},
+ {id:'garden-riverside',label:'川沿い',...artPoint(793,827)},
+ {id:'garden-plaza',label:'庭園の出口',...artPoint(714,946)},
+ {id:'pier',label:'川辺の桟橋',...artPoint(1010,800)},
+ {id:'north-neighborhood',label:'住宅街',...artPoint(710,282)}
+];
+const PAINTED_FLOWER_SPOTS=[
+ {id:'flower-garden',label:'庭園の花壇',...artPoint(773,620)},
+ {id:'flower-south',label:'広場の花壇',...artPoint(687,990)},
+ {id:'flower-cafe',label:'喫茶店の花壇',...artPoint(441,382)}
+];
+function nativeEllipse(cx,cy,rx,ry){return Array.from({length:24},(_,i)=>[cx+Math.cos(i*Math.PI/12)*rx,cy+Math.sin(i*Math.PI/12)*ry])}
+// These silhouettes are small transparent foreground tiles copied from the same
+// painting. Residents are composited between background and foreground, not on
+// top of a flat photograph of the town.
+const PAINTED_OCCLUDERS=[
+ {id:'cafe-building',depth:351,polygon:[[135,241],[151,205],[218,164],[310,158],[414,224],[419,284],[408,335],[345,355],[253,345],[164,322]]},
+ {id:'cafe-parasol-west',depth:382,polygon:[[51,324],[64,304],[113,290],[163,308],[175,326],[120,334],[119,374],[100,379],[96,331]]},
+ {id:'cafe-parasol-east',depth:407,polygon:[[165,348],[174,329],[218,315],[265,330],[280,349],[229,357],[231,397],[209,404],[207,356]]},
+ {id:'house-north-west',depth:238,polygon:[[387,144],[396,119],[447,80],[516,94],[567,150],[565,219],[548,239],[473,247],[393,218]]},
+ {id:'house-north-center',depth:268,polygon:[[597,164],[620,120],[678,99],[744,134],[775,179],[758,245],[682,279],[610,244]]},
+ {id:'house-east',depth:318,polygon:[[781,238],[807,191],[857,149],[921,172],[956,227],[948,299],[871,332],[798,299]]},
+ {id:'house-middle',depth:546,polygon:[[289,449],[324,409],[400,371],[480,405],[525,453],[510,523],[418,557],[310,519]]},
+ {id:'shop-building',depth:688,polygon:[[79,582],[109,531],[166,490],[242,500],[330,550],[350,610],[326,673],[246,708],[112,672],[84,630]]},
+ {id:'house-lower',depth:861,polygon:[[166,757],[194,724],[255,689],[331,704],[401,759],[399,824],[301,870],[190,837]]},
+ {id:'garden-tree',depth:434,polygon:[[644,361],[662,328],[701,298],[758,293],[811,324],[828,364],[804,405],[766,421],[760,440],[735,442],[730,420],[688,409],[655,387]]},
+ {id:'garden-tree-small',depth:804,polygon:[[644,742],[666,710],[705,694],[749,710],[782,741],[774,777],[744,797],[734,816],[709,818],[702,796],[669,780]]},
+ {id:'west-tree-small',depth:764,polygon:[[357,707],[377,680],[419,662],[460,680],[479,714],[457,745],[432,755],[429,779],[408,780],[401,757],[375,744]]},
+ {id:'cherry-tree',depth:710,polygon:[[826,596],[847,554],[887,529],[932,517],[979,526],[1020,557],[1062,603],[1048,653],[1009,679],[976,690],[970,725],[947,726],[939,692],[886,678],[848,645]]},
+ {id:'plaza-tree',depth:1104,polygon:[[377,1003],[397,963],[432,933],[475,919],[527,925],[574,949],[610,990],[611,1027],[579,1061],[532,1079],[522,1104],[490,1108],[477,1081],[431,1065],[394,1039]]},
+ {id:'wisteria',depth:504,polygon:[[789,427],[808,397],[842,376],[895,375],[935,400],[951,438],[947,503],[929,517],[918,474],[827,474],[828,517],[806,508]]},
+ {id:'flower-arch',depth:1248,polygon:[[395,1215],[405,1173],[437,1141],[483,1127],[526,1138],[559,1167],[575,1210],[569,1253],[548,1253],[548,1204],[533,1175],[511,1158],[479,1152],[449,1166],[427,1192],[423,1255],[402,1256]]}
+];
+const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,residentDiagnosticTimer=null,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
 const places=[
- {id:'home',name:'西の住宅',icon:'🏡',x:645,y:340,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
- {id:'home2',name:'東の住宅',icon:'🏠',x:250,y:850,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
- {id:'cafe',name:'喫茶こもれび',icon:'☕',x:232,y:385,type:'cafe',description:'飲み物を楽しめる喫茶店',actions:['食事','休憩','デート']},
- {id:'shop',name:'こみち商店',icon:'🛒',x:181,y:665,type:'shop',description:'日用品や食材を買える小さな商店',actions:['買い物','食材を買う']},
- {id:'plaza',name:'川辺の広場',icon:'🌳',x:430,y:1100,type:'outdoor',description:'川辺の散歩や休憩を楽しめる広場',actions:['散歩','休憩']},
- {id:'bench-river',name:'川辺のベンチ',icon:'🪑',x:695,y:695,type:'bench',description:'水の流れを眺めながら休めるベンチ',actions:['休憩']},
- {id:'bench-path',name:'広場のベンチ',icon:'🪑',x:344,y:1155,type:'bench',description:'木陰のそばでひと休みできるベンチ',actions:['休憩']},
- {id:'bridge',name:'川辺の桟橋',icon:'🌉',x:795,y:850,type:'bridge',description:'川辺をつなぐ小さな橋。水辺の景色を眺められる場所',actions:['散歩','景色を見る']},
- {id:'flower-west',name:'住宅街の花壇',icon:'🌼',x:130,y:610,type:'garden',description:'色とりどりの花が咲く、住宅近くの花壇',actions:['花を見る']},
- {id:'flower-east',name:'東の花壇',icon:'🌷',x:698,y:696,type:'garden',description:'広場のそばにある、日当たりのよい花壇',actions:['花を見る']},
- {id:'flower-south',name:'南の花壇',icon:'🌻',x:670,y:1080,type:'garden',description:'こみちの南側にある小さな花壇',actions:['花を見る']},
- {id:'wisteria-walk',name:'藤棚の小径',icon:'🌿',x:686,y:782,type:'outdoor',description:'桜と藤棚のある川辺の庭園',actions:['散歩','花を見る']}
+ {id:'home',name:'西の住宅',icon:'🏡',...artPoint(475,204),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
+ {id:'home2',name:'東の住宅',icon:'🏠',...artPoint(682,224),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
+ {id:'cafe',name:'喫茶こもれび',icon:'☕',x:artPoint(367,357).x-30,y:artPoint(367,357).y-40,type:'cafe',description:'花に囲まれたテラスのある喫茶店',actions:['食事','休憩','デート']},
+ {id:'shop',name:'こみち商店',icon:'🛒',...artPoint(220,625),type:'shop',description:'石段の上にある小さな商店',actions:['買い物','食材を買う']},
+ {id:'plaza',name:'川辺の広場',icon:'🌳',...artPoint(482,1077),type:'outdoor',description:'大きな木を囲む円形広場',actions:['散歩','休憩']},
+ {id:'bench-river',name:'川辺のベンチ',icon:'🪑',...artPoint(794,779),type:'bench',description:'水辺を眺めて休めるベンチ',actions:['休憩']},
+ {id:'bench-path',name:'広場のベンチ',icon:'🪑',...artPoint(386,1079),type:'bench',description:'広場の木陰で休めるベンチ',actions:['休憩']},
+ {id:'bridge',name:'川辺の桟橋',icon:'🌉',...artPoint(1010,800),type:'bridge',description:'川にせり出した木の桟橋',actions:['散歩','景色を見る']},
+ {id:'flower-west',name:'喫茶店の花壇',icon:'🌼',...artPoint(441,382),type:'garden',description:'テラスを彩る花壇',actions:['花を見る']},
+ {id:'flower-east',name:'庭園の花壇',icon:'🌷',...artPoint(773,620),type:'garden',description:'小径のそばの花壇',actions:['花を見る']},
+ {id:'flower-south',name:'広場の花壇',icon:'🌻',...artPoint(687,990),type:'garden',description:'広場を囲む花壇',actions:['花を見る']},
+ {id:'wisteria-walk',name:'藤棚の小径',icon:'🌿',...artPoint(774,519),type:'outdoor',description:'藤の花と桜を楽しめる川辺の庭園',actions:['散歩','花を見る']}
 ];
 function getPlace(id){return places.find(place=>place.id===id)||null}
 const SAVE_KEY='komichi-life-save-v1';
-const TOWN_LAYOUT_REVISION=9;let previousTownRevision=0;
+const TOWN_LAYOUT_REVISION=10;let previousTownRevision=0;
 // 家具・住居データ。購入者、所有者、利用者、設置場所を独立して管理する。
 const furnitureCatalog={
  bed:{id:'bed',name:'ベッド',price:1800,rooms:['bedroom'],actions:['sleep','rest'],capacity:2,ownership:'household',unique:'household',size:{w:2,h:2}},
@@ -60,14 +117,7 @@ const homeLayoutCatalog={
 };
 let selectedHomeLayout='2LDK',homeSubPage='menu';
 // Staggered house plots for a storybook hillside rather than a geometric grid.
-const residentialPlots=[
-{id:'north-west',label:'北西の花庭の家',x:420,y:245},
-{id:'north-center',label:'北東の花庭の家',x:630,y:270,facing:'west'},
-{id:'south-west',label:'川を望む東の家',x:670,y:410,facing:'west'},
-{id:'south-center',label:'石段の上の家',x:327,y:586},
-{id:'south-east',label:'広場から離れた花庭の家',x:260,y:845},
-{id:'center-west-home',label:'北の木陰の家',x:213,y:190}
-];
+const residentialPlots=PAINTED_PLOTS.map(plot=>({...plot,...artPoint(...plot.anchor)}));
 let townExteriorCache=null;
 function townDisplayHomes(){
  if(townExteriorCache)return townExteriorCache;
@@ -189,7 +239,7 @@ function ensureFurnitureWorld(saved){
  });
  // 住宅配置v6：住人が現在所属していない保存済み住宅も含め、全住宅を新しい街区へ配置。
  // homes全件を対象にしないと、空き家や旧世帯の家だけ旧位置に残ってしまう。
- const homeLayoutVersion=9;
+ const homeLayoutVersion=10;
  const allHomes=Object.values(homes);
  const plotById=new Map(residentialPlots.map(plot=>[plot.id,plot]));
  const occupiedPlots=new Set();
@@ -272,55 +322,33 @@ function isOutdoorResident(p){return !!p&&p.action!=='workOutside'&&!((p.action=
 // 住宅の外観寸法・壁の接地形状を一つの計算結果として共有する。
 const homeGeometryCache=new WeakMap();
 function homeExteriorGeometry(home){
- const cacheKey=home.x+","+home.y+","+home.layoutKey;const cached=homeGeometryCache.get(home);if(cached?.key===cacheKey)return cached.value;
- const sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
- const [w,h]=sizes[home?.layoutKey]||[142,112];
- const left=-w/2,right=w/2,front=h*.52,back=-h*.34,roofY=-h*.72;
- const wallW=w*.76,collisionBack=-h*.25,collisionFront=h*.40;
- const collisionLeft=-wallW/2,collisionRight=wallW/2;
- const footprint=[
-  {x:home.x+collisionLeft,y:home.y+collisionBack},
-  {x:home.x,y:home.y+collisionBack-14},
-  {x:home.x+collisionRight,y:home.y+collisionBack},
-  {x:home.x+collisionRight,y:home.y+collisionFront},
-  {x:home.x,y:home.y+collisionFront+18},
-  {x:home.x+collisionLeft,y:home.y+collisionFront}
- ];
- const value={w,h,left,right,front,back,roofY,footprint};homeGeometryCache.set(home,{key:cacheKey,value});return value;
+ const plot=residentialPlots.find(q=>q.id===home.mapPlotId);
+ const cacheKey=home.x+','+home.y+','+home.mapPlotId;
+ const cached=homeGeometryCache.get(home);if(cached?.key===cacheKey)return cached.value;
+ const dx=home.x-(plot?.x||home.x),dy=home.y-(plot?.y||home.y);
+ const footprint=plot?artPolygon(plot.footprint).map(q=>({x:q.x+dx,y:q.y+dy})):[{x:home.x-48,y:home.y-25},{x:home.x+48,y:home.y-25},{x:home.x+48,y:home.y+45},{x:home.x-48,y:home.y+45}];
+ const w=plot?.extra?118:142,h=112,front=homeEntrance(home).y-home.y;
+ const value={w,h,left:-w/2,right:w/2,front,back:-h*.34,roofY:-h*.72,footprint};
+ homeGeometryCache.set(home,{key:cacheKey,value});return value;
 }
-function pointInHouseFootprint(home,x,y){
- // 描画用の住宅データから生成した壁の接地形状を判定に使用する。
- return pointInPolygon(x,y,homeExteriorGeometry(home).footprint);
-}
+function pointInHouseFootprint(home,x,y){return pointInPolygon(x,y,homeExteriorGeometry(home).footprint)}
+function pointSegmentDistance(x,y,a,b){const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/Math.max(1,dx*dx+dy*dy)));return Math.hypot(x-a.x-dx*t,y-a.y-dy*t)}
 function homeBlocksMovement(home,x,y,p){
- if(!home)return false;
- const geometry=homeExteriorGeometry(home),{w,h}=geometry;
- if(x<home.x-w*.5-12||x>home.x+w*.5+12||y<home.y-h*.35-14||y>home.y+h*.6+15)return false;
- const left=home.x-w/2-9,right=home.x+w/2+9,top=home.y-h*.34-24,bottom=home.y+h*.52+31;
- const entrance=homeEntrance(home),front=home.y+h*.52;
- const doorLane=Math.abs(x-entrance.x)<18&&y>=front-18&&y<=entrance.y+27;
- const householdId=householdForResident(p).homeId;
- const entering=(p.action==='home'||p.action==='sleep')&&householdId===home.id;
- const nearDoor=Math.hypot(p.x-entrance.x,p.y-entrance.y)<40;
- // 自宅から外出する本人は、家の内側から玄関まで歩ける。
- const exitingOwnHome=householdId===home.id&&p.phaseState==='moving'&&!entering&&p.x>=left&&p.x<=right&&p.y>=top&&p.y<=bottom;
- const candidateInsideOwnHome=exitingOwnHome&&x>=left&&x<=right&&y>=top&&y<=bottom;
- if(candidateInsideOwnHome)return false;
- // 建物の接地面だけを塞ぎ、裏側・屋根の張り出し部分は通行可能にする。
- if(!pointInHouseFootprint(home,x,y))return false;
- return !(doorLane&&(entering||nearDoor||exitingOwnHome));
+ if(!home||!pointInHouseFootprint(home,x,y))return false;
+ const own=p&&householdForResident(p).homeId===home.id;
+ if(!own)return true;
+ const approach=homeApproachPoints(home),door=approach[0];
+ const corridor=approach.some((q,i)=>i>0&&pointSegmentDistance(x,y,approach[i-1],q)<24);
+ const exiting=p.phaseState==='moving'&&!['home','sleep'].includes(p.action)&&Math.hypot(p.x-door.x,p.y-door.y)<90;
+ return !(corridor&&(['home','sleep'].includes(p.action)||exiting));
 }
 function isBlockedByHome(x,y,p){
  return townDisplayHomes().some(home=>homeBlocksMovement(home,x,y,p));
 }
 // Shared placement and collision geometry for fixed public buildings.
 const WORLD_BUILDINGS={
- cafe:{id:'cafe',x:210,y:370,
-  footprint:[[100,326],[195,294],[303,350],[303,404],[213,387],[100,418]].map(([x,y])=>({x,y})),
-  door:{x:262,halfWidth:22,minY:388,maxY:425},targetAction:'cafe'},
- shop:{id:'shop',x:181,y:665,
-  footprint:[[104,618],[170,590],[251,646],[251,698],[178,685],[104,708]].map(([x,y])=>({x,y})),
-  door:{x:216,halfWidth:22,minY:687,maxY:722},targetAction:'shoppingTrip'}
+ cafe:{id:'cafe',...artPoint(300,310),footprint:artPolygon([[163,278],[237,249],[404,276],[403,330],[343,352],[248,344],[164,322]]),door:{x:artPoint(367,357).x,halfWidth:22,minY:artPoint(367,335).y,maxY:artPoint(367,357).y},targetAction:'cafe'},
+ shop:{id:'shop',...artPoint(220,625),footprint:artPolygon([[113,577],[215,546],[321,593],[320,650],[245,680],[114,642]]),door:{x:artPoint(265,671).x,halfWidth:22,minY:artPoint(265,646).y,maxY:artPoint(265,671).y},targetAction:'shoppingTrip'}
 };
 function facilityBlocksMovement(x,y,p){
  // 建物の接地面・入口・行動目標は共通の建物データから判定する。
@@ -335,19 +363,11 @@ function facilityBlocksMovement(x,y,p){
  return false;
 }
 // 川の岸線を描画と同じベジェ曲線からサンプリングし、水面への侵入を防ぐ。
-const TOWN_RIVER_CURVES=[
- [[805,168],[747,310],[850,472],[790,650]],
- [[790,650],[740,807],[863,966],[790,1170]],
- [[790,1170],[758,1280],[600,1342],[460,1360]]
-];
-const riverEdgeSamples=TOWN_RIVER_CURVES.flatMap(curve=>Array.from({length:101},(_,i)=>{
- const t=i/100,u=1-t;return {x:u*u*u*curve[0][0]+3*u*u*t*curve[1][0]+3*u*t*t*curve[2][0]+t*t*t*curve[3][0],y:u*u*u*curve[0][1]+3*u*u*t*curve[1][1]+3*u*t*t*curve[2][1]+t*t*t*curve[3][1]};
-})).sort((a,b)=>a.y-b.y);
+const TOWN_RIVER_CURVES=[];
 function riverEdgeX(y){
- if(y<168||y>1360)return Infinity;
- let lo=0,hi=riverEdgeSamples.length-1;
- while(hi-lo>1){const mid=(lo+hi)>>1;if(riverEdgeSamples[mid].y<y)lo=mid;else hi=mid}
- const a=riverEdgeSamples[lo],b=riverEdgeSamples[hi],t=(y-a.y)/Math.max(.001,b.y-a.y);return a.x+(b.x-a.x)*t;
+ if(y<PAINTED_SHORE[0].y||y>PAINTED_SHORE.at(-1).y)return Infinity;
+ for(let i=1;i<PAINTED_SHORE.length;i++)if(y<=PAINTED_SHORE[i].y){const a=PAINTED_SHORE[i-1],b=PAINTED_SHORE[i],t=(y-a.y)/(b.y-a.y);return a.x+(b.x-a.x)*t}
+ return Infinity;
 }
 function pointInPolygon(x,y,polygon){
  let inside=false;
@@ -358,29 +378,24 @@ function pointInPolygon(x,y,polygon){
  return inside;
 }
  // 道路ネットワーク。中央幹線から北・西の住宅地へ接続。
- const roadRoutes=[
-  {main:true,start:[540,353],curves:[[[585,439],[589,538],[540,654]],[[491,773],[477,897],[460,1005]]]},
-  {start:[334,350],curves:[[[391,342],[445,350],[540,353]]]},
-  {start:[540,353],curves:[[[581,410],[593,521],[670,515]]]},
-  {start:[262,444],curves:[[[345,444],[477,439],[570,460]]]},
-  {start:[330,691],curves:[[[407,686],[496,689],[531,678]]]},
-  {start:[216,759],curves:[[[296,762],[400,769],[498,752]]]},
-  {start:[262,969],curves:[[[326,967],[402,950],[473,940]]]},
-  {garden:true,start:[670,515],curves:[[[701,553],[612,543],[644,628]],[[662,676],[610,724],[686,782]],[[625,848],[698,898],[657,973]],[[632,1019],[644,1072],[630,1103]]]},
-  {garden:true,start:[531,678],curves:[[[571,690],[601,668],[644,628]]]},
-  {garden:true,start:[686,782],curves:[[[716,804],[738,840],[755,861]]]},
-  {garden:true,start:[460,1005],curves:[[[475,1064],[493,1093],[492,1110]]]},
-  {garden:true,start:[630,1103],curves:[[[655,1175],[585,1243],[532,1253]]]},
-  {garden:true,start:[334,350],curves:[[[337,303],[286,266],[215,285]]]},
-  {garden:true,start:[440,1042],curves:[[[517,1042],[580,1089],[580,1147]],[[580,1205],[517,1252],[440,1252]],[[363,1252],[300,1205],[300,1147]],[[300,1089],[363,1042],[440,1042]]]}
+ const PAINTED_NATIVE_ROADS=[
+ {main:true,start:[510,270],curves:[[[585,335],[630,415],[591,535]],[[569,618],[506,700],[514,803]],[[507,856],[515,894],[516,948]]]},
+ {start:[510,270],curves:[[[527,262],[548,259],[552,251]]]},
+ {start:[566,318],curves:[[[616,300],[654,290],[710,282]],[[753,288],[762,332],[821,349]],[[860,364],[895,352],[906,338]]]},
+ {start:[560,350],curves:[[[513,356],[478,363],[441,382]],[[409,385],[354,400],[311,382]],[[322,367],[347,359],[367,357]]]},
+ {start:[551,641],curves:[[[528,604],[475,599],[438,560]]]},
+ {start:[543,661],curves:[[[457,680],[367,697],[309,696]],[[294,697],[279,696],[265,696]]]},
+ {start:[515,851],curves:[[[474,854],[459,893],[418,870]]]},
+ {garden:true,start:[591,535],curves:[[[639,533],[694,514],[736,517]],[[734,539],[816,551],[801,592]],[[837,633],[771,688],[704,684]],[[654,688],[612,740],[637,783]],[[646,858],[752,868],[793,827]],[[775,864],[740,899],[714,946]],[[703,961],[691,973],[687,990]]]},
+ {garden:true,start:[736,517],curves:[[[783,529],[824,550],[863,540]]]},
+ {garden:true,start:[793,827],curves:[[[821,819],[824,839],[846,845]],[[912,825],[974,795],[1010,800]]]},
+ {garden:true,start:[482,958],curves:[[[607,958],[708,1011],[708,1077]],[[708,1143],[607,1196],[482,1196]],[[357,1196],[256,1143],[256,1077]],[[256,1011],[357,958],[482,958]]]},
+ {garden:true,start:[482,1196],curves:[[[482,1231],[506,1301],[493,1332]]]},
+ {garden:true,start:[510,270],curves:[[[451,266],[400,250],[374,231]]]}
  ];
+ const roadRoutes=PAINTED_NATIVE_ROADS.map(r=>({...r,start:Object.values(artPoint(...r.start)),curves:r.curves.map(c=>c.map(q=>Object.values(artPoint(...q))))}));
  const roadRendering={edge:'#bba084',surface:'#f7dec0',mainEdgeWidth:104,mainSurfaceWidth:94,branchEdgeWidth:50,branchSurfaceWidth:40,gardenEdgeWidth:32,gardenSurfaceWidth:25};
- const bridge={
-  base:[[755,859],[865,809],[865,847],[755,900]],
-  deck:[[755,844],[865,794],[865,832],[755,885]],
-  rails:[[[756,831],[865,781]],[[755,882],[865,831]]],railColor:'#b18a5c',railWidth:5,
-  approaches:[{start:[686,782],control:[719,813],end:[755,861],edgeWidth:32,surfaceWidth:25}]
- };
+ const bridge={base:[],deck:[[816,810],[1049,725],[1102,748],[1100,813],[900,890],[821,872]].map(q=>Object.values(artPoint(...q))),rails:[],approaches:[]};
  const WORLD_ROAD_NETWORK={routes:roadRoutes,rendering:roadRendering,bridge};
 function riverBlocksMovement(x,y){
  // 橋の描画データにあるデッキの輪郭だけを歩行可能範囲にする。
@@ -390,13 +405,13 @@ function riverBlocksMovement(x,y){
 // Shared placement data for street furniture. Rendering and collision use these same objects.
 const WORLD_STREET_FURNITURE={
  benches:[
-  {id:'plaza-bench',x:708,y:695},
-  {id:'garden-bench',x:720,y:990},
-  {id:'south-bench',x:360,y:1175},
-  {id:'south-bench-east',x:520,y:1175}
- ],
- lamps:[{id:'cafe-lamp',x:401,y:412},{id:'main-lamp',x:610,y:579},{id:'middle-lamp',x:435,y:716},{id:'garden-lamp',x:599,y:875},{id:'pier-lamp',x:841,y:824},{id:'plaza-west-lamp',x:268,y:1160},{id:'plaza-east-lamp',x:608,y:1171}],
- sign:{id:'town-sign',polygon:[[348,408],[374,398],[374,429],[348,439]]}
+ {id:'wisteria-bench',...artPoint(883,498)},
+ {id:'garden-bench',...artPoint(747,622)},
+ {id:'riverside-bench',...artPoint(794,779)},
+ {id:'south-bench',...artPoint(386,1079)},
+ {id:'south-bench-east',...artPoint(596,1080)}],
+ lamps:[[462,343],[649,433],[500,642],[680,608],[606,842],[1059,779],[333,1091],[649,1094],[278,1189],[786,1194]].map(([x,y],i)=>({id:'painted-lamp-'+i,...artPoint(x,y)})),
+ sign:{id:'town-sign',polygon:[]}
 };
 function streetFurnitureBlocksMovement(x,y,p){
  // 街に描画しているベンチをすべて障害物として扱う。
@@ -424,7 +439,10 @@ function restoreBenchExitClearance(p){
 }
 function isBlockedAtPoint(x,y,p){
  // 街の外周を越えないようにし、住人の胴体にも余白を確保する。
- if(x<18||x>882||y<18||y>1382)return true;
+ if(x<-40||x>954||y<95||y>1370)return true;
+ const reserve=Object.values(homes||{}).some(h=>h.mapPlotId==='center-west-home');
+ const onPier=pointInPolygon(x,y,WORLD_ROAD_NETWORK.bridge.deck.map(([x,y])=>({x,y})));
+ if(!pointInPolygon(x,y,PAINTED_LAND)&&!onPier&&!(reserve&&x>95&&x<330&&y>110&&y<330))return true;
  return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p)||natureBlocksMovement(x,y,p)||riverBlocksMovement(x,y)||streetFurnitureBlocksMovement(x,y,p);
 }
 // 住人の胴体を中心とした複数点で当たり判定し、斜め・上下方向のすり抜けも防ぐ。
@@ -467,42 +485,13 @@ function findMovementDetour(p,point){
 }
 // Static nature layout is the single source for tree placement and trunk collision.
 const WORLD_NATURE_OBJECTS={
- trees:[
-  {id:'tree-east-north',x:737,y:600,scale:1.12},
-  {id:'tree-east-middle',x:709,y:870,scale:1.5},
-  {id:'tree-riverside',x:594,y:957,scale:.83},
-  {id:'tree-plaza-center',x:440,y:1165,scale:1.37},
-  {id:'tree-outer-west',x:89,y:932,scale:.93},
-  {id:'tree-cafe-west',x:83,y:420,scale:.87},
-  {id:'tree-terrace-west',x:102,y:613,scale:.92},
-  ...Array.from({length:9},(_,i)=>({id:'tree-north-'+i,x:143+i*71,y:205+(i%3)*15,scale:.76+(i%3)*.08})),
-  ...Array.from({length:5},(_,i)=>({id:'tree-west-'+i,x:45+(i%2)*17,y:520+i*139,scale:.72+(i%3)*.11}))
- ].map(t=>({...t,collision:{trunkWidth:10,top:-18,bottom:20,padding:3}})),
- flowerbeds:[
-  {id:'flowerbed-east-north',soil:[[567,581],[597,567],[627,581],[597,602]],top:[[567,575],[597,561],[627,575],[597,596]]},
-  {id:'flowerbed-east-south',soil:[[558,1030],[595,1011],[631,1030],[595,1051]],top:[[558,1024],[595,1005],[631,1024],[595,1045]]}
- ]
+ trees:[[750,427],[956,706],[721,803],[421,760],[502,1097]].map(([x,y],i)=>({id:'painted-tree-'+i,...artPoint(x,y),scale:1,collision:{trunkWidth:10,top:-5,bottom:5,padding:2}})),
+ flowerbeds:[{id:'plaza-tree-bed',soil:nativeEllipse(502,1108,80,27).map(q=>Object.values(artPoint(...q))),top:nativeEllipse(502,1108,80,27).map(q=>Object.values(artPoint(...q)))}]
 };
 function natureBlocksMovement(x,y,p){
- // 木の葉や影ではなく、描画されている幹の矩形だけを塞ぐ。
- // 幹の幅・高さは drawWorld 内の tree() と同じ倍率で算出する。
- const trees=WORLD_NATURE_OBJECTS.trees;
- for(const tree of trees){
-  const hit=tree.collision;
-  const halfWidth=hit.trunkWidth*tree.scale/2+hit.padding;
-  const top=tree.y+hit.top*tree.scale-hit.padding;
-  const bottom=tree.y+hit.bottom*tree.scale+hit.padding;
-  if(x>=tree.x-halfWidth&&x<=tree.x+halfWidth&&y>=top&&y<=bottom)return true;
- }
- // Arbor and flower-arch posts occupy only their small footings; the canopy
- // and open passage beneath either arch remain walkable.
- if([[669,705],[747,705],[385,1320],[475,1320]]
-   .some(([px,py])=>Math.hypot(x-px,y-py)<9))return true;
- // 低い植え込みは景観用の地被として扱い、歩行を妨げない。
- // 木の幹と花壇のみを通行障害物にする。
- // 描画されている花壇の外周ポリゴンと同じ形で判定し、周囲に透明な四角形を作らない。
- if(WORLD_NATURE_OBJECTS.flowerbeds.some(bed=>pointInPolygon(x,y,bed.top.map(([px,py])=>({x:px,y:py})))))return true;
- return false;
+ for(const t of WORLD_NATURE_OBJECTS.trees)if(Math.abs(x-t.x)<7&&Math.abs(y-t.y)<7)return true;
+ if([[816,508],[936,510],[419,1248],[552,1248]].some(q=>{const a=artPoint(...q);return Math.hypot(x-a.x,y-a.y)<7}))return true;
+ return WORLD_NATURE_OBJECTS.flowerbeds.some(b=>pointInPolygon(x,y,b.top.map(([x,y])=>({x,y}))));
 }
 
 function relationshipLabel(ids){return ids.map(id=>residentById(id)?.name||id).join(' ＆ ')}
@@ -1244,7 +1233,7 @@ function townRiversideRocks(){
  }
 }
 function townDrawGround(){
- ctx.fillStyle='#f1dfb4';ctx.fillRect(-100,-100,1200,1600);
+ ctx.fillStyle='#fadca9';ctx.fillRect(-100,-100,1200,1600);
  // A natural ribbon of water wraps the rounded town instead of ending in a rectangle.
  ctx.save();townRiverOutline();ctx.clip();ctx.fillStyle=townTexture('water');ctx.fillRect(400,120,600,1330);
  const waterShade=ctx.createLinearGradient(760,0,980,0);waterShade.addColorStop(0,'rgba(20,135,170,.05)');waterShade.addColorStop(1,'rgba(255,249,218,.3)');ctx.fillStyle=waterShade;ctx.fillRect(400,120,600,1330);ctx.restore();
@@ -1410,34 +1399,35 @@ function townCottageImage(home,index){
  ctx.restore();
 }
 
+function paintedOccluderTile(item){
+ if(paintedOccluderTiles.has(item.id))return paintedOccluderTiles.get(item.id);
+ const xs=item.polygon.map(q=>q[0]),ys=item.polygon.map(q=>q[1]),left=Math.floor(Math.min(...xs))-2,top=Math.floor(Math.min(...ys))-2,width=Math.ceil(Math.max(...xs))-left+2,height=Math.ceil(Math.max(...ys))-top+2;
+ const tile=document.createElement('canvas');tile.width=width;tile.height=height;const t=tile.getContext('2d');
+ t.beginPath();item.polygon.forEach(([x,y],i)=>i?t.lineTo(x-left,y-top):t.moveTo(x-left,y-top));t.closePath();t.clip();t.drawImage(paintedTownArt,-left,-top);
+ const result={tile,left,top,width,height};paintedOccluderTiles.set(item.id,result);return result;
+}
+function drawPaintedOccluder(item){const q=paintedOccluderTile(item),p=artPoint(q.left,q.top);ctx.drawImage(q.tile,p.x,p.y,q.width*PAINTED_TOWN.scale,q.height*PAINTED_TOWN.scale)}
 function drawWorld(){
  ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(interiorHomeId);return}
- ctx.save();const fit=Math.min(W/1000,H/1400)*1.04;
+ if(!paintedTownArt.complete||!paintedTownArt.naturalWidth){ctx.fillStyle='#fadca9';ctx.fillRect(0,0,W,H);ctx.fillStyle='#8c7350';ctx.font='16px serif';ctx.textAlign='center';ctx.fillText('川辺のこみち',W/2,H/2);return}
+ ctx.save();const fit=Math.min(W/1000,H/1400);
  ctx.translate(W/2,H/2);ctx.scale(fit*zoom,fit*zoom);ctx.translate(-450+panX,-720+panY);
- townCachedGround();
+ ctx.fillStyle='#fadca9';ctx.fillRect(-600,-400,2200,2300);
+ ctx.drawImage(paintedTownArt,PAINTED_TOWN.left,PAINTED_TOWN.top,1122*PAINTED_TOWN.scale,1402*PAINTED_TOWN.scale);
  const outdoors=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
- const items=[
-  ...townDisplayHomes().map((home,index)=>({y:home.y+homeExteriorGeometry(home).front+6,draw:()=>drawHouseExterior(home,index)})),
-  {y:426,draw:()=>drawCafe(WORLD_BUILDINGS.cafe.x,WORLD_BUILDINGS.cafe.y)},
-  {y:729,draw:()=>drawShop(WORLD_BUILDINGS.shop.x,WORLD_BUILDINGS.shop.y)},
-  ...[[91,505,77],[87,692,73],[111,796,81],[111,1005,75],[111,1179,91],[190,1259,78],[587,1281,87],[323,501,72],[412,724,69],[315,777,67],[353,977,66],[363,264,64],[558,284,65],[674,341,67],[765,490,69],[748,619,64],[738,743,61],[747,1018,62],[473,397,61],[476,543,62],[399,864,54]].map(([x,y,w])=>({y,draw:()=>townPaintedDecoration('flowerbed',x,y,w)})),
-  ...WORLD_NATURE_OBJECTS.trees.map(t=>({y:t.y,draw:()=>t.id==='tree-east-middle'?townCherryBlossom(t.x,t.y,t.scale):tree(t.x,t.y,t.scale)})),
-  {y:678,draw:()=>townWisteriaArbor(708,693)},
-  {y:1331,draw:()=>townFlowerArch(430,1320)},
-  ...WORLD_NATURE_OBJECTS.flowerbeds.flatMap((b,i)=>[{y:(b.soil[0][1]+b.soil[2][1])/2,draw:()=>townPaintedFlowerbed(b,i,'back')},{y:Math.max(...b.soil.map(q=>q[1]))+7,draw:()=>townPaintedFlowerbed(b,i,'front')}]),
-  ...WORLD_STREET_FURNITURE.benches.flatMap(b=>[{y:b.y-8,draw:()=>bench(b.x,b.y,'back')},{y:b.y+16,draw:()=>bench(b.x,b.y,'front')}]),
-  ...WORLD_STREET_FURNITURE.lamps.map(l=>({y:l.y,draw:()=>lamp(l.x,l.y)})),
-  ...outdoors.map(({p,i})=>({y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:15*(p.scale||1)),draw:()=>drawChar(p,i,false)}))
- ];
- // Frame the top gardens with a forest behind the northern cottages.
- items.sort((a,b)=>a.y-b.y);items.forEach(item=>item.draw());
- // Pier rail and river edge remain part of the same shared layout geometry.
- const bridge=WORLD_ROAD_NETWORK.bridge;
- ctx.strokeStyle=bridge.railColor;ctx.lineWidth=4;
- bridge.rails.forEach(rail=>{ctx.beginPath();ctx.moveTo(...rail[0]);ctx.lineTo(...rail[1]);ctx.stroke()});
+ const layers=PAINTED_OCCLUDERS.map(item=>({y:artPoint(0,item.depth).y,draw:()=>drawPaintedOccluder(item)}));
+ // Optional sixth home uses its retained painted cottage asset; the five main
+ // plots are already part of the town art, occupied or vacant.
+ Object.values(homes).filter(h=>residentialPlots.find(q=>q.id===h.mapPlotId)?.extra).forEach((h,i)=>layers.push({y:homeEntrance(h).y,draw:()=>drawHouseExterior(h,i)}));
+ WORLD_STREET_FURNITURE.benches.forEach((bench,i)=>{
+  const n=nativePoint(bench.x,bench.y),item={id:'bench-front-'+i,polygon:[[n.x-43,n.y+2],[n.x+43,n.y+2],[n.x+43,n.y+23],[n.x-43,n.y+23]]};
+  layers.push({y:bench.y+16,draw:()=>drawPaintedOccluder(item)});
+ });
+ outdoors.forEach(({p,i})=>layers.push({y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:15*(p.scale||1)),draw:()=>drawChar(p,i,false)}));
+ layers.sort((a,b)=>a.y-b.y);layers.forEach(item=>item.draw());
  outdoors.forEach(({p})=>drawCharLabel(p));
  const night=hour>=22||hour<5?1:hour>=20?(hour-20)/2:hour>=5&&hour<7?(7-hour)/2:hour>=18?(hour-18)/2:0;
- if(night>0){ctx.fillStyle='rgba(35,48,75,'+(night*.38)+')';ctx.fillRect(0,100,1100,1400)}
+ if(night>0){ctx.fillStyle='rgba(28,41,68,'+(night*.40)+')';ctx.fillRect(-600,-400,2200,2300);WORLD_STREET_FURNITURE.lamps.forEach(l=>{const glow=ctx.createRadialGradient(l.x,l.y-46,1,l.x,l.y-46,28);glow.addColorStop(0,'rgba(255,223,140,'+night*.35+')');glow.addColorStop(1,'rgba(255,223,140,0)');ctx.fillStyle=glow;ctx.fillRect(l.x-28,l.y-74,56,56)})}
  ctx.restore();
 }
 
@@ -1585,14 +1575,16 @@ function curvedRoadEdge(a,b,resident){
   return [{x:b.x,y:b.y}];
  return refined;
 }
-function homeFacing(home){return residentialPlots.find(plot=>plot.id===home?.mapPlotId)?.facing==='west'?-1:1}
-function homeEntrance(home){return home?{x:home.x+2*homeFacing(home),y:home.y+78}:null}
+function homeFacing(home){return 1}
+function homeApproachPoints(home){
+ const plot=residentialPlots.find(q=>q.id===home?.mapPlotId);if(!plot)return [{x:home.x+2,y:home.y+78}];
+ const dx=home.x-plot.x,dy=home.y-plot.y;return plot.approach.map(q=>{const a=artPoint(...q);return {x:a.x+dx,y:a.y+dy}});
+}
+function homeEntrance(home){return home?homeApproachPoints(home)[0]:null}
 function homeSouthRoadNode(home){
- if(!home)return roadNodes[0];
- const e=homeEntrance(home);
- const candidates=roadNodes.filter(n=>n.y>=e.y-2&&n.y<=e.y+130);
- const target=(candidates.length?candidates:roadNodes).reduce((best,n)=>Math.hypot(n.x-e.x,n.y-e.y)<Math.hypot(best.x-e.x,best.y-e.y)?n:best);
- return {id:'home-access-'+home.id,x:target.x,y:target.y,links:[target.id]};
+ if(!home)return roadNodes[0];const e=homeApproachPoints(home).at(-1);
+ const target=roadNodes.reduce((best,n)=>Math.hypot(n.x-e.x,n.y-e.y)<Math.hypot(best.x-e.x,best.y-e.y)?n:best,roadNodes[0]);
+ return {id:'home-access-'+home.id,x:e.x,y:e.y,links:[target.id]};
 }
 function roadNodePath(start,goal,resident=null,clearanceCache=new Map()){
  if(!start||!goal)return start?[start]:[];
@@ -1655,12 +1647,7 @@ function compactRoutePoints(points,resident){
 function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  if(resident&&Math.hypot(resident.x-fromX,resident.y-fromY)<2)restoreBenchExitClearance(resident);
  const ownHome=resident?homes[householdForResident(resident).homeId]:null;
- const startHome=ownHome&&(()=>{
-  const e=homeEntrance(ownHome),sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
-  const [w,h]=sizes[ownHome.layoutKey]||[116,100];
-  const inside=fromX>=ownHome.x-w/2-9&&fromX<=ownHome.x+w/2+9&&fromY>=ownHome.y-h*.34-24&&fromY<=ownHome.y+h*.52+31;
-  return inside||(e&&Math.hypot(fromX-e.x,fromY-e.y)<35);
- })()?ownHome:null;
+ const startHome=ownHome&&(pointInHouseFootprint(ownHome,fromX,fromY)||Math.hypot(fromX-homeEntrance(ownHome).x,fromY-homeEntrance(ownHome).y)<45)?ownHome:null;
  const fixedStart=startHome?homeSouthRoadNode(startHome):null;
  const fixedGoal=destinationHome?homeSouthRoadNode(destinationHome):null;
  const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
@@ -1700,13 +1687,13 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const points=[{x:fromX,y:fromY}];
  if(startHome){
   // 玄関から正面の横道へ、描画と一致する短い縦道を進む。
-  points.push({x:fixedStart.x,y:fixedStart.y});
+  points.push(...homeApproachPoints(startHome).slice(1));
  }
  nodes.forEach((node,i)=>{if(i===0)points.push({x:node.x,y:node.y});else points.push(...curvedRoadEdge(nodes[i-1],node,resident));});
  if(destinationHome){
   const e=homeEntrance(destinationHome);
   // 帰宅時も家の正面に伸びた通路からまっすぐ玄関へ向かう。
-  points.push({x:goal.x,y:goal.y},{x:e.x,y:e.y});
+  points.push(...homeApproachPoints(destinationHome).slice().reverse());
  }
  points.push({x:toX,y:toY});
  const result=compactRoutePoints(points,resident);
@@ -1718,7 +1705,7 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
 if(previousTownRevision!==TOWN_LAYOUT_REVISION){
  chars.forEach(p=>{
   if(p.action==='workOutside'||((p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'))return;
-  if(isBlockedByStructure(p.x,p.y,p)){
+  if(true){
    const n=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p)).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
    if(n){p.x=n.x;p.y=n.y}
   }
@@ -1739,6 +1726,13 @@ chars.forEach(p=>{
  }
 });
 saveGame();
+function paintedActivityDestination(x,y,p){
+ const sorted=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p)).sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y));
+ if(!sorted.length)return {x,y};const nearest=sorted[0];
+ const native=nativePoint(x,y),onPlaza=((native.x-482)/260)**2+((native.y-1077)/150)**2<1;
+ if((onPlaza||Math.hypot(nearest.x-x,nearest.y-y)<24)&&!isBlockedByStructure(x,y,p))return {x,y};
+ return {x:nearest.x,y:nearest.y};
+}
 function resolveOpenDestination(x,y,p){if(!isBlockedByStructure(x,y,p))return {x,y};let best=null,bestDistance=Infinity;for(let radius=12;radius<=120;radius+=12){for(let i=0;i<24;i++){const angle=Math.PI*2*i/24,candidate={x:x+Math.cos(angle)*radius,y:y+Math.sin(angle)*radius};if(isBlockedByStructure(candidate.x,candidate.y,p))continue;const distance=Math.hypot(candidate.x-x,candidate.y-y);if(distance<bestDistance){best=candidate;bestDistance=distance}}if(best)return best}return {x,y}}
 // Keep residents from standing on top of each other at shared activity spots.
 function uncrowdedActivityDestination(p,x,y){
@@ -1766,13 +1760,13 @@ function interruptSocialForNewAction(p){
   partner.activity='街で過ごしている';partner.stayText='';partner.pose='stand';
  }
 }
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){p.passing=null;p.trafficWait=0;if(kind!=='social')interruptSocialForNewAction(p);
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind==='date'){targetX=WORLD_BUILDINGS.cafe.door.x+(i%2?18:-18);targetY=WORLD_BUILDINGS.cafe.door.maxY+16}p.passing=null;p.trafficWait=0;if(kind!=='social')interruptSocialForNewAction(p);
  if(kind!=='bench'){
   const previousBench=p.action==='bench'&&p.benchSeat?WORLD_STREET_FURNITURE.benches.filter(b=>b.group!=='cafe')[p.benchSeat.bench]:null;
   p.benchExit=previousBench&&Math.hypot(p.x-previousBench.x,p.y-previousBench.y)<55?{id:previousBench.id,x:p.x,y:p.y}:null;
   p.benchSeat=null;
  }else p.benchExit=null;
- if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=resolveOpenDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}if(['cafe','work','walk','flowers'].includes(kind)){
+ if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=paintedActivityDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}if(['cafe','work','walk','flowers'].includes(kind)){
  const open=uncrowdedActivityDestination(p,targetX,targetY);
  targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY;
 }
@@ -1881,7 +1875,7 @@ function startWork(p,i,plan){
   // Work destinations need usable street-side entrances, not a building's roof center.
   let workTarget={x:place.x,y:place.y};
   const building=WORLD_BUILDINGS[place.id];
-  if(building)workTarget={x:building.door.x,y:building.id==='shop'?building.door.maxY+22:building.door.maxY-14};
+  if(building)workTarget={x:building.door.x,y:building.id==='shop'?building.door.maxY+22:building.door.maxY+10};
   else if(place.type==='home'&&homes[place.id]){
    const entrance=homeEntrance(homes[place.id]);
    workTarget={x:entrance.x,y:entrance.y+32};
@@ -1964,11 +1958,11 @@ function hobbyChoicesFor(p){
   else if(/料理|お菓子|調理|cooking/.test(t)){kind='cooking';label='料理をしている';room='kitchen'}
   else if(/掃除|洗濯|家事/.test(t)){kind='chores';label='家事をしている';room='kitchen'}
   else if(/編み物|手芸|裁縫|工作|絵|描画/.test(t)){kind='craft';label=name+'をしている';room='hobby'}
-  else if(/散歩|ウォーキング|walking|ランニング|ジョギング|running/.test(t)){kind='walk';mode='walk';label=name+'をしている';pose='stand';spot={id:'hobby-walk-'+index,x:420,y:650,label:'こみちの途中'}}
-  else if(/写真|撮影|photography|camera/.test(t)){kind='photography';mode='walk';label='写真を撮っている';pose='stand';spot={id:'hobby-photo-'+index,x:770,y:540,label:'川沿い'}}
+  else if(/散歩|ウォーキング|walking|ランニング|ジョギング|running/.test(t)){kind='walk';mode='walk';label=name+'をしている';pose='stand';spot={id:'hobby-walk-'+index,...artPoint(593,514),label:'こみちの途中'}}
+  else if(/写真|撮影|photography|camera/.test(t)){kind='photography';mode='walk';label='写真を撮っている';pose='stand';spot={id:'hobby-photo-'+index,...artPoint(801,592),label:'川沿い'}}
   else if(/買い物|ショッピング|shopping/.test(t)){kind='shopping';mode='walk';label='買い物をしている';pose='stand';spot={id:'hobby-shop-'+index,x:500,y:500,label:'街のお店'}}
-  else if(/園芸|ガーデニング|植物|gardening/.test(t)){kind='gardening';mode='flowers';label='植物の手入れをしている';pose='look';spot={id:'hobby-garden-'+index,x:700,y:720}}
-  else if(/釣り|fishing/.test(t)){kind='fishing';mode='walk';label='釣りをしている';pose='sit';spot={id:'hobby-fishing-'+index,x:790,y:850,label:'川辺の桟橋'}}
+  else if(/園芸|ガーデニング|植物|gardening/.test(t)){kind='gardening';mode='flowers';label='植物の手入れをしている';pose='look';spot={id:'hobby-garden-'+index,...artPoint(773,620)}}
+  else if(/釣り|fishing/.test(t)){kind='fishing';mode='walk';label='釣りをしている';pose='sit';spot={id:'hobby-fishing-'+index,...artPoint(1010,800),label:'川辺の桟橋'}}
   else if(/カフェ巡り|喫茶店巡り/.test(t)){kind='cafe';mode='cafe';label='喫茶店で過ごしている';pose='sit'}
   const timeRule=/朝|午前|昼|午後|夕方|夜|深夜/.test(name)?(/朝|午前/.test(name)?'morning':/昼/.test(name)?'noon':/午後/.test(name)?'afternoon':/夕方/.test(name)?'evening':/深夜/.test(name)?'lateNight':'night'):'any';
    const weatherRule=/雨/.test(name)?'rainy':/晴れ/.test(name)?'sunny':/曇り/.test(name)?'cloudy':/雪/.test(name)?'snowy':'any';
@@ -2127,13 +2121,13 @@ function chooseRoutine(p,i){
     return
    }
    if(hobby.mode==='cafe'){const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている',hobby.label,'sit',16+Math.random()*20);return}
-   const q=hobby.mode==='flowers'?chooseFreshSpot(p,[{id:'garden-east',x:620,y:740,label:'東の花壇'},{id:'garden-south',x:600,y:1110,label:'南の花壇'}]):(hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:740,y:540,label:'川沿い'},{id:'hobby-path-'+hobby.priority,x:420,y:650,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:600,y:760,label:'川辺の広場'}]));
+   const q=hobby.mode==='flowers'?chooseFreshSpot(p,PAINTED_FLOWER_SPOTS):(hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:740,y:540,label:'川沿い'},{id:'hobby-path-'+hobby.priority,x:420,y:650,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:600,y:760,label:'川辺の広場'}]));
    if(hobby.mode==='flowers'){p.flowerScene={kind:'gardening',stay:hobby.label,diary:hobby.label+'を楽しんだ'};}
    const shoppingPlace=hobby.kind==='shopping'?getPlace('shop'):null;if(shoppingPlace)p.shoppingTrip=true;setAction(p,i,hobby.mode==='flowers'?'flowers':'walk',shoppingPlace?WORLD_BUILDINGS.shop.door.x:q.x,ySafe(shoppingPlace?WORLD_BUILDINGS.shop.door.maxY+22:q.y),shoppingPlace?shoppingPlace.name+'へ向かっている':q.label?(q.label+'へ向かっている'):'趣味の場所へ向かっている',hobby.label,hobby.pose,14+Math.random()*22);if(hobby.kind==='fishing')p.fishingTrip=true;if(hobby.kind==='photography')p.photoTrip=true;
   }})});
  });
- if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=[{id:'flower-east',x:620,y:740},{id:'flower-southeast',x:600,y:1110}];const q=chooseFreshSpot(p,spots);const scene=flowerSceneFor(p);p.flowerScene=scene;setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている',scene.stay,'look',12+Math.random()*18)}});
- if(previous!=='walk')options.push({action:'walk',weight:2.5+(p.activityLevel??50)/20+(p.curiosity??50)/60,run:()=>{const spots=[{id:'riverside-north',x:716,y:516,label:'川沿い'},{id:'plaza',x:430,y:1095,label:'川辺の広場'},{id:'tree-south',x:350,y:1040,label:'木陰'},{id:'path-center',x:420,y:650,label:'こみちの途中'},{id:'riverside-south',x:710,y:1030,label:'川辺'},{id:'garden-wisteria',x:686,y:782,label:'藤棚の小径'},{id:'garden-cherry',x:681,y:917,label:'桜のそば'},{id:'garden-plaza',x:630,y:1103,label:'庭園の出口'}];const q=chooseFreshSpot(p,spots);const scene=walkSceneFor(p,q);p.walkScene=scene;setAction(p,i,'walk',q.x,ySafe(q.y),q.label+'まで散歩中',scene.stay,'stand',8+Math.random()*12+(p.activityLevel??50)*.12)}});
+ if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=PAINTED_FLOWER_SPOTS;const q=chooseFreshSpot(p,spots);const scene=flowerSceneFor(p);p.flowerScene=scene;setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている',scene.stay,'look',12+Math.random()*18)}});
+ if(previous!=='walk')options.push({action:'walk',weight:2.5+(p.activityLevel??50)/20+(p.curiosity??50)/60,run:()=>{const spots=PAINTED_WALK_SPOTS;const q=chooseFreshSpot(p,spots);const scene=walkSceneFor(p,q);p.walkScene=scene;setAction(p,i,'walk',q.x,ySafe(q.y),q.label+'まで散歩中',scene.stay,'stand',8+Math.random()*12+(p.activityLevel??50)*.12)}});
  if(previous!=='cafe'&&p.needs.hunger>=42&&(p.money??5000)>=450)options.push({action:'cafe',weight:1.5+(p.curiosity??50)/100,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている','喫茶店でひと休み','sit',12+Math.random()*12)}});
  if(previous!=='bench'&&p.needs.energy>=38)options.push({action:'bench',weight:2,run:()=>{const scene=benchSceneFor(p);if(!startBenchVisit(p,i,scene.stay,10+Math.random()*14,scene))setAction(p,i,'walk',430,1100,'広場へ向かっている','広場でひと休みしている','stand',10+Math.random()*14)} });
  applyScheduleWeights(options,p);
@@ -2688,11 +2682,11 @@ function select(i){if(!chars[i])return;selected=i;if(!interiorHomeId){panX=450-c
 });
 
 const activePointers=new Map();let gesture=null;
-function screenToWorld(x,y){const fit=Math.min(W/1000,H/1400)*1.04,scale=fit*zoom;return{x:(x-W/2)/scale+450-panX,y:(y-H/2)/scale+720-panY}}
+function screenToWorld(x,y){const fit=Math.min(W/1000,H/1400),scale=fit*zoom;return{x:(x-W/2)/scale+450-panX,y:(y-H/2)/scale+720-panY}}
 function pointerMid(){const pts=[...activePointers.values()];return{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}}
 function pointerDistance(){const pts=[...activePointers.values()];return Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)}
 c.addEventListener('pointerdown',e=>{e.preventDefault();c.setPointerCapture(e.pointerId);const r=c.getBoundingClientRect(),pt={x:e.clientX-r.left,y:e.clientY-r.top,startX:e.clientX-r.left,startY:e.clientY-r.top};activePointers.set(e.pointerId,pt);if(activePointers.size===1){gesture={type:'tap',start:pt, moved:false}}else if(activePointers.size===2){const mid=pointerMid();gesture={type:interiorHomeId?'interior':'map',distance:pointerDistance(),zoom:interiorHomeId?interiorZoom:zoom,panX:interiorHomeId?interiorPanX:panX,panY:interiorHomeId?interiorPanY:panY,world:screenToWorld(mid.x,mid.y),mid}}});
-c.addEventListener('pointermove',e=>{if(!activePointers.has(e.pointerId))return;e.preventDefault();const r=c.getBoundingClientRect(),pt=activePointers.get(e.pointerId);pt.x=e.clientX-r.left;pt.y=e.clientY-r.top;if(gesture?.type==='tap'&&activePointers.size===1){if(Math.hypot(pt.x-pt.startX,pt.y-pt.startY)>12)gesture.moved=true}if(activePointers.size>=2&&(gesture?.type==='map'||gesture?.type==='interior')){const mid=pointerMid(),dist=Math.max(20,pointerDistance()),fit=Math.min(W/900,H/1400)*(gesture.type==='interior'?1.05:1.04),nextZoom=Math.max(.65,Math.min(2.4,gesture.zoom*dist/Math.max(20,gesture.distance))),scale=fit*nextZoom;if(gesture.type==='interior'){interiorZoom=nextZoom;interiorPanX=mid.x-W/2-(gesture.mid.x-W/2)*nextZoom/gesture.zoom+gesture.panX*nextZoom/gesture.zoom;interiorPanY=mid.y-H/2-(gesture.mid.y-H/2)*nextZoom/gesture.zoom+gesture.panY*nextZoom/gesture.zoom}else{zoom=nextZoom;panX=(mid.x-W/2)/scale-gesture.world.x+450;panY=(mid.y-H/2)/scale-gesture.world.y+720}drawWorld()}});
+c.addEventListener('pointermove',e=>{if(!activePointers.has(e.pointerId))return;e.preventDefault();const r=c.getBoundingClientRect(),pt=activePointers.get(e.pointerId);pt.x=e.clientX-r.left;pt.y=e.clientY-r.top;if(gesture?.type==='tap'&&activePointers.size===1){if(Math.hypot(pt.x-pt.startX,pt.y-pt.startY)>12)gesture.moved=true}if(activePointers.size>=2&&(gesture?.type==='map'||gesture?.type==='interior')){const mid=pointerMid(),dist=Math.max(20,pointerDistance()),fit=gesture.type==='interior'?Math.min(W/900,H/1400)*1.05:Math.min(W/1000,H/1400),nextZoom=Math.max(.65,Math.min(2.4,gesture.zoom*dist/Math.max(20,gesture.distance))),scale=fit*nextZoom;if(gesture.type==='interior'){interiorZoom=nextZoom;interiorPanX=mid.x-W/2-(gesture.mid.x-W/2)*nextZoom/gesture.zoom+gesture.panX*nextZoom/gesture.zoom;interiorPanY=mid.y-H/2-(gesture.mid.y-H/2)*nextZoom/gesture.zoom+gesture.panY*nextZoom/gesture.zoom}else{zoom=nextZoom;panX=(mid.x-W/2)/scale-gesture.world.x+450;panY=(mid.y-H/2)/scale-gesture.world.y+720}drawWorld()}});
 function finishPointer(e){if(!activePointers.has(e.pointerId))return;const pt=activePointers.get(e.pointerId);activePointers.delete(e.pointerId);if(activePointers.size===0){if(gesture?.type==='tap'&&!gesture.moved){const w=screenToWorld(pt.x,pt.y);const i=chars.findIndex(p=>isOutdoorResident(p)&&Math.hypot(p.x-w.x,p.y-w.y)<48);if(i>=0)select(i)}gesture=null}else if(activePointers.size===1){const remain=[...activePointers.values()][0];gesture={type:'tap',start:remain,moved:true}}}
 c.addEventListener('pointerup',finishPointer);c.addEventListener('pointercancel',finishPointer);
 document.getElementById('zin').onclick=()=>{if(interiorHomeId)interiorZoom=Math.min(2.4,interiorZoom+.1);else zoom=Math.min(2.4,zoom+.1);drawWorld()};document.getElementById('zout').onclick=()=>{if(interiorHomeId)interiorZoom=Math.max(.65,interiorZoom-.1);else zoom=Math.max(.65,zoom-.1);drawWorld()};document.getElementById('reset').onclick=()=>{if(interiorHomeId){interiorZoom=1;interiorPanX=0;interiorPanY=0}else{zoom=1;panX=0;panY=0}drawWorld()};const uiToggle=document.getElementById('uiToggle');uiToggle.onclick=()=>{const hidden=document.getElementById('app').classList.toggle('lower-ui-hidden');uiToggle.classList.toggle('active',hidden);uiToggle.textContent=hidden?'⌃':'⌄';uiToggle.setAttribute('aria-label',hidden?'下部メニューを表示':'下部メニューを隠す');uiToggle.title=hidden?'住人表示とメニューを表示':'住人表示とメニューを隠す'};const pauseButton=document.getElementById('pause');if(pauseButton)pauseButton.onclick=e=>{paused=!paused;e.currentTarget.textContent=paused?'▶':'Ⅱ';e.currentTarget.title=paused?'再開':'一時停止'};
