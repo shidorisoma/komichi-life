@@ -2324,6 +2324,11 @@ function residentWalkDirection(p){
    const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy);
    const forward=dx*heading.x+dy*heading.y,across=Math.abs(dx*heading.y-dy*heading.x);
    if(q.phaseState!=='moving'){
+    // A shared public destination is not an obstacle to circle around forever.
+    // Let the regular collision guard hold a comfortable distance, then settle nearby.
+    if(['walk','flowers','cafe','work'].includes(p.action)&&
+       Math.hypot(q.x-p.tx,q.y-p.ty)<28&&
+       Math.hypot(p.x-p.tx,p.y-p.ty)<55)continue;
     if(forward < -4||across>28||d>59)continue;
     if((p.phase||0)>=(p.passingCooldown||0)){
      const plan=preparePassing(p,q,'bypass');
@@ -2335,7 +2340,7 @@ function residentWalkDirection(p){
    const hq=residentWalkDirection(q);if(!hq)continue;
    const dot=heading.x*hq.x+heading.y*hq.y;
    if(dot>.65){
-    if(forward>0&&across<23&&d<31){p.stuckTime=0;return true}
+    if(forward>0&&across<23&&d<26){p.stuckTime=0;return true}
     continue;
    }
    const vx=(hq.x-heading.x)*42,vy=(hq.y-heading.y)*42;
