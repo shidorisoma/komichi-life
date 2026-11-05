@@ -820,11 +820,26 @@ function townPaintedBench(x,y,layer){
  if(layer!=='back')ctx.drawImage(image,0,sourceCut,image.naturalWidth,image.naturalHeight-sourceCut,left,top+h*split,w,h*(1-split));
  return true;
 }
-function townPaintedFlowerbed(bed,index){
+// Painted flowers are taller than their stone base, so separate their depth.
+function townPaintedFlowerbed(bed,index,layer='all'){
  const cx=bed.soil.reduce((sum,p)=>sum+p[0],0)/bed.soil.length;
  const bottom=Math.max(...bed.soil.map(p=>p[1]))+7;
- if(townPaintedDecoration('flowerbed',cx,bottom,104))return;
- // Same old flowerbed footprint, with no change to collision.
+ const image=townDecorArt.flowerbed;
+ if(image&&image.complete&&image.naturalWidth>0&&image.naturalHeight>0){
+  const w=104,h=w*image.naturalHeight/image.naturalWidth;
+  const left=cx-w/2,top=bottom-h,split=.83;
+  if(layer==='all'){ctx.drawImage(image,left,top,w,h);return}
+  const cut=Math.round(image.naturalHeight*split);
+  const displayCut=h*cut/image.naturalHeight;
+  if(layer==='back'){
+   ctx.drawImage(image,0,0,image.naturalWidth,cut,left,top,w,displayCut);
+  }else if(layer==='front'){
+   ctx.drawImage(image,0,cut,image.naturalWidth,image.naturalHeight-cut,left,top+displayCut,w,h-displayCut);
+  }
+  return;
+ }
+ // Fallback is rendered once while the illustrated asset is loading.
+ if(layer==='front')return;
  poly(bed.soil,'#a88a62');poly(bed.top,'#dfc59b');
  for(let j=0;j<15;j++)flower(cx-33+(j*17)%72,bottom-42+(j*9)%27,.77);
 }
@@ -1131,10 +1146,13 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   {y:WORLD_BUILDINGS.cafe.y+23,draw:()=>drawCafe(WORLD_BUILDINGS.cafe.x,WORLD_BUILDINGS.cafe.y)},
   {y:WORLD_BUILDINGS.shop.y+20,draw:()=>drawShop(WORLD_BUILDINGS.shop.x,WORLD_BUILDINGS.shop.y)},
   ...WORLD_NATURE_OBJECTS.trees.map(item=>({y:item.y,draw:()=>tree(item.x,item.y,item.scale)})),
-  ...WORLD_NATURE_OBJECTS.flowerbeds.map((item,index)=>({
-   y:Math.max(...item.soil.map(p=>p[1]))+1,
-   draw:()=>townPaintedFlowerbed(item,index)
-  })),
+  ...WORLD_NATURE_OBJECTS.flowerbeds.flatMap((item,index)=>{
+   const ys=item.soil.map(point=>point[1]),far=Math.min(...ys),near=Math.max(...ys);
+   return [
+    {y:(far+near)/2,draw:()=>townPaintedFlowerbed(item,index,'back')},
+    {y:near+7,draw:()=>townPaintedFlowerbed(item,index,'front')}
+   ];
+  }),
   {y:Math.max(...WORLD_STREET_FURNITURE.sign.polygon.map(p=>p[1])),draw:()=>{
    poly(WORLD_STREET_FURNITURE.sign.polygon,'#8a6d4b');
    ctx.fillStyle='#fff3d4';ctx.font='bold 11px sans-serif';ctx.fillText('こみち',419,460);
@@ -1147,10 +1165,16 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   ...WORLD_STREET_FURNITURE.benches.map(item=>({y:item.y-8,draw:()=>bench(item.x,item.y,'back')})),
    ...WORLD_STREET_FURNITURE.benches.map(item=>({y:item.y+16,draw:()=>bench(item.x,item.y,'front')})),
   ...WORLD_STREET_FURNITURE.lamps.map(item=>({y:item.y,draw:()=>lamp(item.x,item.y)})),
-  ...outdoorResidents.map(({p,i})=>({y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:0),draw:()=>drawChar(p,i)}))
+  ...outdoorResidents.map(({p,i})=>({
+   // Ground depth follows the feet; bench residents stay between bench layers.
+   y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:15*(p.scale||1)),
+   draw:()=>drawChar(p,i,false)
+  }))
  ];
  depthItems.sort((a,b)=>a.y-b.y);
  depthItems.forEach(item=>item.draw());
+ // Residents' nameplates remain readable, independent of physical occlusion.
+ outdoorResidents.forEach(({p})=>drawCharLabel(p));
  // 時刻に合わせた街の明るさ
  const nightFactor=hour>=22||hour<5?1:hour>=20?((hour-20)/2):hour>=5&&hour<7?((7-hour)/2):hour>=18?((hour-18)/2):0;
  if(nightFactor>0){
@@ -1200,7 +1224,7 @@ function drawHomeFurniture(homeId){
  });
 }
 function drawHomeInterior(homeId){ctx.save();ctx.fillStyle='#e9dfc9';ctx.fillRect(0,0,W,H);const scale=Math.min(W/900,H/1400)*1.05*interiorZoom;ctx.translate(W/2+interiorPanX,H/2+interiorPanY);ctx.scale(scale,scale);ctx.translate(-450,-700);const customHome=homes[homeId]?.rooms?.length>0;ctx.fillStyle='#b99b76';if(customHome){const rs=homes[homeId].rooms;rs.forEach(r=>{ctx.fillRect(r.x-10,r.y-10,r.w+20,r.h+20);ctx.fillStyle='#eadfc9';ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeStyle='#a58a68';ctx.lineWidth=7;ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.fillStyle='#eadfc9';ctx.font='bold 19px sans-serif';ctx.fillText(r.name,r.x+14,r.y+27);ctx.fillStyle='#b99b76'})}else{ctx.fillRect(105,390,690,620);ctx.fillStyle='#eadfc9';ctx.fillRect(125,410,650,580);ctx.strokeStyle='#a58a68';ctx.lineWidth=9;ctx.strokeRect(125,410,650,580);ctx.fillStyle='#d9c7a8';ctx.fillRect(430,410,10,580);ctx.fillRect(125,690,650,9)}ctx.fillStyle='#8d7054';ctx.font='bold 23px sans-serif';ctx.fillText(homes[homeId]?.name||(homeId==='home'?'西の住宅':'東の住宅'),145,365);drawHomeFurniture(homeId);const residents=chars.filter(p=>householdForResident(p).homeId===homeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'),spots={living:[{x:235,y:590},{x:295,y:590}],hobby:[{x:570,y:590},{x:630,y:590}],bedroom:[{x:235,y:900},{x:295,y:900}],kitchen:[{x:580,y:900},{x:640,y:900}]},roomCounts={};residents.forEach(p=>{const roomType=p.action==='sleep'?'bedroom':(p.homeHobby?.room||'living'),customRoom=homes[homeId]?.rooms?.find(r=>r.type===roomType)||homes[homeId]?.rooms?.[0],slots=customHome&&customRoom?[{x:customRoom.x+customRoom.w*.55,y:customRoom.y+customRoom.h*.58},{x:customRoom.x+customRoom.w*.68,y:customRoom.y+customRoom.h*.62}]:(spots[roomType]||spots.living),index=roomCounts[roomType]||0;if(index>=2)return;roomCounts[roomType]=index+1;const q=slots[index];drawChar({...p,x:q.x,y:q.y,pose:'sit'},chars.indexOf(p))});ctx.textAlign='left';ctx.restore();}
-function drawChar(p,i){
+function drawChar(p,i,showLabel=true){
  let x=p.x,y=p.y; const tall=p.scale||1; // 住人ごとの表示スケール
  ellipse(x,y+15,19*tall,7,'#776b51aa');
  if(selected===i){ctx.strokeStyle='#8da17a';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,y+16,23*tall,8,0,0,Math.PI*2);ctx.stroke()}
@@ -1224,7 +1248,15 @@ function drawChar(p,i){
    ctx.fillStyle='#e8c4ae';ctx.fillRect(-3,-13,6,7);ellipse(0,-23,11,13,'#efcdbd');const hairColor=p.hair||'#655b4c';ellipse(0,-31,13,10,hairColor);ellipse(-10,-23,4,11,hairColor);ellipse(10,-22,4,11,hairColor);poly([[-12,-29],[-9,-39],[0,-40],[11,-35],[8,-29],[4,-34],[0,-27],[-4,-32],[-9,-27]],hairColor,null);ellipse(-4,-23,1.2,1.4,'#49372d');ellipse(4,-23,1.2,1.4,'#49372d');
  }
  ctx.restore();
- ctx.font='12px sans-serif';let w=ctx.measureText(p.name).width+20;ctx.fillStyle='#fffaf0e8';roundRect(x-w/2,y+24,w,22,11);ctx.fill();ctx.fillStyle='#8c7e68';ctx.textAlign='center';ctx.fillText(p.name,x,y+39)
+ if(showLabel)drawCharLabel(p);
+}
+function drawCharLabel(p){
+ const x=p.x,y=p.y;
+ ctx.save();ctx.font='12px sans-serif';
+ const width=ctx.measureText(p.name).width+20;
+ ctx.fillStyle='#fffaf0e8';roundRect(x-width/2,y+24,width,22,11);ctx.fill();
+ ctx.fillStyle='#8c7e68';ctx.textAlign='center';ctx.fillText(p.name,x,y+39);
+ ctx.restore();
 }
 function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
 function addDiary(text){const stamp=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');diary.unshift({day:calendarDay,time:stamp,text});if(diary.length>300)diary.pop()}
@@ -1858,12 +1890,12 @@ function chooseRoutine(p,i){
     return
    }
    if(hobby.mode==='cafe'){const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている',hobby.label,'sit',16+Math.random()*20);return}
-   const q=hobby.mode==='flowers'?chooseFreshSpot(p,[{id:'garden-east',x:700,y:720,label:'東の花壇'},{id:'garden-south',x:670,y:1115,label:'南の花壇'}]):(hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:740,y:540,label:'川沿い'},{id:'hobby-path-'+hobby.priority,x:420,y:650,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:600,y:760,label:'川辺の広場'}]));
+   const q=hobby.mode==='flowers'?chooseFreshSpot(p,[{id:'garden-east',x:620,y:740,label:'東の花壇'},{id:'garden-south',x:600,y:1110,label:'南の花壇'}]):(hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:740,y:540,label:'川沿い'},{id:'hobby-path-'+hobby.priority,x:420,y:650,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:600,y:760,label:'川辺の広場'}]));
    if(hobby.mode==='flowers'){p.flowerScene={kind:'gardening',stay:hobby.label,diary:hobby.label+'を楽しんだ'};}
    const shoppingPlace=hobby.kind==='shopping'?getPlace('shop'):null;if(shoppingPlace)p.shoppingTrip=true;setAction(p,i,hobby.mode==='flowers'?'flowers':'walk',shoppingPlace?649:q.x,ySafe(shoppingPlace?462:q.y),shoppingPlace?shoppingPlace.name+'へ向かっている':q.label?(q.label+'へ向かっている'):'趣味の場所へ向かっている',hobby.label,hobby.pose,14+Math.random()*22);if(hobby.kind==='fishing')p.fishingTrip=true;if(hobby.kind==='photography')p.photoTrip=true;
   }})});
  });
- if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=[{id:'flower-east',x:700,y:720},{id:'flower-southeast',x:670,y:1115}];const q=chooseFreshSpot(p,spots);const scene=flowerSceneFor(p);p.flowerScene=scene;setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている',scene.stay,'look',12+Math.random()*18)}});
+ if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=[{id:'flower-east',x:620,y:740},{id:'flower-southeast',x:600,y:1110}];const q=chooseFreshSpot(p,spots);const scene=flowerSceneFor(p);p.flowerScene=scene;setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている',scene.stay,'look',12+Math.random()*18)}});
  if(previous!=='walk')options.push({action:'walk',weight:2.5+(p.activityLevel??50)/20+(p.curiosity??50)/60,run:()=>{const spots=[{id:'riverside-north',x:740,y:520,label:'川沿い'},{id:'plaza',x:600,y:760,label:'川辺の広場'},{id:'tree-south',x:350,y:1040,label:'木陰'},{id:'path-center',x:420,y:650,label:'こみちの途中'},{id:'riverside-south',x:760,y:1050,label:'川辺'}];const q=chooseFreshSpot(p,spots);const scene=walkSceneFor(p,q);p.walkScene=scene;setAction(p,i,'walk',q.x,ySafe(q.y),q.label+'まで散歩中',scene.stay,'stand',8+Math.random()*12+(p.activityLevel??50)*.12)}});
  if(previous!=='cafe'&&p.needs.hunger>=42&&(p.money??5000)>=450)options.push({action:'cafe',weight:1.5+(p.curiosity??50)/100,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている','喫茶店でひと休み','sit',12+Math.random()*12)}});
  if(previous!=='bench'&&p.needs.energy>=38)options.push({action:'bench',weight:2,run:()=>{const scene=benchSceneFor(p);if(!startBenchVisit(p,i,scene.stay,10+Math.random()*14,scene))setAction(p,i,'walk',430,1100,'広場へ向かっている','広場でひと休みしている','stand',10+Math.random()*14)} });
