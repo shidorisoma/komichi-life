@@ -711,6 +711,8 @@ function lamp(x,y){
  ctx.strokeStyle='#b27d4c';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-5,y-60);ctx.lineTo(x-5,y-78);ctx.moveTo(x+5,y-60);ctx.lineTo(x+5,y-78);ctx.stroke();
 }
 function drawShop(x,y){
+ // Entry markers are part of the existing collision/navigation model.
+ if(townPaintedBuilding('shop',WORLD_BUILDINGS.shop.door.x,WORLD_BUILDINGS.shop.door.maxY+22,158,.596,.823))return;
  ctx.save();ctx.translate(x,y);
  ellipse(0,45,76,23,'rgba(72,68,49,.22)');
  poly([[-61,25],[0,53],[62,25],[65,38],[0,67],[-64,40]],'#c8a985','#9c7f61',1);
@@ -741,6 +743,7 @@ function drawShop(x,y){
  ctx.restore();
 }
 function drawCafe(x,y){
+ if(townPaintedBuilding('cafe',WORLD_BUILDINGS.cafe.door.x,330,218,.675,.836))return;
  ctx.save();ctx.translate(x,y);
  ellipse(-4,36,119,31,'rgba(70,64,43,.22)');
  // Cafe terrace: raised cobblestone apron with outdoor seating.
@@ -770,7 +773,30 @@ function drawCafe(x,y){
  townFlowerPatch(-93,36,.62,1);townFlowerPatch(83,35,.62,0);
  ctx.restore();
 }
-// Illustration textures are real SVG image assets kept in the game repository.
+// Game artwork is loaded as independent, transparent images; world logic stays unchanged.
+// Painted cottage/cafe/market images. Keep original canvas buildings as an instant fallback.
+const townBuildingArtSources={
+ cottage:'assets/building-cottage.avif?v=1',
+ cafe:'assets/building-cafe.avif?v=1',
+ shop:'assets/building-shop.avif?v=1'
+};
+const townBuildingArt={};
+for(const [kind,src] of Object.entries(townBuildingArtSources)){
+ const img=new Image();
+ townBuildingArt[kind]=img;
+ img.onerror=()=>{townBuildingArt[kind]=null;};
+ img.src=src;
+}
+function townPaintedBuilding(kind,doorX,doorY,width,doorFractionX,doorFractionY){
+ const image=townBuildingArt[kind];
+ if(!image||!image.complete||image.naturalWidth<=0||!image.naturalHeight)return null;
+ const height=width*image.naturalHeight/image.naturalWidth;
+ const left=doorX-width*doorFractionX,top=doorY-height*doorFractionY;
+ ctx.drawImage(image,left,top,width,height);
+ return {left,top,width,height};
+}
+
+// Painted road/grass/water materials, with procedural fallback if still loading.
 // Procedural textures below remain as a graceful offline/slow-load fallback.
 const townTextures={};
 const townMaterialSources={
@@ -954,6 +980,17 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // 登録されている住居を、それぞれの所在地に描画
  function drawHouseExterior(home,index){
  const x=home.x,y=home.y,{w,h,left,right,front,back,roofY}=homeExteriorGeometry(home);
+ const door=homeEntrance(home);
+ const painted=townPaintedBuilding('cottage',door.x,door.y,176*w/150,.607,.823);
+ if(painted){
+  // Keep custom house names from existing saves, and preserve the street map's labels.
+  ctx.save();ctx.textAlign='center';ctx.font='bold 10px sans-serif';
+  ctx.lineWidth=3;ctx.strokeStyle='rgba(82,58,41,.85)';ctx.fillStyle='#fff9df';
+  ctx.strokeText(home.name||'住居',home.x,painted.top-4);
+  ctx.fillText(home.name||'住居',home.x,painted.top-4);
+  ctx.restore();
+  return;
+ }
  const cream=['#fff0d7','#ffe9c9','#f9eddf'][index%3],side=['#e2c9a7','#dcc4a4','#e4d4be'][index%3];
  ctx.save();ctx.translate(x,y);
  // Garden footprint and soft contact shadow.
