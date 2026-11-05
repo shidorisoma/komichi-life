@@ -629,7 +629,7 @@ function resetResidentPosition(p,i){
   if(!destination){console.warn('住人の安全な復旧地点を確保できませんでした',p.id);return}
  }
  p.x=destination.x;p.y=destination.y;p.tx=p.x;p.ty=p.y;
- p.routePoints=[];p.routeIndex=0;p.stuckTime=0;p.routeRetries=0;
+ p.passing=null;p.trafficWait=0;p.routePoints=[];p.routeIndex=0;p.stuckTime=0;p.routeRetries=0;
  p.action='idle';p.phaseState='idle';p.stay=0;p.stayText='';
  p.activity='街で過ごしている';p.pose='stand';p.benchSeat=null;
  // リセット直後に次の生活行動を選び、idleのまま放置しない。
@@ -663,7 +663,37 @@ function openPlaceResidents(){
  document.getElementById('closePlaceResidents').onclick=()=>{if(residentDiagnosticTimer)clearInterval(residentDiagnosticTimer);residentDiagnosticTimer=null;panel.classList.remove('show');showTab(interiorHomeId?'home':'walk',true)};
 }
 renderResidentStatus();
-function addResident(definition){const id=definition.id||'resident-'+Date.now();if(chars.some(p=>p.id===id))return null;const offset=chars.length%5;const resident={id,name:definition.name||'新しい住人',money:Number.isFinite(definition.money)?Math.max(0,definition.money):5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},sociability:Number.isFinite(definition.sociability)?Math.max(0,Math.min(100,definition.sociability)):50,curiosity:Number.isFinite(definition.curiosity)?Math.max(0,Math.min(100,definition.curiosity)):50,activityLevel:Number.isFinite(definition.activityLevel)?Math.max(0,Math.min(100,definition.activityLevel)):50,walkPreference:Number.isFinite(definition.walkPreference)?Math.max(0,Math.min(100,definition.walkPreference)):50,naturePreference:Number.isFinite(definition.naturePreference)?Math.max(0,Math.min(100,definition.naturePreference)):50,cafePreference:Number.isFinite(definition.cafePreference)?Math.max(0,Math.min(100,definition.cafePreference)):50,lastInitiatedSocialStamp:-1,lastSocialStamp:-1,x:420+offset*28,y:700+offset*32,tx:420+offset*28,ty:700+offset*32,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame(true);return resident;}
+// Spread newly added residents over safe walkable positions instead of
+// recycling the same five locations and stacking residents on top of each other.
+function findSafeResidentSpawn(requested=null){
+ const initial=[
+  {x:420,y:700},{x:448,y:732},{x:476,y:764},
+  {x:504,y:796},{x:532,y:828},{x:420,y:898},
+  {x:330,y:898},{x:250,y:898},{x:350,y:1040},
+  {x:445,y:1010},{x:600,y:760},{x:610,y:880}
+ ];
+ const places=[
+  ...(requested&&Number.isFinite(requested.x)&&Number.isFinite(requested.y)?[requested]:[]),
+  ...initial,
+  ...roadNodes.map(n=>({x:n.x,y:n.y}))
+ ];
+ const busy=chars.filter(p=>isOutdoorResident(p)&&Number.isFinite(p.x)&&Number.isFinite(p.y));
+ const candidate={id:'new-resident-spawn',action:'walk',phaseState:'idle'};
+ const clear=point=>point.x>=30&&point.x<=870&&point.y>=220&&point.y<=1310
+  &&!isBlockedByStructure(point.x,point.y,candidate);
+ const distanceFromCrowd=point=>busy.reduce((n,p)=>Math.min(n,Math.hypot(point.x-p.x,point.y-p.y)),Infinity);
+ for(const node of roadNodes){
+  for(const radius of [26,43,62])for(let k=0;k<12;k++){
+   const a=k*Math.PI/6;
+   places.push({x:node.x+Math.cos(a)*radius,y:node.y+Math.sin(a)*radius});
+  }
+ }
+ const safe=places.find(point=>clear(point)&&distanceFromCrowd(point)>=40);
+ if(safe)return safe;
+ // Even when overcrowded, prefer the safest available spot over a duplicate spawn.
+ return places.filter(clear).sort((a,b)=>distanceFromCrowd(b)-distanceFromCrowd(a))[0]||{x:420,y:700};
+}
+function addResident(definition){const id=definition.id||'resident-'+Date.now();if(chars.some(p=>p.id===id))return null;const spawn=findSafeResidentSpawn(definition);const resident={id,name:definition.name||'新しい住人',money:Number.isFinite(definition.money)?Math.max(0,definition.money):5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},sociability:Number.isFinite(definition.sociability)?Math.max(0,Math.min(100,definition.sociability)):50,curiosity:Number.isFinite(definition.curiosity)?Math.max(0,Math.min(100,definition.curiosity)):50,activityLevel:Number.isFinite(definition.activityLevel)?Math.max(0,Math.min(100,definition.activityLevel)):50,walkPreference:Number.isFinite(definition.walkPreference)?Math.max(0,Math.min(100,definition.walkPreference)):50,naturePreference:Number.isFinite(definition.naturePreference)?Math.max(0,Math.min(100,definition.naturePreference)):50,cafePreference:Number.isFinite(definition.cafePreference)?Math.max(0,Math.min(100,definition.cafePreference)):50,lastInitiatedSocialStamp:-1,lastSocialStamp:-1,x:spawn.x,y:spawn.y,tx:spawn.x,ty:spawn.y,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.x=spawn.x;resident.y=spawn.y;resident.tx=spawn.x;resident.ty=spawn.y;resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame(true);return resident;}
 window.addResident=addResident;
 window.addEventListener('pagehide',()=>saveGame());
 document.addEventListener('visibilitychange',()=>{lastClockSample=performance.now();if(document.visibilityState==='hidden')saveGame()});
