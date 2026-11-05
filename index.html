@@ -182,7 +182,7 @@ function deleteHome(homeId){
  const fallback=Object.keys(homes).find(id=>id!==homeId),memberIds=new Set(households['household:'+homeId]?.residentIds||[]);
  const reassignedResidents=chars.filter(p=>p.homeId===homeId||memberIds.has(p.id));
  reassignedResidents.forEach(p=>{p.homeId=fallback});
- const fallbackRooms=homes[fallback]?.rooms||[];
+ const fallbackRooms=(homes[fallback]?.roomIds||homes[fallback]?.rooms?.map(r=>r.id)||[]).map(id=>rooms[id]).filter(Boolean);
  furniture=furniture.filter(item=>{
   if(item.homeId!==homeId)return true;
   if(item.ownershipType==='individual'){
@@ -192,7 +192,7 @@ function deleteHome(homeId){
   return false;
  });
  (home.roomIds||home.rooms?.map(r=>r.id)||[]).forEach(id=>delete rooms[id]);
- delete households['household:'+homeId];delete homes[homeId];places=places.filter(p=>p.id!==homeId);
+ delete households['household:'+homeId];delete homes[homeId];const placeIndex=places.findIndex(p=>p.id===homeId);if(placeIndex>=0)places.splice(placeIndex,1);
  syncHomePlaces();reassignedResidents.forEach(syncResidentHomeDestination);if(interiorHomeId===homeId)interiorHomeId='';renderResidentStatus();saveGame(true);drawWorld();return true;
 }
 function renderHomeMenu(){
@@ -1761,11 +1761,13 @@ function interruptSocialForNewAction(p){
  }
 }
 function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind==='date'){targetX=WORLD_BUILDINGS.cafe.door.x+(i%2?18:-18);targetY=WORLD_BUILDINGS.cafe.door.maxY+16}p.passing=null;p.trafficWait=0;if(kind!=='social')interruptSocialForNewAction(p);
- if(kind!=='bench'){
-  const previousBench=p.action==='bench'&&p.benchSeat?WORLD_STREET_FURNITURE.benches.filter(b=>b.group!=='cafe')[p.benchSeat.bench]:null;
-  p.benchExit=previousBench&&Math.hypot(p.x-previousBench.x,p.y-previousBench.y)<55?{id:previousBench.id,x:p.x,y:p.y}:null;
-  p.benchSeat=null;
- }else p.benchExit=null;
+ // Keep the departure corridor even when the next activity is another bench,
+ // or a new destination replaces a trip before the resident has stood clear.
+ const previousBench=p.action==='bench'&&p.benchSeat?WORLD_STREET_FURNITURE.benches.filter(b=>b.group!=='cafe')[p.benchSeat.bench]:null;
+ if(previousBench&&Math.hypot(p.x-previousBench.x,p.y-previousBench.y)<55){
+  p.benchExit={id:previousBench.id,x:p.x,y:p.y};
+ }else if(!p.benchExit||Math.hypot(p.x-p.benchExit.x,p.y-p.benchExit.y)>=85)p.benchExit=null;
+ p.benchSeat=null;
  if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=paintedActivityDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}if(['cafe','work','walk','flowers'].includes(kind)){
  const open=uncrowdedActivityDestination(p,targetX,targetY);
  targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY;
