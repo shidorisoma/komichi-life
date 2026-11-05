@@ -1753,19 +1753,42 @@ function uncrowdedActivityDestination(p,x,y){
  }
  return {x,y};
 }
+// Conversation time starts only after both residents have reached the meeting.
+// A cancelled or unreachable rendezvous must release both pedestrians.
+function cancelSocialVisit(p){
+ interruptSocialForNewAction(p);
+ if(p.action!=='social')return;
+ p.action='idle';p.phaseState='idle';p.routePoints=[];p.routeIndex=0;
+ p.tx=p.x;p.ty=p.y;p.stay=0;p.stayText='';p.pose='stand';
+ p.passing=null;p.trafficWait=0;p.socialWaitSeconds=0;p.activity='街で過ごしている';p.nextActionRetrySeconds=3;
+ renderResidentStatus();
+}
+function waitForSocialPartner(p,dt){
+ const partner=residentById(p.socialPartnerId);
+ if(!partner||partner.action!=='social'||partner.socialPartnerId!==p.id||!['moving','staying'].includes(partner.phaseState)){
+  cancelSocialVisit(p);return true;
+ }
+ if(partner.phaseState!=='staying'||Math.hypot(partner.x-p.x,partner.y-p.y)>115){
+  p.socialWaitSeconds=(p.socialWaitSeconds||0)+dt;
+  p.activity=partner.name+'の到着を待っている';
+  if(p.socialWaitSeconds>=120)cancelSocialVisit(p);
+  return true;
+ }
+ p.socialWaitSeconds=0;p.activity=p.stayText;return false;
+}
 function interruptSocialForNewAction(p){
  if(p.action!=='social'||!p.socialPartnerId)return;
  const partner=residentById(p.socialPartnerId);
- p.socialPartnerId=null;
+ p.socialPartnerId=null;p.socialWaitSeconds=0;
  if(!partner||partner.socialPartnerId!==p.id)return;
- partner.socialPartnerId=null;
+ partner.socialPartnerId=null;partner.socialWaitSeconds=0;partner.passing=null;partner.trafficWait=0;
  if(partner.action==='social'){
   partner.action='idle';partner.phaseState='idle';partner.routePoints=[];partner.routeIndex=0;
   partner.tx=partner.x;partner.ty=partner.y;partner.stay=0;partner.stuckTime=0;partner.routeRetries=0;
   partner.activity='街で過ごしている';partner.stayText='';partner.pose='stand';
  }
 }
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind==='date'){targetX=WORLD_BUILDINGS.cafe.door.x+(i%2?18:-18);targetY=WORLD_BUILDINGS.cafe.door.maxY+16}p.passing=null;p.trafficWait=0;if(kind!=='social')interruptSocialForNewAction(p);
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind==='date'){targetX=WORLD_BUILDINGS.cafe.door.x+(i%2?18:-18);targetY=WORLD_BUILDINGS.cafe.door.maxY+16}p.passing=null;p.trafficWait=0;p.socialWaitSeconds=0;if(kind!=='social')interruptSocialForNewAction(p);
  // Keep the departure corridor even when the next activity is another bench,
  // or a new destination replaces a trip before the resident has stood clear.
  const previousBench=p.action==='bench'&&p.benchSeat?WORLD_STREET_FURNITURE.benches.filter(b=>b.group!=='cafe')[p.benchSeat.bench]:null;
@@ -2158,7 +2181,14 @@ function ySafe(y){return Math.max(260,Math.min(1260,y))}
 
 function arrive(p,i){
  p.passing=null;p.trafficWait=0;
- p.phaseState='staying';p.x=p.tx;p.y=p.ty;p.activity=p.stayText;renderResidentStatus();
+ p.phaseState='staying';p.x=p.tx;p.y=p.ty;p.activity=p.stayText;
+ if(p.action==='social'){
+  const partner=residentById(p.socialPartnerId);
+  if(partner?.action==='social'&&partner.socialPartnerId===p.id&&partner.phaseState==='staying'&&Math.hypot(partner.x-p.x,partner.y-p.y)<=115){
+   p.socialWaitSeconds=0;partner.socialWaitSeconds=0;partner.activity=partner.stayText;
+  }else if(partner)p.activity=partner.name+'の到着を待っている';
+ }
+ renderResidentStatus();
  p.pose=p.action==='bench'||p.action==='cafe'||p.action==='date'||p.action==='sleep'||p.action==='home'?'sit':p.action==='flowers'?'look':'stand';
  if(p.action==='cafe'){const cost=450;p.money=Math.max(0,(Number(p.money)||0)-cost);recordMoney(p,'expense',cost,'喫茶こもれび');p.needs.hunger=Math.min(100,(p.needs?.hunger??80)+12);p.needs.mood=Math.min(100,(p.needs?.mood??80)+2);const cafeHobbies=hobbyChoicesFor(p);const cafeMenu=cafeHobbies.some(h=>h.kind==='reading')?['ホットコーヒーとスコーン','カフェオレとバタークッキー']:cafeHobbies.some(h=>h.kind==='cooking')?['季節の焼き菓子とコーヒー','厚焼きパンケーキとカフェオレ']:cafeHobbies.some(h=>h.kind==='music')?['カフェオレとバタークッキー','ホットコーヒーとスコーン']:['ホットコーヒーとスコーン','カフェオレとバタークッキー','季節の焼き菓子と紅茶'];if(weatherType==='rainy')cafeMenu.push('ホットチョコレートとシナモントースト');else if(weatherType==='sunny')cafeMenu.push('アイスコーヒーとレモンケーキ');else if(weatherType==='cloudy')cafeMenu.push('カフェオレと焼きたてマフィン');p.cafeOrder=cafeMenu[(Math.random()*cafeMenu.length)|0];p.activity=(p.cafeScene||'喫茶店でひと休みしている')+'。'+p.cafeOrder+'を楽しんでいる';}
  if(p.action==='walk'&&p.fishingTrip){const stock=householdFoodStore(p);stock.fishIngredients=Math.min(5,stock.fishIngredients+1);p.fishingTrip=false;addDiary(p.name+'が川辺で魚を釣り、自宅へ持ち帰った。');}
@@ -2455,9 +2485,8 @@ function recoverResidentFromFailedRoute(p,i){
    partner.pose='stand';partner.stuckTime=0;partner.routeRetries=0;
   }
  }
- const safe=roadNodes.filter(n=>!n.facility&&!isBlockedByStructure(n.x,n.y,p)&&movementSegmentClear(p.x,p.y,n.x,n.y,p))
-  .sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
- if(safe){p.x=safe.x;p.y=safe.y}
+ // Replan from the actual position. Snapping to a visible road node here
+ // caused a noticeable jump whenever an old travel plan became invalid.
  if(p.action==='date'&&sharedGoal){sharedGoal='';goalTicks=0}
  p.action='idle';p.phaseState='idle';p.stay=0;p.routePoints=[];p.routeIndex=0;
  p.tx=p.x;p.ty=p.y;p.activity='街で過ごしている';p.stayText='';p.pose='stand';
@@ -2560,11 +2589,16 @@ function residentWalkDirection(p){
    const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy);
    const forward=dx*heading.x+dy*heading.y,across=Math.abs(dx*heading.y-dy*heading.x);
    if(q.phaseState!=='moving'){
+    // Nearby residents only need a bypass if they actually obstruct the next
+    // walking segment. A wide proximity cone made safe gaps loop forever.
+    const route=p.routePoints,waypoint=route?.length?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};
+    if(pointSegmentDistance(q.x,q.y,p,waypoint)>=24)continue;
     // A shared public destination is not an obstacle to circle around forever.
     // Let the regular collision guard hold a comfortable distance, then settle nearby.
+    const finalStep=!route?.length||(p.routeIndex||1)>=route.length-1;
     if(['walk','flowers','cafe','work'].includes(p.action)&&
-       Math.hypot(q.x-p.tx,q.y-p.ty)<28&&
-       Math.hypot(p.x-p.tx,p.y-p.ty)<55)continue;
+       Math.hypot(p.x-p.tx,p.y-p.ty)<55&&
+       (finalStep||Math.hypot(q.x-p.tx,q.y-p.ty)<28))continue;
     if(forward < -4||across>28||d>59)continue;
     if((p.phase||0)>=(p.passingCooldown||0)){
      const plan=preparePassing(p,q,'bypass');
@@ -2619,7 +2653,7 @@ function loop(t){
    if(nearest&&Math.hypot(nearest.x-p.x,nearest.y-p.y)<44){
     const finalStep=!route||(p.routeIndex||1)>=route.length-1;
     // Occupied destinations: stop comfortably beside the other resident.
-    if(finalStep&&Math.hypot(p.x-p.tx,p.y-p.ty)<40&&['walk','flowers','cafe','work'].includes(p.action)){
+    if(finalStep&&Math.hypot(p.x-p.tx,p.y-p.ty)<55&&['walk','flowers','cafe','work'].includes(p.action)){
      p.tx=p.x;p.ty=p.y;arrive(p,i);return;
     }
     const detour=preparePassing(p,nearest,'bypass');
@@ -2659,7 +2693,7 @@ function loop(t){
  }else{
   p.stuckTime=0;p.routeRetries=0;
  }
-}else if(route&&(p.routeIndex||1)<route.length-1){const reached=route[Math.min(p.routeIndex||1,route.length-1)];const safeReach=reached&&!isBlockedByStructure(reached.x,reached.y,p)&&movementSegmentClear(p.x,p.y,reached.x,reached.y,p);if(safeReach){p.x=reached.x;p.y=reached.y;p.routeIndex=(p.routeIndex||1)+1;p.stuckTime=0;p.routeRetries=0}else{const detour=reached?findMovementDetour(p,reached):null;if(detour){route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route}else{p.stuckTime=(p.stuckTime||0)+dt;if(p.stuckTime>1.5){p.stuckTime=0;p.routeRetries=(p.routeRetries||0)+1;if(p.routeRetries>=2)recoverResidentFromFailedRoute(p,i);else{p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);p.routeIndex=1}}}}}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}else if(p.phaseState==='idle'){
+}else if(route&&(p.routeIndex||1)<route.length-1){const reached=route[Math.min(p.routeIndex||1,route.length-1)];const safeReach=reached&&!isBlockedByStructure(reached.x,reached.y,p)&&movementSegmentClear(p.x,p.y,reached.x,reached.y,p);if(safeReach){p.x=reached.x;p.y=reached.y;p.routeIndex=(p.routeIndex||1)+1;p.stuckTime=0;p.routeRetries=0}else{const detour=reached?findMovementDetour(p,reached):null;if(detour){route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route}else{p.stuckTime=(p.stuckTime||0)+dt;if(p.stuckTime>1.5){p.stuckTime=0;p.routeRetries=(p.routeRetries||0)+1;if(p.routeRetries>=2)recoverResidentFromFailedRoute(p,i);else{p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);p.routeIndex=1}}}}}else arrive(p,i)}else if(p.phaseState==='staying'){if(p.action==='social'&&waitForSocialPartner(p,dt))return;p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}else if(p.phaseState==='idle'){
  p.nextActionRetrySeconds=Math.max(0,(Number.isFinite(p.nextActionRetrySeconds)?p.nextActionRetrySeconds:0)-dt);
  if(p.nextActionRetrySeconds<=0)chooseRoutine(p,i)
 }})}drawWorld();
