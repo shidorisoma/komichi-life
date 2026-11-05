@@ -161,6 +161,7 @@ function createHomeFromTemplate(layoutKey,residentIds){
 }
 function syncHomePlaces(){
  townExteriorCache=null;
+ for(let i=places.length-1;i>=0;i--)if(places[i].type==='home'&&!homes[places[i].id])places.splice(i,1);
  Object.values(homes).forEach(home=>{
   const hid='household:'+home.id;
   households[hid]={...(households[hid]||{}),id:hid,homeId:home.id,residentIds:chars.filter(p=>householdForResident(p).homeId===home.id).map(p=>p.id)};
@@ -223,8 +224,10 @@ function renderHomeManage(){
  body.querySelectorAll('.deleteHomeButton').forEach(b=>b.onclick=()=>{const id=b.dataset.home;if(Object.keys(homes).length<=1){alert('最後の1軒は削除できません');return}if(!confirm('この家を削除します。入居者は別の家へ移り、共有家具は削除されます。個人所有の家具は別の家へ移して保管します。よろしいですか？'))return;deleteHome(id);renderHomeManage()});
 }
 function ensureFurnitureWorld(saved){
- const homeIds=[...new Set(chars.map(p=>householdForResident(p).homeId))];
+ // Resolve resident ownership against the saved homes, not the empty startup
+ // map; otherwise a removed starter home is silently recreated on every reload.
  homes=saved?.homes&&typeof saved.homes==='object'?saved.homes:{};
+ const homeIds=[...new Set(chars.map(p=>householdForResident(p).homeId))];
  households=saved?.households&&typeof saved.households==='object'?saved.households:{};
  rooms=saved?.rooms&&typeof saved.rooms==='object'?saved.rooms:{};
  furniture=Array.isArray(saved?.furniture)?saved.furniture:[];

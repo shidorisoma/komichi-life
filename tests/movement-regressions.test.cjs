@@ -59,6 +59,7 @@ assert.equal(personal.homeId,fallback);assert(h.rooms[personal.roomId]);assert.e
 const saved=JSON.parse(storage['komichi-life-save-v1']);
 assert(!saved.furnitureWorld.homes[removed]);assert(saved.furnitureWorld.furniture.some(f=>f.instanceId===personal.instanceId));
 assert.equal(h.deleteHome(fallback),false,'Must retain one home');
+const reloaded=loadModel();assert(!reloaded.homes[removed],'Deleted home was recreated after reload');assert(reloaded.homes[fallback]);assert(!reloaded.places.some(p=>p.id===removed),'Deleted home remains in map list');assert.equal(reloaded.chars[0].homeId,fallback);assert(reloaded.getFurniture().some(f=>f.instanceId===personal.instanceId));
 // Intervals advance for a full day, pause while hidden, then resume without a jump.
 for(let n=0;n<1440;n++){testNow+=1000;h.advanceGameClock()}
 assert.equal(h.getClock().calendarDay,1);assert.equal(h.getClock().hour,15);assert.equal(h.getClock().minute,25);
