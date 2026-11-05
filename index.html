@@ -162,6 +162,8 @@ function createHomeFromTemplate(layoutKey,residentIds){
 function syncHomePlaces(){
  townExteriorCache=null;
  Object.values(homes).forEach(home=>{
+  const hid='household:'+home.id;
+  households[hid]={...(households[hid]||{}),id:hid,homeId:home.id,residentIds:chars.filter(p=>householdForResident(p).homeId===home.id).map(p=>p.id)};
   let place=places.find(p=>p.id===home.id);
   if(!place){place={id:home.id,icon:'🏡',x:home.x||250,y:home.y||850,type:'home',description:(home.layoutKey||'住居')+'の住居',actions:['帰宅','休憩']};places.push(place)}
   place.name=home.name||'住居';place.x=Number.isFinite(home.x)?home.x:(place.x||250);place.y=Number.isFinite(home.y)?home.y:(place.y||850);const entrance=homeEntrance(home);home.entranceX=entrance.x;home.entranceY=entrance.y;

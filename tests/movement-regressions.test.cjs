@@ -9,7 +9,7 @@ let testNow=0;const storage={};const b={console,Math,Date,Set,Map,WeakMap,JSON,N
 // separately in the browser. This test catches disconnected paths and save loss.
 function loadModel(){
  vm.createContext(b);
- const exported='globalThis.qa={loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,setAction,availableBenchSeats,deleteHome,places,rooms,getFurniture:()=>furniture,getErrors:()=>lastFrameErrorCount,advanceGameClock,getClock:()=>({hour,minute,calendarDay}),saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
+ const exported='globalThis.qa={loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,setAction,availableBenchSeats,deleteHome,updateHomeDetails,households,places,rooms,getFurniture:()=>furniture,getErrors:()=>lastFrameErrorCount,advanceGameClock,getClock:()=>({hour,minute,calendarDay}),saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);return b.qa;
 }
 const assert=require('assert').strict,q=loadModel(),p=q.chars[0];
@@ -42,6 +42,10 @@ for(let n=1;n<=5000&&pair.chars.some(p=>p.phaseState==='moving');n++)pair.loop(n
 pair.chars.forEach(resident=>assert.equal(resident.phaseState,'staying','Paired bench visit did not arrive'));
 assert(Math.hypot(pair.chars[0].x-pair.chars[1].x,pair.chars[0].y-pair.chars[1].y)>=22);
 // A separate model prevents a household test from affecting the movement check.
+const membership=loadModel(),ids=Object.keys(membership.homes);
+assert(membership.updateHomeDetails(ids[1],'転居先',[membership.chars[0].id]));
+assert(membership.households['household:'+ids[1]].residentIds.includes(membership.chars[0].id));
+assert(!membership.households['household:'+ids[0]].residentIds.includes(membership.chars[0].id));
 const h=loadModel(),removed=Object.keys(h.homes)[0],fallback=Object.keys(h.homes)[1];
 const person=h.chars[0];person.homeId=removed;person.action='home';person.phaseState='staying';
 const sourceRoom=Object.values(h.rooms).find(r=>r.homeId===removed);
@@ -49,7 +53,7 @@ const personal={instanceId:'regression-personal',homeId:removed,roomId:sourceRoo
 h.getFurniture().push(personal);
 assert(h.deleteHome(removed),'Home deletion did not complete');
 assert(!h.homes[removed]);assert(!h.places.some(p=>p.id===removed));
-assert.equal(person.homeId,fallback);
+assert.equal(person.homeId,fallback);assert(h.households['household:'+fallback].residentIds.includes(person.id),'New household membership was not updated');
 assert(h.getFurniture().some(f=>f.instanceId===personal.instanceId),'Personal furniture was lost');
 assert.equal(personal.homeId,fallback);assert(h.rooms[personal.roomId]);assert.equal(personal.placed,false);
 const saved=JSON.parse(storage['komichi-life-save-v1']);
@@ -61,4 +65,4 @@ assert.equal(h.getClock().calendarDay,1);assert.equal(h.getClock().hour,15);asse
 b.document.hidden=true;testNow+=60000;h.advanceGameClock();assert.equal(h.getClock().minute,25);
 b.document.hidden=false;testNow+=1000;h.advanceGameClock();assert.equal(h.getClock().minute,26);
 assert.equal(h.getErrors(),0);
-console.log('PASS: all bench departures, retargeting and actual arrival; home deletion, personal furniture and save; 24-hour clock and background resume');
+console.log('PASS: all bench departures, retargeting and actual arrival; home transfers and deletion, personal furniture and save; 24-hour clock and background resume');
