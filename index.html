@@ -127,10 +127,38 @@ function townDisplayHomes(){
  const real=Object.values(homes||{}),used=new Set(real.map(h=>h.mapPlotId));
  return townExteriorCache=[...real,...residentialPlots.filter(plot=>!used.has(plot.id)&&plot.id!=='center-west-home').map(plot=>({id:'vacant-'+plot.id,name:'',x:plot.x,y:plot.y,mapPlotId:plot.id,scenicVacant:true}))];
 }
+function uniqueWorldId(prefix,exists){
+ const base=prefix+Date.now().toString(36);let id=base,suffix=1;
+ while(exists(id))id=base+'-'+suffix++;
+ return id;
+}
+function rememberHomeDeparture(p,home){
+ if(!p||!home||p.phaseState!=='moving')return;
+ const approach=homeApproachPoints(home);
+ if(approach.some((q,i)=>i>0&&pointSegmentDistance(p.x,p.y,approach[i-1],q)<25)){
+  p.homeDeparture={home:{id:home.id,mapPlotId:home.mapPlotId,x:home.x,y:home.y,layoutKey:home.layoutKey}};
+ }
+}
+function assignResidentHome(p,homeId){
+ if(!p)return;
+ const previous=homes[householdForResident(p).homeId];
+ if(previous?.id!==homeId)rememberHomeDeparture(p,previous);
+ p.homeId=homeId;
+}
+function departureHomeFor(p){
+ const home=p?.homeDeparture?.home;
+ if(!home||!Number.isFinite(home.x)||!Number.isFinite(home.y)||!residentialPlots.some(q=>q.id===home.mapPlotId))return null;
+ if(Math.hypot(p.x-homeEntrance(home).x,p.y-homeEntrance(home).y)>100){delete p.homeDeparture;return null}
+ return home;
+}
 function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
 // House placement and household changes must refresh any ongoing home/sleep route.
 function syncResidentHomeDestination(p){
- if(!p||(p.action!=='home'&&p.action!=='sleep'))return;
+ if(!p)return;
+ if(p.action!=='home'&&p.action!=='sleep'){
+  if(p.phaseState==='moving'){p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,null,p);p.routeIndex=1;p.stuckTime=0;p.routeRetries=0}
+  return;
+ }
  const home=homes[householdForResident(p).homeId];
  if(!home)return;
  const entrance=homeEntrance(home);
@@ -143,27 +171,30 @@ function syncResidentHomeDestination(p){
   p.routeIndex=1;p.stuckTime=0;p.routeRetries=0;
  }
 }
-function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();chars.filter(p=>householdForResident(p).homeId===homeId).forEach(syncResidentHomeDestination);renderResidentStatus();saveGame(true);drawWorld();return true}
+function relocateHome(homeId,plotId){const home=homes[homeId],plot=residentialPlots.find(p=>p.id===plotId);if(!home||!plot||Object.values(homes).some(h=>h.id!==homeId&&h.mapPlotId===plotId))return false;chars.filter(p=>householdForResident(p).homeId===homeId).forEach(p=>rememberHomeDeparture(p,home));home.mapPlotId=plot.id;home.x=plot.x;home.y=plot.y;syncHomePlaces();chars.filter(p=>householdForResident(p).homeId===homeId).forEach(syncResidentHomeDestination);renderResidentStatus();saveGame(true);drawWorld();return true}
 function createHomeFromTemplate(layoutKey,residentIds){
  const variants=homeLayoutCatalog[layoutKey],memberIds=[...new Set((Array.isArray(residentIds)?residentIds:[residentIds]).filter(Boolean))];
  if(!variants?.length||!memberIds.length||memberIds.some(id=>!residentById(id)))return null;
  const plot=availableResidentialPlot();if(!plot){alert('街の住宅用地がいっぱいです');return null}
  const template=variants[Math.floor(Math.random()*variants.length)];
- const homeId='home-'+Date.now().toString(36),hid='household:'+homeId;
+ const homeId=uniqueWorldId('home-',id=>!!homes[id]),hid='household:'+homeId;
  const home={id:homeId,name:layoutKey+'の新居',layoutKey,templateName:template.name,roomIds:[],mapPlotId:plot.id,x:plot.x,y:plot.y,rooms:template.rooms.map((r,i)=>({...r,id:homeId+':room'+i,homeId,furnitureIds:[]}))};
  homes[homeId]=home;
  home.rooms.forEach(room=>{rooms[room.id]=room;home.roomIds.push(room.id)});
  households[hid]={id:hid,homeId,residentIds:memberIds.slice()};
- memberIds.forEach(id=>{const p=residentById(id);p.homeId=homeId;syncResidentHomeDestination(p)});
+ memberIds.forEach(id=>assignResidentHome(residentById(id),homeId));
  const add=(type,room,x,y)=>{const def=furnitureCatalog[type],instanceId=homeId+'-'+type+'-'+furniture.length;const item={instanceId,furnitureId:type,purchaserId:'system',ownershipType:def.ownership,ownerId:def.ownership==='household'?hid:memberIds[0],homeId,roomId:room.id,x,y,rotation:0,allowedResidentIds:null,placed:true};furniture.push(item);room.furnitureIds.push(instanceId)};
  const bedroom=home.rooms.find(r=>r.type==='bedroom'),kitchen=home.rooms.find(r=>r.type==='kitchen'),living=home.rooms.find(r=>r.type==='living')||home.rooms.find(r=>r.type!=='bedroom');
  if(bedroom)add('bed',bedroom,bedroom.x+bedroom.w/2,bedroom.y+bedroom.h/2);
  if(kitchen){add('fridge',kitchen,kitchen.x+45,kitchen.y+65);add('table',kitchen,kitchen.x+kitchen.w/2,kitchen.y+kitchen.h/2)}
  if(living)add('sofa',living,living.x+living.w/2,living.y+living.h/2);
- syncHomePlaces();saveGame(true);return home;
+ syncHomePlaces();memberIds.forEach(id=>syncResidentHomeDestination(residentById(id)));saveGame(true);return home;
 }
 function syncHomePlaces(){
  townExteriorCache=null;
+ // Persist each resident's actual home instead of reassigning it from their
+ // changing array index when somebody joins or leaves the town.
+ chars.forEach(p=>{const id=householdForResident(p).homeId;p.homeId=homes[id]?id:Object.keys(homes)[0]});
  for(let i=places.length-1;i>=0;i--)if(places[i].type==='home'&&!homes[places[i].id])places.splice(i,1);
  Object.values(homes).forEach(home=>{
   const hid='household:'+home.id;
@@ -178,8 +209,8 @@ function updateHomeDetails(homeId,name,memberIds){
  const selectedIds=[...new Set(memberIds)].filter(id=>residentById(id));
  const fallback=Object.keys(homes).find(id=>id!==homeId)||null;
  const currentIds=new Set([...(households['household:'+homeId]?.residentIds||[]),...chars.filter(p=>p.homeId===homeId).map(p=>p.id)]);
- currentIds.forEach(id=>{if(!selectedIds.includes(id)){const p=residentById(id);if(p&&fallback)p.homeId=fallback}});
- selectedIds.forEach(id=>{const p=residentById(id);p.homeId=homeId});
+ currentIds.forEach(id=>{if(!selectedIds.includes(id)){const p=residentById(id);if(p&&fallback)assignResidentHome(p,fallback)}});
+ selectedIds.forEach(id=>assignResidentHome(residentById(id),homeId));
  const hid='household:'+homeId;households[hid]={...(households[hid]||{}),id:hid,homeId,residentIds:selectedIds};
  home.name=String(name||'').trim()||home.name||'住居';syncHomePlaces();new Set([...currentIds,...selectedIds]).forEach(id=>syncResidentHomeDestination(residentById(id)));renderResidentStatus();saveGame(true);return true;
 }
@@ -187,7 +218,7 @@ function deleteHome(homeId){
  const home=homes[homeId];if(!home||Object.keys(homes).length<=1)return false;
  const fallback=Object.keys(homes).find(id=>id!==homeId),memberIds=new Set(households['household:'+homeId]?.residentIds||[]);
  const reassignedResidents=chars.filter(p=>p.homeId===homeId||memberIds.has(p.id));
- reassignedResidents.forEach(p=>{p.homeId=fallback});
+ reassignedResidents.forEach(p=>assignResidentHome(p,fallback));
  const fallbackRooms=(homes[fallback]?.roomIds||homes[fallback]?.rooms?.map(r=>r.id)||[]).map(id=>rooms[id]).filter(Boolean);
  furniture=furniture.filter(item=>{
   if(item.homeId!==homeId)return true;
@@ -343,6 +374,11 @@ function pointInHouseFootprint(home,x,y){return pointInPolygon(x,y,homeExteriorG
 function pointSegmentDistance(x,y,a,b){const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/Math.max(1,dx*dx+dy*dy)));return Math.hypot(x-a.x-dx*t,y-a.y-dy*t)}
 function homeBlocksMovement(home,x,y,p){
  if(!home||!pointInHouseFootprint(home,x,y))return false;
+ const departure=departureHomeFor(p);
+ if(departure&&p.phaseState==='moving'&&departure.mapPlotId===home.mapPlotId){
+  const exit=homeApproachPoints(departure);
+  if(exit.some((q,i)=>i>0&&pointSegmentDistance(x,y,exit[i-1],q)<24))return false;
+ }
  const own=p&&householdForResident(p).homeId===home.id;
  if(!own)return true;
  const approach=homeApproachPoints(home),door=approach[0];
@@ -799,7 +835,25 @@ function findSafeResidentSpawn(requested=null){
  // Even when overcrowded, prefer the safest available spot over a duplicate spawn.
  return places.filter(clear).sort((a,b)=>distanceFromCrowd(b)-distanceFromCrowd(a))[0]||{x:420,y:700};
 }
-function addResident(definition){const id=definition.id||'resident-'+Date.now();if(chars.some(p=>p.id===id))return null;const spawn=findSafeResidentSpawn(definition);const resident={id,name:definition.name||'新しい住人',money:Number.isFinite(definition.money)?Math.max(0,definition.money):5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},sociability:Number.isFinite(definition.sociability)?Math.max(0,Math.min(100,definition.sociability)):50,curiosity:Number.isFinite(definition.curiosity)?Math.max(0,Math.min(100,definition.curiosity)):50,activityLevel:Number.isFinite(definition.activityLevel)?Math.max(0,Math.min(100,definition.activityLevel)):50,walkPreference:Number.isFinite(definition.walkPreference)?Math.max(0,Math.min(100,definition.walkPreference)):50,naturePreference:Number.isFinite(definition.naturePreference)?Math.max(0,Math.min(100,definition.naturePreference)):50,cafePreference:Number.isFinite(definition.cafePreference)?Math.max(0,Math.min(100,definition.cafePreference)):50,lastInitiatedSocialStamp:-1,lastSocialStamp:-1,x:spawn.x,y:spawn.y,tx:spawn.x,ty:spawn.y,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.x=spawn.x;resident.y=spawn.y;resident.tx=spawn.x;resident.ty=spawn.y;resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame(true);return resident;}
+function addResident(definition){const id=typeof definition.id==='string'&&definition.id.trim()?definition.id:uniqueWorldId('resident-',id=>chars.some(p=>p.id===id));if(chars.some(p=>p.id===id))return null;const spawn=findSafeResidentSpawn(definition);const resident={id,name:definition.name||'新しい住人',money:Number.isFinite(definition.money)?Math.max(0,definition.money):5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},sociability:Number.isFinite(definition.sociability)?Math.max(0,Math.min(100,definition.sociability)):50,curiosity:Number.isFinite(definition.curiosity)?Math.max(0,Math.min(100,definition.curiosity)):50,activityLevel:Number.isFinite(definition.activityLevel)?Math.max(0,Math.min(100,definition.activityLevel)):50,walkPreference:Number.isFinite(definition.walkPreference)?Math.max(0,Math.min(100,definition.walkPreference)):50,naturePreference:Number.isFinite(definition.naturePreference)?Math.max(0,Math.min(100,definition.naturePreference)):50,cafePreference:Number.isFinite(definition.cafePreference)?Math.max(0,Math.min(100,definition.cafePreference)):50,lastInitiatedSocialStamp:-1,lastSocialStamp:-1,x:spawn.x,y:spawn.y,tx:spawn.x,ty:spawn.y,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.id=id;resident.x=spawn.x;resident.y=spawn.y;resident.tx=spawn.x;resident.ty=spawn.y;resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);ensureAllRelationships();const assigned=householdForResident(resident).homeId;resident.homeId=homes[assigned]?assigned:Object.keys(homes)[0];syncHomePlaces();chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame(true);return resident;}
+function removeResident(id){
+ const p=residentById(id);if(!p||chars.length<=1)return false;
+ interruptSocialForNewAction(p);
+ const index=chars.indexOf(p),removedPairIds=new Set(Object.entries(relationships).filter(([,r])=>r.residentIds?.includes(id)).map(([pairId])=>pairId));
+ chars.splice(index,1);
+ relationships=Object.fromEntries(Object.entries(relationships).filter(([,r])=>!r.residentIds?.includes(id)));
+ memories=memories.filter(m=>!m.pairId||!removedPairIds.has(m.pairId));
+ if(sharedGoal&&['nagisumi','yaku'].includes(id)){
+  sharedGoal='';goalTicks=0;
+  chars.filter(q=>q.action==='date').forEach(q=>{q.action='idle';q.phaseState='idle';q.routePoints=[];q.routeIndex=0;q.tx=q.x;q.ty=q.y;q.stay=0;q.activity='街で過ごしている'});
+ }
+ chars.forEach(q=>{
+  if(q.passing?.otherId===id){q.passing=null;q.trafficWait=0;q.passingCooldown=0}
+  if(q.socialPartnerId===id)cancelSocialVisit(q);
+ });
+ if(selected>=chars.length)selected=chars.length-1;else if(index<selected)selected--;
+ editingResidentId='';residentPageId='';ensureAllRelationships();syncHomePlaces();renderResidentStatus();saveGame(true);return true;
+}
 window.addResident=addResident;
 function suspendGame(){
  pageSuspended=true;lastClockSample=performance.now();clearPointerGesture();saveGame();
@@ -1775,7 +1829,8 @@ function compactRoutePoints(points,resident){
 function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  if(resident&&Math.hypot(resident.x-fromX,resident.y-fromY)<2)restoreBenchExitClearance(resident);
  const ownHome=resident?homes[householdForResident(resident).homeId]:null;
- const startHome=ownHome&&(pointInHouseFootprint(ownHome,fromX,fromY)||Math.hypot(fromX-homeEntrance(ownHome).x,fromY-homeEntrance(ownHome).y)<45)?ownHome:null;
+ const departure=departureHomeFor(resident);
+ const startHome=departure||(ownHome&&(pointInHouseFootprint(ownHome,fromX,fromY)||Math.hypot(fromX-homeEntrance(ownHome).x,fromY-homeEntrance(ownHome).y)<45)?ownHome:null);
  const fixedStart=startHome?homeSouthRoadNode(startHome):null;
  const fixedGoal=destinationHome?homeSouthRoadNode(destinationHome):null;
  const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
@@ -2934,7 +2989,7 @@ function renderResidentManager(){
  document.getElementById('addResidentBtn').onclick=()=>{const p=addResident({name:'新しい住人',detail:'',hair:'#655b4c',color:'#778768'});if(p){residentPageId=p.id;renderResidentManager()}};
  body.querySelectorAll('[data-view-resident]').forEach(b=>b.onclick=()=>{residentPageId=b.dataset.viewResident;renderResidentManager()});
  body.querySelectorAll('[data-edit-resident]').forEach(b=>b.onclick=()=>{editingResidentId=b.dataset.editResident;renderResidentManager()});
- body.querySelectorAll('[data-remove-resident]').forEach(b=>b.onclick=()=>{const id=b.dataset.removeResident,p=residentById(id);if(!p||chars.length<=1){alert('最後の1人は退去できません。');return}if(!confirm(p.name+'を街から退去させますか？'))return;const idx=chars.indexOf(p);const removedPairIds=new Set(Object.entries(relationships).filter(([,rel])=>rel.residentIds?.includes(id)).map(([pairId])=>pairId));chars.splice(idx,1);relationships=Object.fromEntries(Object.entries(relationships).filter(([,rel])=>!rel.residentIds?.includes(id)));memories=memories.filter(m=>!m.pairId||!removedPairIds.has(m.pairId));if(selected>=chars.length)selected=chars.length-1;else if(idx<selected)selected--;editingResidentId='';residentPageId='';ensureAllRelationships();renderResidentStatus();saveGame(true);renderResidentManager()});
+ body.querySelectorAll('[data-remove-resident]').forEach(b=>b.onclick=()=>{const id=b.dataset.removeResident,p=residentById(id);if(!p||chars.length<=1){alert('最後の1人は退去できません。');return}if(!confirm(p.name+'を街から退去させますか？'))return;if(removeResident(id))renderResidentManager()});
 }
 function showTab(t,force=false){if(!force&&t===tab&&t!=='walk')t='walk';if(t!=='relations')expandedRelationId='';tab=t;document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));panel.classList.toggle('show',t!=='walk');panel.classList.toggle('mapPanel',t==='map');panel.classList.toggle('homePanel',t==='home');document.getElementById('mapToggle').classList.toggle('active',t==='map');document.getElementById('mapToggle').textContent=interiorHomeId?'↩︎':'🗺️';document.getElementById('mapToggle').classList.toggle('returnCity',!!interiorHomeId);document.getElementById('mapToggle').setAttribute('aria-label',interiorHomeId?'街に戻る':'地図');if(t==='walk'){document.getElementById('hint').style.display=interiorHomeId?'none':'block';if(!interiorHomeId){document.getElementById('placeTitle').textContent='川辺のこみち';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';document.getElementById('placeActions').classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map')}else{const home=getPlace(interiorHomeId);document.getElementById('placeTitle').textContent=home?home.name:'家の中';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').classList.add('show')}renderResidentStatus();return}document.getElementById('hint').style.display='none';if(t==='map'){document.getElementById('placeTitle').textContent='川辺のこみち';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';document.getElementById('placeActions').classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map');renderResidentStatus();title.textContent='街の地図';body.innerHTML='<div class="metricTitle">住人の家の中を覗く</div><div class="mapGrid">'+Object.values(homes).map(h=>'<button class="actionBtn enterHome" data-home="'+escapeHtml(h.id)+'">🏡 '+escapeHtml(h.name)+'の中へ</button>').join('')+'</div><div class="metricTitle">街のスポット</div><div class="mapGrid">'+places.filter(place=>place.type==='home'||place.type==='cafe'||place.type==='shop'||place.id==='plaza').map(place=>'<button class="actionBtn mapPlace" data-place="'+place.id+'">'+place.icon+' '+escapeHtml(place.name)+'</button>').join('')+'</div><p class="subtle">場所を選ぶと、その場所を地図に映します。</p>';body.querySelectorAll('.mapPlace').forEach(b=>b.onclick=()=>{const place=getPlace(b.dataset.place);if(!place)return;interiorHomeId='';homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;panX=450-place.x;panY=720-place.y;drawWorld();showTab('walk')});body.querySelectorAll('.enterHome').forEach(b=>b.onclick=()=>{interiorHomeId=b.dataset.home;homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;drawWorld();showTab('home')})}if(t==='home'){const home=getPlace(interiorHomeId);const household=Object.values(households).find(h=>h.homeId===interiorHomeId)||{homeId:interiorHomeId};const inventoryResident=chars.find(p=>householdForResident(p).homeId===interiorHomeId);const stock=inventoryResident?householdFoodStore(inventoryResident):householdFoodStore({homeId:interiorHomeId});title.textContent='';panel.classList.remove('show');document.getElementById('placeTitle').textContent=home?home.name:'家の中';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();const actions=document.getElementById('placeActions');document.getElementById('placeTitle').textContent=(home?home.name:'家の中')+'　🥕食材 '+stock.foodIngredients+'個 ／ 🐟魚 '+stock.fishIngredients+'匹';actions.innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';actions.classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map',true);renderResidentStatus();return}
 if(t==='residents'){
