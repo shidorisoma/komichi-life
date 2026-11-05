@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#f6eedf">
 <title>川辺のこみち</title>
 <style>
-:root{--cream:rgba(255,251,241,.93);--ink:#655b4c;--muted:#938875;--green:#778768;--line:rgba(126,111,83,.18)}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#d8d0b8;font-family:ui-rounded,"Hiragino Maru Gothic ProN","Yu Gothic",system-ui,sans-serif;color:var(--ink)}#app{position:relative;width:100%;height:100%;overflow:hidden;background:#d8d0b8}.lower-ui-hidden .status,.lower-ui-hidden .nav{display:none!important}canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}.top{position:absolute;top:calc(env(safe-area-inset-top) + 12px);left:9%;width:82%;height:76px;padding:8px 12px;border-radius:27px;background:var(--cream);box-shadow:0 5px 22px #67563a25;backdrop-filter:blur(8px);display:flex;align-items:center;gap:12px}.topInfo{min-width:0;flex:1;padding-right:0}.top:has(.placeActions.show) .topInfo{padding-right:122px}.placeActions{display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);gap:5px;flex-wrap:nowrap;justify-content:flex-end;max-width:122px;margin:0}.placeActions.show{display:flex}.placeActions button{border:0;border-radius:12px;padding:8px 9px;background:#edf0e5;color:var(--ink);font:inherit;font-size:12px;white-space:nowrap}.placeActions .placeMap{background:#edf0e5;color:var(--ink)}.placeActions .placeBack{background:var(--green);color:white}.sun{font-size:34px;color:#d4a844}.place{font-size:clamp(15px,4vw,20px);font-weight:800;letter-spacing:.04em;white-space:nowrap}.weather{font-size:10px;color:#998b74;margin-top:1px;white-space:nowrap}.clock{font-size:12px;color:#93856e;margin-top:2px}.speaker{position:absolute;right:3.5%;top:calc(env(safe-area-inset-top) + 12px);width:62px;height:62px;border:0;border-radius:50%;background:var(--cream);font-size:26px;color:var(--ink);box-shadow:0 4px 16px #67563a22}.zoom{position:absolute;right:4%;top:25%;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 8px;border-radius:26px;background:var(--cream);box-shadow:0 4px 16px #67563a22}.zoom button{border:0;background:transparent;color:var(--ink);font-size:23px;width:32px;height:32px;padding:0}.zoom .minus{border-top:1px solid var(--line);font-size:21px}.zoom .center{font-size:19px;border-top:1px solid var(--line);padding-top:5px}.zoom .uiToggle{font-size:19px;border-top:1px solid var(--line);padding-top:4px;font-weight:700}.zoom .uiToggle.active{color:var(--green);background:#e9eddf;border-radius:12px}.zoom .mapIcon{font-size:23px;border-top:1px solid var(--line);padding-top:7px;height:39px;width:36px}.zoom .mapIcon.returnCity{font-size:27px;font-weight:600;padding-top:3px}.zoom .mapIcon.active{background:#e9eddf;border-radius:14px;color:#708064}.tag{position:absolute;top:49%;left:50%;transform:translate(-50%,-50%);padding:5px 15px;background:#fffaf0e8;border-radius:20px;font-size:12px;box-shadow:0 2px 8px #55452b22;pointer-events:none}.status{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 91px);left:9%;width:82%;min-height:76px;border-radius:28px;background:var(--cream);box-shadow:0 5px 20px #67563a25;display:flex;align-items:center;justify-content:flex-start;overflow-x:auto;overscroll-behavior-x:contain;padding:8px 9px;gap:3px}.status .person{flex:0 0 48%}.person{display:flex;align-items:center;gap:5px;min-width:0;flex:1;padding:5px 5px;border-radius:18px;cursor:pointer;overflow:hidden}.person>div{min-width:0;flex:1;overflow:hidden}.person.selected{background:#e9eddf;border:1px solid #a9b69a}.avatar{width:34px;height:39px;flex:none}.pname{font-weight:700;font-size:14px;white-space:nowrap}.activity{font-size:11px;color:#918873;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.3;max-width:100%;overflow-wrap:anywhere}.midtime{font-size:12px;color:#9a8e79;white-space:nowrap;flex:none;width:39px;text-align:center}.nav{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 12px);left:9%;width:82%;height:76px;border-radius:27px;background:var(--cream);box-shadow:0 5px 20px #67563a25;display:flex;justify-content:space-around;align-items:center;padding:6px}.nav button{border:0;background:transparent;color:#968a77;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:1;height:100%;border-radius:20px;font-size:12px}.nav button.active{background:#e9eddf;color:#708064}.nav .ico{font-size:23px;line-height:1}.panel{position:absolute;left:7%;right:7%;bottom:calc(env(safe-area-inset-bottom) + 180px);max-height:42%;overflow:auto;background:var(--cream);border-radius:22px;padding:16px;box-shadow:0 8px 25px #55452b35;display:none}.panel.show{display:block}.panel.mapPanel{left:50%;right:auto;width:68%;max-width:520px;transform:translateX(-50%);padding:13px}.mapGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.mapGrid .homeMenuButtons{display:grid;gap:12px;padding:8px 0}.homeMenuButtons .actionBtn{min-height:58px;font-size:15px}.homeResidentChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0 14px}.homeResidentOption{display:flex;align-items:center;gap:7px;padding:9px;background:#f1eee4;border-radius:10px;font-size:13px;min-width:0}.homeResidentOption input{accent-color:#778768;width:17px;height:17px;flex:none}.homeEditCard{padding:12px;margin:10px 0;border:1px solid var(--line);border-radius:14px;background:#fffaf0;display:flex;flex-direction:column;gap:7px}.homeEditLabel{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted)}.homeNameInput{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--ink);font:inherit}.homeSelect{width:100%;padding:11px;border:1px solid var(--line);border-radius:12px;background:#fffaf0;color:var(--ink);font:inherit}.homePreview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:10px;background:#b99b76;border-radius:12px}.homePreviewRoom{min-height:62px;display:grid;place-items:center;background:#f5eddd;border:2px solid #a58a68;border-radius:4px;font-size:12px;font-weight:700}.actionBtn{width:100%;min-width:0;margin:0;padding:9px 8px;border-radius:12px;font-size:12px;line-height:1.2;white-space:nowrap;overflow-wrap:normal;min-height:44px}.panel h3{margin:0 0 10px;font-size:16px}.entry{font-size:12px;line-height:1.65;padding:7px 0;border-bottom:1px solid var(--line)}.relationSummary{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:12px 10px;border:0;border-radius:13px;background:#edf0e5;color:var(--ink);font:inherit;text-align:left}.relationPageHeader{position:sticky;top:-16px;z-index:2;display:flex;align-items:center;gap:12px;margin:0 -16px 10px;padding:8px 16px 11px;background:var(--cream);border-bottom:1px solid var(--line);font-size:15px}.relationBack{width:34px;height:34px;flex:none;border:0;border-radius:50%;background:#edf0e5;color:var(--green);font-size:28px;line-height:1;padding:0 0 3px}.relationSummary b{font-size:13px}.relationChevron{color:var(--green);font-size:18px}.relationDetail{padding:4px 8px 8px}.eventTrigger{margin-top:16px}.actionBtn{display:block;width:100%;border:0;border-radius:14px;padding:12px;margin:10px 0 4px;background:#778768;color:white;font:inherit;font-weight:700}.meter{display:grid;grid-template-columns:52px 1fr 32px;gap:8px;align-items:center;font-size:11px;margin:7px 0}.track{height:8px;border-radius:9px;background:#e7e0d2;overflow:hidden}.fill{height:100%;border-radius:9px;background:#91a17d}.metricTitle{font-size:13px;font-weight:700;margin:12px 0 5px}.subtle{font-size:11px;color:#988b77;line-height:1.6}.residentTools{display:flex;gap:7px;margin:8px 0}.residentTools button,.residentRow button{border:0;border-radius:11px;padding:8px 10px;background:#edf0e5;color:var(--ink);font:inherit;font-size:12px}.residentRow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.residentRow .avatar{width:30px;height:34px}.residentRow .residentInfo{flex:1;min-width:0}.residentRow .residentResetBtn{flex:none;min-width:58px;padding:8px 9px;background:#778768;color:#fff;font-weight:700;font-size:11px}.residentForm{display:grid;gap:8px;margin-top:10px;padding:11px;border-radius:14px;background:#f4f0e6}.residentForm label{display:grid;gap:4px;font-size:11px;color:var(--muted)}.residentForm input,.residentForm textarea{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px;background:#fffdf7;color:var(--ink);font:inherit;font-size:13px}.residentForm textarea{resize:vertical;min-height:54px}.residentForm .colorFields{display:grid;grid-template-columns:1fr 1fr;gap:8px}.residentForm input[type=color]{height:38px;padding:3px}.residentForm .formActions{display:flex;gap:7px}.residentForm button{flex:1;border:0;border-radius:10px;padding:9px;background:var(--green);color:white;font:inherit;font-size:12px;font-weight:700}.relationSummary{justify-content:flex-start}.relationFaces{display:flex;align-items:center;flex:none}.relationFaces .avatar{width:27px;height:32px;margin-right:-5px}.relationSummary .relationNames{flex:1;min-width:0}.residentNameButton{border:0;padding:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;text-align:left}.residentPageHeader{position:sticky;top:-16px;z-index:8;display:flex;align-items:center;gap:10px;margin:0 -16px 12px;padding:10px 16px 10px;background:var(--cream);border-bottom:1px solid var(--line)}.residentProfileHero{display:flex;align-items:center;gap:12px;padding:10px 4px}.residentProfileHero .avatar{width:58px;height:66px}.residentProfileHero h3{margin:0;font-size:17px}.residentProfileText{font-size:12px;line-height:1.7;padding:8px 2px}.entry small{color:#a2937b;margin-right:8px}.pill{display:inline-block;background:#edf0e5;border-radius:12px;padding:3px 8px;margin:3px;font-size:11px}.hint{display:none!important;position:absolute;top:calc(env(safe-area-inset-top) + 102px);left:50%;transform:translateX(-50%);background:#fffaf0d9;padding:5px 12px;border-radius:20px;font-size:10px;color:#97896f;white-space:nowrap}
+:root{--cream:rgba(255,251,241,.93);--ink:#655b4c;--muted:#938875;--green:#778768;--line:rgba(126,111,83,.18)}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f1dfb4;font-family:ui-rounded,"Hiragino Maru Gothic ProN","Yu Gothic",system-ui,sans-serif;color:var(--ink)}#app{position:relative;width:100%;height:100%;overflow:hidden;background:#f1dfb4}.lower-ui-hidden .status,.lower-ui-hidden .nav{display:none!important}canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}.top{position:absolute;top:calc(env(safe-area-inset-top) + 12px);left:9%;width:82%;height:76px;padding:8px 12px;border-radius:27px;background:var(--cream);box-shadow:0 5px 22px #67563a25;backdrop-filter:blur(8px);display:flex;align-items:center;gap:12px}.topInfo{min-width:0;flex:1;padding-right:0}.top:has(.placeActions.show) .topInfo{padding-right:122px}.placeActions{display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);gap:5px;flex-wrap:nowrap;justify-content:flex-end;max-width:122px;margin:0}.placeActions.show{display:flex}.placeActions button{border:0;border-radius:12px;padding:8px 9px;background:#edf0e5;color:var(--ink);font:inherit;font-size:12px;white-space:nowrap}.placeActions .placeMap{background:#edf0e5;color:var(--ink)}.placeActions .placeBack{background:var(--green);color:white}.sun{font-size:34px;color:#d4a844}.place{font-size:clamp(15px,4vw,20px);font-weight:800;letter-spacing:.04em;white-space:nowrap}.weather{font-size:10px;color:#998b74;margin-top:1px;white-space:nowrap}.clock{font-size:12px;color:#93856e;margin-top:2px}.speaker{position:absolute;right:3.5%;top:calc(env(safe-area-inset-top) + 12px);width:62px;height:62px;border:0;border-radius:50%;background:var(--cream);font-size:26px;color:var(--ink);box-shadow:0 4px 16px #67563a22}.zoom{position:absolute;right:4%;top:25%;display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 8px;border-radius:26px;background:var(--cream);box-shadow:0 4px 16px #67563a22}.zoom button{border:0;background:transparent;color:var(--ink);font-size:23px;width:32px;height:32px;padding:0}.zoom .minus{border-top:1px solid var(--line);font-size:21px}.zoom .center{font-size:19px;border-top:1px solid var(--line);padding-top:5px}.zoom .uiToggle{font-size:19px;border-top:1px solid var(--line);padding-top:4px;font-weight:700}.zoom .uiToggle.active{color:var(--green);background:#e9eddf;border-radius:12px}.zoom .mapIcon{font-size:23px;border-top:1px solid var(--line);padding-top:7px;height:39px;width:36px}.zoom .mapIcon.returnCity{font-size:27px;font-weight:600;padding-top:3px}.zoom .mapIcon.active{background:#e9eddf;border-radius:14px;color:#708064}.tag{position:absolute;top:49%;left:50%;transform:translate(-50%,-50%);padding:5px 15px;background:#fffaf0e8;border-radius:20px;font-size:12px;box-shadow:0 2px 8px #55452b22;pointer-events:none}.status{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 91px);left:9%;width:82%;min-height:76px;border-radius:28px;background:var(--cream);box-shadow:0 5px 20px #67563a25;display:flex;align-items:center;justify-content:flex-start;overflow-x:auto;overscroll-behavior-x:contain;padding:8px 9px;gap:3px}.status .person{flex:0 0 48%}.person{display:flex;align-items:center;gap:5px;min-width:0;flex:1;padding:5px 5px;border-radius:18px;cursor:pointer;overflow:hidden}.person>div{min-width:0;flex:1;overflow:hidden}.person.selected{background:#e9eddf;border:1px solid #a9b69a}.avatar{width:34px;height:39px;flex:none}.pname{font-weight:700;font-size:14px;white-space:nowrap}.activity{font-size:11px;color:#918873;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.3;max-width:100%;overflow-wrap:anywhere}.midtime{font-size:12px;color:#9a8e79;white-space:nowrap;flex:none;width:39px;text-align:center}.nav{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 12px);left:9%;width:82%;height:76px;border-radius:27px;background:var(--cream);box-shadow:0 5px 20px #67563a25;display:flex;justify-content:space-around;align-items:center;padding:6px}.nav button{border:0;background:transparent;color:#968a77;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:1;height:100%;border-radius:20px;font-size:12px}.nav button.active{background:#e9eddf;color:#708064}.nav .ico{font-size:23px;line-height:1}.panel{position:absolute;left:7%;right:7%;bottom:calc(env(safe-area-inset-bottom) + 180px);max-height:42%;overflow:auto;background:var(--cream);border-radius:22px;padding:16px;box-shadow:0 8px 25px #55452b35;display:none}.panel.show{display:block}.panel.mapPanel{left:50%;right:auto;width:68%;max-width:520px;transform:translateX(-50%);padding:13px}.mapGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.mapGrid .homeMenuButtons{display:grid;gap:12px;padding:8px 0}.homeMenuButtons .actionBtn{min-height:58px;font-size:15px}.homeResidentChoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:8px 0 14px}.homeResidentOption{display:flex;align-items:center;gap:7px;padding:9px;background:#f1eee4;border-radius:10px;font-size:13px;min-width:0}.homeResidentOption input{accent-color:#778768;width:17px;height:17px;flex:none}.homeEditCard{padding:12px;margin:10px 0;border:1px solid var(--line);border-radius:14px;background:#fffaf0;display:flex;flex-direction:column;gap:7px}.homeEditLabel{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted)}.homeNameInput{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--ink);font:inherit}.homeSelect{width:100%;padding:11px;border:1px solid var(--line);border-radius:12px;background:#fffaf0;color:var(--ink);font:inherit}.homePreview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:10px;background:#b99b76;border-radius:12px}.homePreviewRoom{min-height:62px;display:grid;place-items:center;background:#f5eddd;border:2px solid #a58a68;border-radius:4px;font-size:12px;font-weight:700}.actionBtn{width:100%;min-width:0;margin:0;padding:9px 8px;border-radius:12px;font-size:12px;line-height:1.2;white-space:nowrap;overflow-wrap:normal;min-height:44px}.panel h3{margin:0 0 10px;font-size:16px}.entry{font-size:12px;line-height:1.65;padding:7px 0;border-bottom:1px solid var(--line)}.relationSummary{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:12px 10px;border:0;border-radius:13px;background:#edf0e5;color:var(--ink);font:inherit;text-align:left}.relationPageHeader{position:sticky;top:-16px;z-index:2;display:flex;align-items:center;gap:12px;margin:0 -16px 10px;padding:8px 16px 11px;background:var(--cream);border-bottom:1px solid var(--line);font-size:15px}.relationBack{width:34px;height:34px;flex:none;border:0;border-radius:50%;background:#edf0e5;color:var(--green);font-size:28px;line-height:1;padding:0 0 3px}.relationSummary b{font-size:13px}.relationChevron{color:var(--green);font-size:18px}.relationDetail{padding:4px 8px 8px}.eventTrigger{margin-top:16px}.actionBtn{display:block;width:100%;border:0;border-radius:14px;padding:12px;margin:10px 0 4px;background:#778768;color:white;font:inherit;font-weight:700}.meter{display:grid;grid-template-columns:52px 1fr 32px;gap:8px;align-items:center;font-size:11px;margin:7px 0}.track{height:8px;border-radius:9px;background:#e7e0d2;overflow:hidden}.fill{height:100%;border-radius:9px;background:#91a17d}.metricTitle{font-size:13px;font-weight:700;margin:12px 0 5px}.subtle{font-size:11px;color:#988b77;line-height:1.6}.residentTools{display:flex;gap:7px;margin:8px 0}.residentTools button,.residentRow button{border:0;border-radius:11px;padding:8px 10px;background:#edf0e5;color:var(--ink);font:inherit;font-size:12px}.residentRow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.residentRow .avatar{width:30px;height:34px}.residentRow .residentInfo{flex:1;min-width:0}.residentRow .residentResetBtn{flex:none;min-width:58px;padding:8px 9px;background:#778768;color:#fff;font-weight:700;font-size:11px}.residentForm{display:grid;gap:8px;margin-top:10px;padding:11px;border-radius:14px;background:#f4f0e6}.residentForm label{display:grid;gap:4px;font-size:11px;color:var(--muted)}.residentForm input,.residentForm textarea{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px;background:#fffdf7;color:var(--ink);font:inherit;font-size:13px}.residentForm textarea{resize:vertical;min-height:54px}.residentForm .colorFields{display:grid;grid-template-columns:1fr 1fr;gap:8px}.residentForm input[type=color]{height:38px;padding:3px}.residentForm .formActions{display:flex;gap:7px}.residentForm button{flex:1;border:0;border-radius:10px;padding:9px;background:var(--green);color:white;font:inherit;font-size:12px;font-weight:700}.relationSummary{justify-content:flex-start}.relationFaces{display:flex;align-items:center;flex:none}.relationFaces .avatar{width:27px;height:32px;margin-right:-5px}.relationSummary .relationNames{flex:1;min-width:0}.residentNameButton{border:0;padding:0;background:transparent;color:var(--ink);font:inherit;font-weight:700;text-align:left}.residentPageHeader{position:sticky;top:-16px;z-index:8;display:flex;align-items:center;gap:10px;margin:0 -16px 12px;padding:10px 16px 10px;background:var(--cream);border-bottom:1px solid var(--line)}.residentProfileHero{display:flex;align-items:center;gap:12px;padding:10px 4px}.residentProfileHero .avatar{width:58px;height:66px}.residentProfileHero h3{margin:0;font-size:17px}.residentProfileText{font-size:12px;line-height:1.7;padding:8px 2px}.entry small{color:#a2937b;margin-right:8px}.pill{display:inline-block;background:#edf0e5;border-radius:12px;padding:3px 8px;margin:3px;font-size:11px}.hint{display:none!important;position:absolute;top:calc(env(safe-area-inset-top) + 102px);left:50%;transform:translateX(-50%);background:#fffaf0d9;padding:5px 12px;border-radius:20px;font-size:10px;color:#97896f;white-space:nowrap}
 @media(min-width:700px){.top{width:82%;left:9%}.speaker{right:auto;left:430px}.status,.nav{width:430px;left:50%;transform:translateX(-50%)}.zoom{right:25px}.panel{width:430px;left:50%;right:auto;transform:translateX(-50%)}}
 .panel{z-index:5;top:calc(env(safe-area-inset-top) + 150px);bottom:calc(env(safe-area-inset-bottom) + 96px);left:4%;right:4%;width:auto;max-width:none;max-height:none;transform:none;overflow-y:auto;overscroll-behavior:contain;padding:16px} .panel.mapPanel{left:4%;right:4%;width:auto;max-width:none;transform:none;padding:16px}.panel.homePanel{display:none!important}.homeHeader{display:flex;align-items:center;gap:6px}.homeHeader h3{margin:0 auto 0 0;font-size:15px}.homeHeader button{border:0;border-radius:10px;padding:7px 9px;background:#edf0e5;color:var(--ink);font:inherit;font-size:11px;white-space:nowrap}.homeResidents{display:none;margin-top:8px}.homeResidents.open{display:block}.homeResidents .entry{font-size:11px;padding:5px 0}.homeBack{background:var(--green)!important;color:white!important}.residentEditHeader{position:sticky;top:-16px;z-index:8;margin:-16px -16px 10px;padding:10px 14px;background:var(--cream);min-height:56px}.residentEditHeader b{white-space:nowrap}.headerActions{margin-left:auto;display:flex;gap:6px}.residentEditHeader .headerActions button{border:0;border-radius:10px;padding:8px 10px;font:inherit;font-size:11px;font-weight:700;white-space:nowrap}.residentEditHeader .headerSave{background:var(--green);color:white}.residentEditHeader .headerCancel{background:#e9e4d8;color:var(--ink)}.residentForm{margin-top:0}.fixedWorkTimes{display:none}.timeRange{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:8px}.timeRange>span{padding-bottom:12px;font-size:14px}.timeRange label{min-width:0}.checkSetting{display:flex!important;flex-direction:row;align-items:center;gap:9px!important;padding:8px 2px}.residentForm .checkSetting input[type=checkbox]{width:20px;height:20px;flex:none;margin:0;accent-color:var(--green)}.residentForm .checkSetting span{font-size:12px;color:var(--ink)}.residentForm .formActions{display:none}.timeRange{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;justify-content:center;gap:5px}.timeRange>span{padding:0 1px 11px;font-size:14px;white-space:nowrap;pointer-events:none}.timeRange label{min-width:0;width:calc(100% - 2ch)}.timeRange input{width:100%;min-width:0;padding:7px 3px;text-align:center;font-size:12px}.workTwoCols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.workTwoCols label{min-width:0}.callSettingRow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:8px}.callSettingRow .checkSetting{min-width:0}.callFrequencyField{min-width:0}.callFrequencyField select{width:100%;border:1px solid var(--line);border-radius:9px;padding:8px;background:#fffdf7;color:var(--ink);font:inherit;font-size:13px}
 .zoom .mapIcon{display:none}.zoom .mapIcon.returnCity{display:block}.residentNameLine{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.residentMoney{font-size:13px;color:#8a795f;background:rgba(235,228,209,.75);border-radius:12px;padding:4px 8px;white-space:nowrap}.residentInfo{min-width:0;flex:1}.historyToggle{width:100%;margin:8px 0 4px;padding:11px 12px;border:0;border-radius:12px;background:#edf0e5;color:var(--ink);font:inherit;font-size:12px;text-align:left}.moneyHistory.collapsed{display:none}.moneyHistory{margin:4px 0 10px}button:active{transform:scale(.97);filter:brightness(.94)}
@@ -16,23 +16,24 @@
 <div class="panel" id="panel"><h3 id="panelTitle">街の地図</h3><div id="panelBody"></div></div>
 <div class="status" id="residentStatus"></div><nav class="nav"><button class="active" data-tab="walk"><span class="ico">⌁</span>さんぽ</button><button data-tab="residents"><span class="ico">♙</span>住人</button><button data-tab="relations"><span class="ico">♡</span>関係</button><button data-tab="homes"><span class="ico">⌂</span>家</button><button data-tab="memories"><span class="ico">▤</span>ログ</button></nav></div>
 <script>
-(()=>{const c=document.getElementById('world'),ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,residentDiagnosticTimer=null,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
+(()=>{const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,residentDiagnosticTimer=null,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
 const places=[
  {id:'home',name:'西の住宅',icon:'🏡',x:645,y:340,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'home2',name:'東の住宅',icon:'🏠',x:250,y:850,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
- {id:'cafe',name:'喫茶こもれび',icon:'☕',x:240,y:290,type:'cafe',description:'飲み物を楽しめる喫茶店',actions:['食事','休憩','デート']},
- {id:'shop',name:'こみち商店',icon:'🛒',x:620,y:390,type:'shop',description:'日用品や食材を買える小さな商店',actions:['買い物','食材を買う']},
+ {id:'cafe',name:'喫茶こもれび',icon:'☕',x:232,y:385,type:'cafe',description:'飲み物を楽しめる喫茶店',actions:['食事','休憩','デート']},
+ {id:'shop',name:'こみち商店',icon:'🛒',x:181,y:730,type:'shop',description:'日用品や食材を買える小さな商店',actions:['買い物','食材を買う']},
  {id:'plaza',name:'川辺の広場',icon:'🌳',x:430,y:1100,type:'outdoor',description:'川辺の散歩や休憩を楽しめる広場',actions:['散歩','休憩']},
- {id:'bench-river',name:'川辺のベンチ',icon:'🪑',x:715,y:800,type:'bench',description:'水の流れを眺めながら休めるベンチ',actions:['休憩']},
- {id:'bench-path',name:'広場のベンチ',icon:'🪑',x:360,y:1180,type:'bench',description:'木陰のそばでひと休みできるベンチ',actions:['休憩']},
- {id:'bridge',name:'川辺の桟橋',icon:'🌉',x:765,y:738,type:'bridge',description:'川辺をつなぐ小さな橋。水辺の景色を眺められる場所',actions:['散歩','景色を見る']},
+ {id:'bench-river',name:'川辺のベンチ',icon:'🪑',x:695,y:695,type:'bench',description:'水の流れを眺めながら休めるベンチ',actions:['休憩']},
+ {id:'bench-path',name:'広場のベンチ',icon:'🪑',x:344,y:1155,type:'bench',description:'木陰のそばでひと休みできるベンチ',actions:['休憩']},
+ {id:'bridge',name:'川辺の桟橋',icon:'🌉',x:795,y:850,type:'bridge',description:'川辺をつなぐ小さな橋。水辺の景色を眺められる場所',actions:['散歩','景色を見る']},
  {id:'flower-west',name:'住宅街の花壇',icon:'🌼',x:130,y:610,type:'garden',description:'色とりどりの花が咲く、住宅近くの花壇',actions:['花を見る']},
  {id:'flower-east',name:'東の花壇',icon:'🌷',x:698,y:696,type:'garden',description:'広場のそばにある、日当たりのよい花壇',actions:['花を見る']},
  {id:'flower-south',name:'南の花壇',icon:'🌻',x:670,y:1080,type:'garden',description:'こみちの南側にある小さな花壇',actions:['花を見る']},
- {id:'wisteria-walk',name:'藤棚の小径',icon:'🌿',x:624,y:872,type:'outdoor',description:'桜と藤棚のある川辺の庭園',actions:['散歩','花を見る']}
+ {id:'wisteria-walk',name:'藤棚の小径',icon:'🌿',x:686,y:782,type:'outdoor',description:'桜と藤棚のある川辺の庭園',actions:['散歩','花を見る']}
 ];
 function getPlace(id){return places.find(place=>place.id===id)||null}
 const SAVE_KEY='komichi-life-save-v1';
+const TOWN_LAYOUT_REVISION=8;let previousTownRevision=0;
 // 家具・住居データ。購入者、所有者、利用者、設置場所を独立して管理する。
 const furnitureCatalog={
  bed:{id:'bed',name:'ベッド',price:1800,rooms:['bedroom'],actions:['sleep','rest'],capacity:2,ownership:'household',unique:'household',size:{w:2,h:2}},
@@ -60,13 +61,19 @@ const homeLayoutCatalog={
 let selectedHomeLayout='2LDK',homeSubPage='menu';
 // Staggered house plots for a storybook hillside rather than a geometric grid.
 const residentialPlots=[
-{id:'north-west',label:'西側上段の住宅地',x:148,y:419},
-{id:'north-center',label:'中央上段の住宅地',x:339,y:425},
-{id:'south-west',label:'西側中段の住宅地',x:128,y:600},
-{id:'south-center',label:'中央中段の住宅地',x:322,y:612},
-{id:'south-east',label:'西側下段の住宅地',x:150,y:777},
-{id:'center-west-home',label:'中央下段の住宅地',x:339,y:764}
+{id:'north-west',label:'北西の花庭の家',x:420,y:245},
+{id:'north-center',label:'北東の花庭の家',x:630,y:270},
+{id:'south-west',label:'川を望む東の家',x:716,y:410},
+{id:'south-center',label:'石段の上の家',x:327,y:586},
+{id:'south-east',label:'広場の手前の家',x:245,y:916},
+{id:'center-west-home',label:'北の木陰の家',x:213,y:190}
 ];
+let townExteriorCache=null;
+function townDisplayHomes(){
+ if(townExteriorCache)return townExteriorCache;
+ const real=Object.values(homes||{}),used=new Set(real.map(h=>h.mapPlotId));
+ return townExteriorCache=[...real,...residentialPlots.filter(plot=>!used.has(plot.id)&&plot.id!=='center-west-home').map(plot=>({id:'vacant-'+plot.id,name:'',x:plot.x,y:plot.y,mapPlotId:plot.id,scenicVacant:true}))];
+}
 function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
 // House placement and household changes must refresh any ongoing home/sleep route.
 function syncResidentHomeDestination(p){
@@ -103,6 +110,7 @@ function createHomeFromTemplate(layoutKey,residentIds){
  syncHomePlaces();saveGame(true);return home;
 }
 function syncHomePlaces(){
+ townExteriorCache=null;
  Object.values(homes).forEach(home=>{
   let place=places.find(p=>p.id===home.id);
   if(!place){place={id:home.id,icon:'🏡',x:home.x||250,y:home.y||850,type:'home',description:(home.layoutKey||'住居')+'の住居',actions:['帰宅','休憩']};places.push(place)}
@@ -181,7 +189,7 @@ function ensureFurnitureWorld(saved){
  });
  // 住宅配置v6：住人が現在所属していない保存済み住宅も含め、全住宅を新しい街区へ配置。
  // homes全件を対象にしないと、空き家や旧世帯の家だけ旧位置に残ってしまう。
- const homeLayoutVersion=7;
+ const homeLayoutVersion=8;
  const allHomes=Object.values(homes);
  const plotById=new Map(residentialPlots.map(plot=>[plot.id,plot]));
  const occupiedPlots=new Set();
@@ -262,9 +270,11 @@ function residentById(id){return chars.find(p=>p.id===id)||null}
 // 屋外にいる住人だけを街の描画・物理判定・屋外での交流対象にする。
 function isOutdoorResident(p){return !!p&&p.action!=='workOutside'&&!((p.action==='home'||p.action==='sleep')&&p.phaseState==='staying')}
 // 住宅の外観寸法・壁の接地形状を一つの計算結果として共有する。
+const homeGeometryCache=new WeakMap();
 function homeExteriorGeometry(home){
+ const cacheKey=home.x+","+home.y+","+home.layoutKey;const cached=homeGeometryCache.get(home);if(cached?.key===cacheKey)return cached.value;
  const sizes={'1K':[104,92],'1DK':[116,100],'1LDK':[128,106],'2K':[138,112],'2LDK':[150,120]};
- const [w,h]=sizes[home?.layoutKey]||[116,100];
+ const [w,h]=sizes[home?.layoutKey]||[142,112];
  const left=-w/2,right=w/2,front=h*.52,back=-h*.34,roofY=-h*.72;
  const wallW=w*.76,collisionBack=-h*.25,collisionFront=h*.40;
  const collisionLeft=-wallW/2,collisionRight=wallW/2;
@@ -276,7 +286,7 @@ function homeExteriorGeometry(home){
   {x:home.x,y:home.y+collisionFront+18},
   {x:home.x+collisionLeft,y:home.y+collisionFront}
  ];
- return {w,h,left,right,front,back,roofY,footprint};
+ const value={w,h,left,right,front,back,roofY,footprint};homeGeometryCache.set(home,{key:cacheKey,value});return value;
 }
 function pointInHouseFootprint(home,x,y){
  // 描画用の住宅データから生成した壁の接地形状を判定に使用する。
@@ -285,6 +295,7 @@ function pointInHouseFootprint(home,x,y){
 function homeBlocksMovement(home,x,y,p){
  if(!home)return false;
  const geometry=homeExteriorGeometry(home),{w,h}=geometry;
+ if(x<home.x-w*.5-12||x>home.x+w*.5+12||y<home.y-h*.35-14||y>home.y+h*.6+15)return false;
  const left=home.x-w/2-9,right=home.x+w/2+9,top=home.y-h*.34-24,bottom=home.y+h*.52+31;
  const entrance=homeEntrance(home),front=home.y+h*.52;
  const doorLane=Math.abs(x-entrance.x)<18&&y>=front-18&&y<=entrance.y+27;
@@ -300,22 +311,16 @@ function homeBlocksMovement(home,x,y,p){
  return !(doorLane&&(entering||nearDoor||exitingOwnHome));
 }
 function isBlockedByHome(x,y,p){
- return Object.values(homes||{}).some(home=>homeBlocksMovement(home,x,y,p));
+ return townDisplayHomes().some(home=>homeBlocksMovement(home,x,y,p));
 }
 // Shared placement and collision geometry for fixed public buildings.
 const WORLD_BUILDINGS={
- cafe:{
-  id:'cafe',x:240,y:290,
-  footprint:[[135,262],[220,220],[325,262],[325,320],[220,282],[135,323]].map(([x,y])=>({x,y})),
-  door:{x:270,halfWidth:19,minY:286,maxY:344},
-  targetAction:'cafe'
- },
- shop:{
-  id:'shop',x:620,y:390,
-  footprint:[[563,370],[620,398],[678,370],[678,418],[620,445],[563,418]].map(([x,y])=>({x,y})),
-  door:{x:649,halfWidth:20,minY:410,maxY:440},
-  targetAction:'shoppingTrip'
- }
+ cafe:{id:'cafe',x:210,y:370,
+  footprint:[[100,326],[195,294],[303,350],[303,404],[213,387],[100,418]].map(([x,y])=>({x,y})),
+  door:{x:262,halfWidth:22,minY:388,maxY:425},targetAction:'cafe'},
+ shop:{id:'shop',x:181,y:730,
+  footprint:[[104,683],[170,655],[251,711],[251,763],[178,750],[104,773]].map(([x,y])=>({x,y})),
+  door:{x:216,halfWidth:22,minY:752,maxY:787},targetAction:'shoppingTrip'}
 };
 function facilityBlocksMovement(x,y,p){
  // 建物の接地面・入口・行動目標は共通の建物データから判定する。
@@ -330,31 +335,19 @@ function facilityBlocksMovement(x,y,p){
  return false;
 }
 // 川の岸線を描画と同じベジェ曲線からサンプリングし、水面への侵入を防ぐ。
-const riverEdgeSamples=(()=>{
- const curves=[
-  [[760,180],[690,360],[880,470],[790,650]],
-  [[790,650],[710,830],[900,940],[790,1170]]
- ];
- const samples=[];
- curves.forEach(curve=>{
-  for(let i=0;i<=100;i++){
-   const t=i/100,u=1-t;
-   const x=u*u*u*curve[0][0]+3*u*u*t*curve[1][0]+3*u*t*t*curve[2][0]+t*t*t*curve[3][0];
-   const y=u*u*u*curve[0][1]+3*u*u*t*curve[1][1]+3*u*t*t*curve[2][1]+t*t*t*curve[3][1];
-   samples.push({x,y});
-  }
- });
- return samples.sort((a,b)=>a.y-b.y);
-})();
+const TOWN_RIVER_CURVES=[
+ [[805,168],[747,310],[850,472],[790,650]],
+ [[790,650],[740,807],[863,966],[790,1170]],
+ [[790,1170],[758,1280],[600,1342],[460,1360]]
+];
+const riverEdgeSamples=TOWN_RIVER_CURVES.flatMap(curve=>Array.from({length:101},(_,i)=>{
+ const t=i/100,u=1-t;return {x:u*u*u*curve[0][0]+3*u*u*t*curve[1][0]+3*u*t*t*curve[2][0]+t*t*t*curve[3][0],y:u*u*u*curve[0][1]+3*u*u*t*curve[1][1]+3*u*t*t*curve[2][1]+t*t*t*curve[3][1]};
+})).sort((a,b)=>a.y-b.y);
 function riverEdgeX(y){
- if(y<180||y>1300)return Infinity;
- // The painted river continues diagonally from (790,1170) to (1030,1300).
- // Keep the southern tip collision aligned with that visible shoreline.
- if(y>1170)return 790+(y-1170)*240/130;
+ if(y<168||y>1360)return Infinity;
  let lo=0,hi=riverEdgeSamples.length-1;
  while(hi-lo>1){const mid=(lo+hi)>>1;if(riverEdgeSamples[mid].y<y)lo=mid;else hi=mid}
- const a=riverEdgeSamples[lo],b=riverEdgeSamples[hi],t=(y-a.y)/Math.max(.001,b.y-a.y);
- return a.x+(b.x-a.x)*t;
+ const a=riverEdgeSamples[lo],b=riverEdgeSamples[hi],t=(y-a.y)/Math.max(.001,b.y-a.y);return a.x+(b.x-a.x)*t;
 }
 function pointInPolygon(x,y,polygon){
  let inside=false;
@@ -366,28 +359,27 @@ function pointInPolygon(x,y,polygon){
 }
  // 道路ネットワーク。中央幹線から北・西の住宅地へ接続。
  const roadRoutes=[
-  {main:true,start:[470,170],curves:[[[514,255],[534,431],[490,555]],[[430,660],[475,847],[445,1010]]]},
-  {start:[505,350],curves:[[[472,301],[346,362],[250,330]]]},
-  {start:[545,444],curves:[[[581,446],[638,494],[700,490]]]},
-  {start:[465,790],curves:[[[513,800],[566,744],[610,760]]]},
-  {start:[60,535],curves:[[[38,591],[78,657],[60,705]],[[43,775],[83,833],[60,898]]]},
-  {start:[60,535],curves:[[[121,503],[194,556],[250,535]],[[303,512],[374,549],[430,535]]]},
-  {start:[60,705],curves:[[[120,677],[197,730],[250,705]],[[312,678],[365,730],[430,705]]]},
-  {start:[60,898],curves:[[[121,870],[207,925],[250,898]],[[303,877],[370,916],[430,898]]]},
-  {start:[430,535],curves:[[[451,531],[468,563],[490,555]]]},
-  // A serpentine limestone footpath links the riverside park to the plaza.
-  {garden:true,start:[610,760],curves:[[[650,795],[649,836],[624,872]],[[600,913],[604,985],[617,1015]]]}
+  {main:true,start:[540,353],curves:[[[585,439],[589,538],[540,654]],[[491,773],[477,897],[460,1005]]]},
+  {start:[334,350],curves:[[[391,342],[445,350],[540,353]]]},
+  {start:[540,353],curves:[[[614,393],[623,520],[718,520]]]},
+  {start:[262,444],curves:[[[345,444],[477,439],[570,460]]]},
+  {start:[330,691],curves:[[[407,686],[496,689],[531,678]]]},
+  {start:[216,824],curves:[[[296,827],[396,831],[484,820]]]},
+  {start:[247,1014],curves:[[[302,1001],[388,996],[460,1005]]]},
+  {garden:true,start:[718,520],curves:[[[701,553],[612,543],[644,628]],[[662,676],[610,724],[686,782]],[[625,848],[698,898],[657,973]],[[632,1019],[644,1072],[630,1103]]]},
+  {garden:true,start:[531,678],curves:[[[571,690],[601,668],[644,628]]]},
+  {garden:true,start:[686,782],curves:[[[716,804],[738,840],[755,861]]]},
+  {garden:true,start:[460,1005],curves:[[[475,1044],[493,1073],[492,1090]]]},
+  {garden:true,start:[630,1103],curves:[[[655,1155],[585,1223],[532,1233]]]},
+  {garden:true,start:[334,350],curves:[[[337,303],[286,266],[215,285]]]},
+  {garden:true,start:[440,1022],curves:[[[517,1022],[580,1069],[580,1127]],[[580,1185],[517,1232],[440,1232]],[[363,1232],[300,1185],[300,1127]],[[300,1069],[363,1022],[440,1022]]]}
  ];
-  const roadRendering={edge:'#aa896c',surface:'#efcfaa',mainEdgeWidth:112,mainSurfaceWidth:94,branchEdgeWidth:48,branchSurfaceWidth:36,gardenEdgeWidth:29,gardenSurfaceWidth:20};
- // 道路の描画と橋の歩行可能範囲は、このネットワーク定義を参照する。
+ const roadRendering={edge:'#bba084',surface:'#f7dec0',mainEdgeWidth:104,mainSurfaceWidth:94,branchEdgeWidth:50,branchSurfaceWidth:40,gardenEdgeWidth:32,gardenSurfaceWidth:25};
  const bridge={
-  base:[[690,760],[810,705],[842,725],[720,785]],
-  deck:[[690,747],[810,692],[842,712],[720,772]],
-  rails:[[[698,738],[817,684]],[[715,766],[835,711]]],
-  railColor:'#765b40',railWidth:5,
-  approaches:[
-   {start:[610,760],control:[650,760],end:[690,760],edgeWidth:34,surfaceWidth:23}
-  ]
+  base:[[755,859],[865,809],[865,847],[755,900]],
+  deck:[[755,844],[865,794],[865,832],[755,885]],
+  rails:[[[756,831],[865,781]],[[755,882],[865,831]]],railColor:'#b18a5c',railWidth:5,
+  approaches:[{start:[686,782],control:[719,813],end:[755,861],edgeWidth:32,surfaceWidth:25}]
  };
  const WORLD_ROAD_NETWORK={routes:roadRoutes,rendering:roadRendering,bridge};
 function riverBlocksMovement(x,y){
@@ -398,22 +390,13 @@ function riverBlocksMovement(x,y){
 // Shared placement data for street furniture. Rendering and collision use these same objects.
 const WORLD_STREET_FURNITURE={
  benches:[
-  {id:'cafe-bench-west',x:110,y:365,group:'cafe'},
-  {id:'cafe-bench-center',x:175,y:365,group:'cafe'},
-  {id:'cafe-bench-east',x:240,y:365,group:'cafe'},
-  {id:'plaza-bench',x:715,y:800},
-  {id:'south-bench',x:360,y:1180},
-   {id:'south-bench-east',x:515,y:1180}
+  {id:'plaza-bench',x:708,y:695},
+  {id:'garden-bench',x:720,y:990},
+  {id:'south-bench',x:360,y:1155},
+  {id:'south-bench-east',x:520,y:1155}
  ],
- lamps:[
-  {id:'plaza-lamp',x:650,y:730},
-  {id:'residential-lamp',x:390,y:520},
-  {id:'riverside-lamp',x:785,y:1000}
- ],
- sign:{
-  id:'town-sign',
-  polygon:[[420,450],[456,432],[456,475],[420,493]]
- }
+ lamps:[{id:'cafe-lamp',x:401,y:412},{id:'main-lamp',x:610,y:579},{id:'middle-lamp',x:449,y:749},{id:'garden-lamp',x:599,y:875},{id:'pier-lamp',x:841,y:824},{id:'plaza-west-lamp',x:268,y:1140},{id:'plaza-east-lamp',x:608,y:1151}],
+ sign:{id:'town-sign',polygon:[[348,408],[374,398],[374,429],[348,439]]}
 };
 function streetFurnitureBlocksMovement(x,y,p){
  // 街に描画しているベンチをすべて障害物として扱う。
@@ -427,7 +410,7 @@ function streetFurnitureBlocksMovement(x,y,p){
  // 街灯の上部は歩行を塞がず、足元の支柱だけを障害物にする。
  if(WORLD_STREET_FURNITURE.lamps.some(l=>x>=l.x-7&&x<=l.x+7&&y>=l.y-12&&y<=l.y+6))return true;
  // 案内板の支柱と板面は歩行者が通り抜けないようにする。
- if(pointInPolygon(x,y,WORLD_STREET_FURNITURE.sign.polygon.map(([px,py])=>({x:px,y:py}))))return true;
+ // No freestanding sign in the new scenic layout.
  return false;
 }
 // Restore a saved walker whose seat-departure permission was lost.
@@ -485,17 +468,19 @@ function findMovementDetour(p,point){
 // Static nature layout is the single source for tree placement and trunk collision.
 const WORLD_NATURE_OBJECTS={
  trees:[
-  {id:'tree-east-north',x:690,y:575,scale:1.15,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
-  {id:'tree-east-middle',x:675,y:930,scale:.9,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
-  {id:'tree-riverside',x:575,y:710,scale:.75,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
-  {id:'tree-southwest',x:360,y:1110,scale:.82,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
-  {id:'tree-plaza-center',x:430,y:1150,scale:.88,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
-   {id:'tree-outer-west',x:92,y:1053,scale:.7,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}},
-   {id:'tree-cafe-top',x:395,y:245,scale:.7,collision:{trunkWidth:10,top:-18,bottom:24,padding:3}}
- ],
+  {id:'tree-east-north',x:737,y:600,scale:1.12},
+  {id:'tree-east-middle',x:722,y:870,scale:1.18},
+  {id:'tree-riverside',x:594,y:957,scale:.83},
+  {id:'tree-plaza-center',x:440,y:1145,scale:1.26},
+  {id:'tree-outer-west',x:89,y:932,scale:.93},
+  {id:'tree-cafe-west',x:83,y:420,scale:.87},
+  {id:'tree-terrace-west',x:102,y:613,scale:.92},
+  ...Array.from({length:9},(_,i)=>({id:'tree-north-'+i,x:143+i*71,y:205+(i%3)*15,scale:.76+(i%3)*.08})),
+  ...Array.from({length:5},(_,i)=>({id:'tree-west-'+i,x:45+(i%2)*17,y:520+i*139,scale:.72+(i%3)*.11}))
+ ].map(t=>({...t,collision:{trunkWidth:10,top:-18,bottom:20,padding:3}})),
  flowerbeds:[
-  {id:'flowerbed-east-north',soil:[[650,700],[700,670],[745,695],[695,725]],top:[[650,684],[700,654],[745,679],[695,709]]},
-  {id:'flowerbed-east-south',soil:[[625,1080],[675,1050],[720,1075],[670,1105]],top:[[625,1064],[675,1034],[720,1059],[670,1089]]}
+  {id:'flowerbed-east-north',soil:[[567,581],[597,567],[627,581],[597,602]],top:[[567,575],[597,561],[627,575],[597,596]]},
+  {id:'flowerbed-east-south',soil:[[558,1030],[595,1011],[631,1030],[595,1051]],top:[[558,1024],[595,1005],[631,1024],[595,1045]]}
  ]
 };
 function natureBlocksMovement(x,y,p){
@@ -511,7 +496,7 @@ function natureBlocksMovement(x,y,p){
  }
  // Arbor and flower-arch posts occupy only their small footings; the canopy
  // and open passage beneath either arch remain walkable.
- if([[669,893],[747,893],[385,1313],[475,1313]]
+ if([[669,705],[747,705],[385,1300],[475,1300]]
    .some(([px,py])=>Math.hypot(x-px,y-py)<9))return true;
  // 低い植え込みは景観用の地被として扱い、歩行を妨げない。
  // 木の幹と花壇のみを通行障害物にする。
@@ -557,21 +542,21 @@ let saveToastTimer=null;
 function showSaveToast(message='保存しました'){let toast=document.getElementById('saveToast');if(!toast){toast=document.createElement('div');toast.id='saveToast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');document.body.appendChild(toast)}toast.textContent='✓ '+message;toast.classList.add('show');clearTimeout(saveToastTimer);saveToastTimer=setTimeout(()=>toast.classList.remove('show'),2000)}
 function saveGame(notify=false){
  try{
-  const data={version:5,stampEpoch:'calendar',furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},residents:chars.map(p=>{const {passing,passingCooldown,trafficWait,...saved}=p;return {...saved,profile:{...p.profile},needs:{...p.needs}}})};
+  const data={version:5,stampEpoch:'calendar',furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},townLayoutRevision:TOWN_LAYOUT_REVISION,residents:chars.map(p=>{const {passing,passingCooldown,trafficWait,...saved}=p;return {...saved,profile:{...p.profile},needs:{...p.needs}}})};
   localStorage.setItem(SAVE_KEY,JSON.stringify(data));if(notify)showSaveToast();
  }catch(e){console.warn('セーブに失敗しました',e)}
 }
 function loadGame(){
  try{
   const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;
-  const data=JSON.parse(raw);if(!data||![1,2,3,4,5].includes(data.version))return false;lastSocialPairId=typeof data.lastSocialPairId==='string'?data.lastSocialPairId:'';sameSocialPairCount=Number.isFinite(data.sameSocialPairCount)?Math.max(0,data.sameSocialPairCount):0;
+  const data=JSON.parse(raw);if(!data||![1,2,3,4,5].includes(data.version))return false;previousTownRevision=data.townLayoutRevision||0;lastSocialPairId=typeof data.lastSocialPairId==='string'?data.lastSocialPairId:'';sameSocialPairCount=Number.isFinite(data.sameSocialPairCount)?Math.max(0,data.sameSocialPairCount):0;
   if(data.clock){hour=Number.isFinite(data.clock.hour)?data.clock.hour:hour;minute=Number.isFinite(data.clock.minute)?data.clock.minute:minute;day=Number.isFinite(data.clock.day)?data.clock.day:day;calendarDay=Number.isFinite(data.clock.calendarDay)?data.clock.calendarDay:calendarDay}if(data.weather&&['sunny','cloudy','rainy'].includes(data.weather.type)){weatherType=data.weather.type;weatherDay=Number.isFinite(data.weather.day)?data.weather.day:calendarDay}
   
   if(data.bond)Object.keys(bond).forEach(k=>{if(Number.isFinite(data.bond[k]))bond[k]=Math.max(0,Math.min(100,data.bond[k]))});
   if(Array.isArray(data.diary))diary=data.diary.filter(d=>d&&typeof d.time==='string'&&typeof d.text==='string').slice(0,300);if(Array.isArray(data.memories))memories=data.memories.filter(m=>m&&typeof m.time==='string'&&typeof m.title==='string'&&typeof m.text==='string'&&(m.pairId||m.title==='ふたりの喫茶店時間')).map(m=>m.title==='ふたりの喫茶店時間'?{...m,pairId:m.pairId||'nagisumi-yaku'}:m).slice(0,100);if(data.unlockedEvents&&typeof data.unlockedEvents==='object')unlockedEvents=data.unlockedEvents;
   sharedGoal=typeof data.sharedGoal==='string'?data.sharedGoal:'';goalTicks=Number.isFinite(data.goalTicks)?data.goalTicks:0;lastRoutine=Number.isFinite(data.lastRoutine)?data.lastRoutine:0;lastRecoveryStamp=Number.isFinite(data.lastRecoveryStamp)?data.lastRecoveryStamp:-1;lastBondStamp=Number.isFinite(data.lastBondStamp)?data.lastBondStamp:-1;
   if(Number.isInteger(data.selected))selected=Math.max(0,data.selected);
-  if(data.view){if(Number.isFinite(data.view.zoom))zoom=Math.max(.65,Math.min(2.4,data.view.zoom));if(Number.isFinite(data.view.panX))panX=data.view.panX;if(Number.isFinite(data.view.panY))panY=data.view.panY}
+  if(data.townLayoutRevision===TOWN_LAYOUT_REVISION&&data.view){if(Number.isFinite(data.view.zoom))zoom=Math.max(.65,Math.min(2.4,data.view.zoom));if(Number.isFinite(data.view.panX))panX=data.view.panX;if(Number.isFinite(data.view.panY))panY=data.view.panY}
   const savedResidents=Array.isArray(data.residents)?data.residents:(Array.isArray(data.chars)?data.chars.map((p,i)=>({...p,needs:data.needs?.[i]})):null);
   if(savedResidents){
    const restored=savedResidents.map((saved,i)=>{
@@ -752,7 +737,7 @@ function lamp(x,y){
 }
 function drawShop(x,y){
  // Entry markers are part of the existing collision/navigation model.
- if(townPaintedBuilding('shop',WORLD_BUILDINGS.shop.door.x,WORLD_BUILDINGS.shop.door.maxY+22,158,.596,.823))return;
+ if(townPaintedBuilding('shop',WORLD_BUILDINGS.shop.door.x,WORLD_BUILDINGS.shop.door.maxY+22,218,.596,.823))return;
  ctx.save();ctx.translate(x,y);
  ellipse(0,45,76,23,'rgba(72,68,49,.22)');
  poly([[-61,25],[0,53],[62,25],[65,38],[0,67],[-64,40]],'#c8a985','#9c7f61',1);
@@ -783,7 +768,7 @@ function drawShop(x,y){
  ctx.restore();
 }
 function drawCafe(x,y){
- if(townPaintedBuilding('cafe',WORLD_BUILDINGS.cafe.door.x,330,218,.675,.836))return;
+ if(townPaintedBuilding('cafe',WORLD_BUILDINGS.cafe.door.x,WORLD_BUILDINGS.cafe.door.maxY,280,.675,.836))return;
  ctx.save();ctx.translate(x,y);
  ellipse(-4,36,119,31,'rgba(70,64,43,.22)');
  // Cafe terrace: raised cobblestone apron with outdoor seating.
@@ -917,7 +902,7 @@ function townTexture(kind){
  if(image&&image.complete&&image.naturalWidth>0){
   try{
    const material=ctx.createPattern(image,'repeat');
-   if(material){townTextures[kind]=material;return material;}
+   if(material){if(kind==='brick'||kind==='stone')material.setTransform(new DOMMatrix().scale(.42,.34));townTextures[kind]=material;return material;}
   }catch(error){console.warn('街の画像素材を読み込めませんでした',kind,error);}
  }
  const tile=document.createElement('canvas'),t=tile.getContext('2d');tile.width=128;tile.height=128;
@@ -958,7 +943,7 @@ function townTexture(kind){
    t.lineWidth=.7+random()*1.1;t.beginPath();t.moveTo(x,y);t.quadraticCurveTo(x+len*.42,y-3,x+len,y-.4);t.stroke();
   }
  }
- townTextures[kind]=ctx.createPattern(tile,'repeat');return townTextures[kind];
+ townTextures[kind]=ctx.createPattern(tile,'repeat');if(kind==='brick'||kind==='stone')townTextures[kind]?.setTransform(new DOMMatrix().scale(.42,.34));return townTextures[kind];
 }
 function townRiverOutline(){
  ctx.beginPath();ctx.moveTo(760,180);ctx.bezierCurveTo(690,360,880,470,790,650);
@@ -1076,11 +1061,11 @@ function tree(x,y,r=1){
 }
  
 function townCherryBlossom(x,y,r){
- tree(x,y,r);ctx.save();ctx.globalAlpha=.94;
- for(let i=0;i<37;i++){
-  const a=i*2.399963,dist=(13+(i%6)*7)*r,px=x+Math.cos(a)*dist,py=y-(59+Math.sin(a)*19+(i%4)*4)*r;
-  ellipse(px,py,11*r,8*r,['#f9bfd4','#ffe2e9','#eda5bd','#ffd1dc','#f3acc8'][i%5]);
-  ellipse(px-3*r,py-3*r,4*r,2.3*r,'rgba(255,247,239,.6)');
+ tree(x,y,r);ctx.save();
+ for(let i=0;i<155;i++){
+  const a=i*2.399963,d=Math.sqrt((i+.5)/155),px=x+Math.cos(a)*53*r*d,py=y-67*r+Math.sin(a)*33*r*d;
+  ellipse(px,py,(3.5+(i%4))*r,(2.5+(i%3))*r,['#f6abc7','#ffd5e2','#fff0ee','#f9bfd3','#eba2bd'][i%5]);
+  if(i%3===0)ellipse(px-r,py-r,1.6*r,1.1*r,'#fff3ef');
  }
  ctx.restore();
 }
@@ -1118,132 +1103,154 @@ function townRiverReedsAndBoat(){
   for(let k=-2;k<=2;k++){ctx.moveTo(x,y+9);ctx.quadraticCurveTo(x+k*5,y-9,x+k*8,y-19)}ctx.stroke();
   ellipse(x-15,y-19,2.4,5,'#c2a06c');ellipse(x+15,y-18,2.4,5,'#c2a06c');
  }
- ctx.save();ctx.translate(852,830);ctx.rotate(-.3);
+ ctx.save();ctx.translate(874,915);ctx.rotate(-.3);
  ellipse(0,14,44,13,'rgba(18,115,155,.22)');
  poly([[-42,0],[-22,-15],[24,-15],[43,0],[29,21],[-27,21]],'#b57f4e','#75543c',2);
  poly([[-29,1],[-15,-9],[18,-9],[31,1],[22,12],[-20,12]],'#553d32','#ecc392',2);
  ctx.strokeStyle='#edc492';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-22,1);ctx.lineTo(24,1);ctx.stroke();ctx.restore();
 }
 
-function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(interiorHomeId);return}ctx.save();const fit=Math.min(W/900,H/1400)*1.04;ctx.translate(W/2,H/2);ctx.scale(fit*zoom,fit*zoom);ctx.translate(-450+panX,-720+panY);
- // Warm garden floor and stone-edged miniature neighborhood.
- ctx.fillStyle='#e8d5ab';ctx.fillRect(-200,-200,1300,1800);
- const island=townIslandOutline;
- ctx.save();ctx.shadowColor='rgba(75,96,45,.24)';ctx.shadowBlur=20;ctx.shadowOffsetY=16;
- poly(island,'#a0bd6d','#927e51',12);ctx.restore();
- poly(island,townTexture('grass'),'#e8d6af',10);
- townTerraceTerrain();
- // Bright water, gentle waves and three-dimensional stone embankment.
- townRiverOutline();const water=ctx.createLinearGradient(740,200,1030,1000);
- water.addColorStop(0,'#8cdbdb');water.addColorStop(.5,'#45b9d7');water.addColorStop(1,'#268ac3');
- ctx.fillStyle=water;ctx.fill();
- ctx.save();townRiverOutline();ctx.clip();ctx.globalAlpha=.83;ctx.fillStyle=townTexture('water');ctx.fillRect(685,120,370,1230);ctx.restore();
- ctx.beginPath();ctx.moveTo(760,180);ctx.bezierCurveTo(690,360,880,470,790,650);
- ctx.bezierCurveTo(710,830,900,940,790,1170);ctx.lineTo(1030,1300);
- ctx.strokeStyle='#859875';ctx.lineWidth=27;ctx.stroke();
- ctx.strokeStyle='#f6e4c1';ctx.lineWidth=15;ctx.stroke();
- ctx.strokeStyle='#c9b18c';ctx.lineWidth=2;ctx.stroke();
- for(let y=228;y<1190;y+=39){
-  const x=riverEdgeX(y);
-  if(x>700&&x<880){
-   ellipse(x-3,y+4,11,5,'rgba(79,92,78,.20)');
-   poly([[x-7,y+2],[x-7,y-9],[x,y-14],[x+7,y-9],[x+7,y+2]],'#d8c6a6','#988b70',1);
-   ellipse(x,y-10,7,3,'#fff4d9');ellipse(x+17,y+11,8,3,'rgba(241,255,246,.55)');
+
+// Scenic layout: a hill village, terraced west frontage and a riverside garden.
+// All ground decoration is cached; animated residents remain separate draw items.
+let townGroundCache=null,townGroundCacheKey='';
+function townShorePath(){
+ ctx.beginPath();ctx.moveTo(...TOWN_RIVER_CURVES[0][0]);
+ TOWN_RIVER_CURVES.forEach(q=>ctx.bezierCurveTo(...q[1],...q[2],...q[3]));
+}
+function townRiverOutline(){
+ townShorePath();ctx.bezierCurveTo(550,1415,775,1380,867,1230);
+ ctx.bezierCurveTo(960,1015,899,849,942,649);
+ ctx.bezierCurveTo(990,439,887,288,926,140);ctx.quadraticCurveTo(865,148,805,168);ctx.closePath();
+}
+function townLandOutline(){
+ ctx.beginPath();ctx.moveTo(805,168);
+ TOWN_RIVER_CURVES.forEach(q=>ctx.bezierCurveTo(...q[1],...q[2],...q[3]));
+ ctx.bezierCurveTo(315,1387,115,1290,64,1180);
+ ctx.bezierCurveTo(10,1040,30,747,31,513);
+ ctx.bezierCurveTo(19,369,72,283,163,242);
+ ctx.bezierCurveTo(342,131,582,100,805,168);ctx.closePath();
+}
+function townStoneWall(points,height=24){
+ // Dark stone face, staggered mortar and a bright limestone cap.
+ poly([...points,...points.slice().reverse().map(([x,y])=>[x,y+height])],'#b7a082','#92795e',1.5);
+ for(let k=0;k<points.length-1;k++){
+  const [ax,ay]=points[k],[bx,by]=points[k+1],length=Math.hypot(bx-ax,by-ay),n=Math.max(1,Math.floor(length/22));
+  ctx.strokeStyle='rgba(101,77,56,.38)';ctx.lineWidth=1;
+  for(let row=0;row<Math.ceil(height/10);row++){
+   const yy=Math.min(height,row*10+3);ctx.beginPath();ctx.moveTo(ax,ay+yy);ctx.lineTo(bx,by+yy);ctx.stroke();
+   for(let col=0;col<n;col++){
+    const t=(col+(row%2?.5:0))/n,x=ax+(bx-ax)*t,y=ay+(by-ay)*t;
+    ctx.beginPath();ctx.moveTo(x,y+yy);ctx.lineTo(x,y+Math.min(height,yy+9));ctx.stroke();
+   }
   }
  }
- for(let i=0;i<35;i++){
-  const y=230+i*29,x=riverEdgeX(y)+25+(i%4)*17;
-  if(x<920)ellipse(x,y,4+(i%3)*2,2,'rgba(231,252,245,.76)');
+ ctx.strokeStyle='#f9e7ca';ctx.lineWidth=6;ctx.lineJoin='round';ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();
+}
+function townSteps(x,y,width,count=5){
+ for(let i=count-1;i>=0;i--){
+  const yy=y+i*7,w=width+i*2;
+  poly([[x-w/2,yy],[x+w/2,yy-8],[x+w/2,yy-1],[x-w/2,yy+7]],'#b39a7b','#9e8469',.8);
+  poly([[x-w/2,yy-5],[x+w/2,yy-13],[x+w/2,yy-8],[x-w/2,yy]],townTexture('stone'),'#fff0d4',1);
  }
+}
+function townPaving(route,width,material){
+ ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(...route.start);
+ route.curves.forEach(c=>ctx.bezierCurveTo(...c[0],...c[1],...c[2]));
+ ctx.strokeStyle=material;ctx.lineWidth=width;ctx.stroke();
+}
+function townBedBorder(x,y,rx,ry,shade=0){
+ ellipse(x,y+6,rx+3,ry+3,'#ad9474');ellipse(x,y+1,rx+3,ry+2,'#efdfbd');ellipse(x,y,rx,ry,'#78a154');
+ for(let i=0;i<Math.max(6,rx/3);i++){
+  const a=i*2.39996,r=Math.sqrt((i+.5)/Math.max(6,rx/3));
+  townFlowerPatch(x+Math.cos(a)*rx*r*.85,y+Math.sin(a)*ry*r*.7,.38+(i%3)*.065,shade+i);
+ }
+}
+function townDrawGround(){
+ ctx.fillStyle='#f1dfb4';ctx.fillRect(-100,-100,1200,1600);
+ // A natural ribbon of water wraps the rounded town instead of ending in a rectangle.
+ ctx.save();townRiverOutline();ctx.clip();ctx.fillStyle=townTexture('water');ctx.fillRect(400,120,600,1330);
+ const waterShade=ctx.createLinearGradient(760,0,980,0);waterShade.addColorStop(0,'rgba(20,135,170,.05)');waterShade.addColorStop(1,'rgba(255,249,218,.3)');ctx.fillStyle=waterShade;ctx.fillRect(400,120,600,1330);ctx.restore();
+ ctx.save();ctx.shadowColor='rgba(91,75,44,.22)';ctx.shadowBlur=18;ctx.shadowOffsetY=14;townLandOutline();ctx.fillStyle='#b5a17c';ctx.fill();ctx.restore();
+ townLandOutline();ctx.fillStyle=townTexture('grass');ctx.fill();
+ ctx.save();townLandOutline();ctx.clip();ctx.fillStyle='rgba(242,225,145,.17)';ctx.fillRect(0,100,900,1300);ctx.restore();
+ // Outer miniature stone wall and winding river parapet.
+ ctx.save();townLandOutline();ctx.strokeStyle='#aa9173';ctx.lineWidth=15;ctx.stroke();townLandOutline();ctx.strokeStyle='#ead7b5';ctx.lineWidth=8;ctx.stroke();ctx.restore();
+ townShorePath();ctx.strokeStyle='#9c9475';ctx.lineWidth=23;ctx.stroke();townShorePath();ctx.strokeStyle='#e8d6b7';ctx.lineWidth=14;ctx.stroke();townShorePath();ctx.strokeStyle='#fff0d1';ctx.lineWidth=3;ctx.stroke();
+ for(let y=207;y<1340;y+=48){const x=riverEdgeX(y);if(!Number.isFinite(x))continue;
+  poly([[x-7,y],[x-7,y-18],[x+7,y-18],[x+7,y]],'#c4af8d','#9c886b',1);
+  ellipse(x,y-19,9,5,'#fff0d3');
+  const rx=x+25+(y%3)*4;ellipse(rx,y+13,15,9,'#748e8b');ellipse(rx-2,y+9,12,7,'#bac1ab');ellipse(rx-5,y+7,6,3,'#dfe0c8');
+  ctx.strokeStyle='rgba(248,255,242,.75)';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(rx,y+17,21,8,0,0,Math.PI);ctx.stroke();
+ }
+ // Three left-hand terraces form a continuous rising hillside.
+ const terraces=[
+  {floor:[[55,383],[181,334],[387,416],[363,478],[157,514],[55,470]],wall:[[55,470],[157,514],[363,478]],height:31},
+  {floor:[[190,561],[330,524],[440,573],[432,690],[314,730],[187,679]],wall:[[187,679],[314,730],[432,690]],height:25},
+  {floor:[[58,706],[181,656],[322,722],[310,829],[153,875],[58,821]],wall:[[58,821],[153,875],[310,829]],height:29},
+  {floor:[[114,903],[247,851],[367,914],[355,1018],[236,1055],[114,1003]],wall:[[114,1003],[236,1055],[355,1018]],height:23}
+ ];
+ terraces.forEach(t=>{poly(t.floor,townTexture('stone'),'#f9e4c1',4);townStoneWall(t.wall,t.height)});
+ // Raised, flower-filled cottage gardens; their footpaths meet the same road graph.
+ townDisplayHomes().forEach((h,i)=>{
+  const w=homeExteriorGeometry(h).w*.65;
+  poly([[h.x-w,h.y-20],[h.x,h.y-67],[h.x+w,h.y-19],[h.x+w,h.y+56],[h.x,h.y+96],[h.x-w,h.y+51]],'#a9bf77','#e9d4ae',3);
+  townStoneWall([[h.x-w,h.y+51],[h.x,h.y+96],[h.x+w,h.y+56]],12);
+  townFlowerPatch(h.x-w+13,h.y+48,.85,i);townFlowerPatch(h.x+w-12,h.y+48,.80,i+1);
+ });
+ // Broad apricot main street, narrow pale garden walk, short terrace accesses.
+ for(const route of roadRoutes)townPaving(route,route.main?104:route.garden?32:50,'#bba183');
+ for(const route of roadRoutes)townPaving(route,route.main?95:route.garden?25:41,'#f9e5c7');
+ for(const route of roadRoutes){
+  townPaving(route,route.main?88:route.garden?21:34,townTexture(route.garden?'stone':'brick'));
+  if(!route.garden){ctx.save();ctx.globalAlpha=.40;townPaving(route,route.main?88:34,'#ffe8cc');ctx.restore()}
+ }
+ townDisplayHomes().forEach(h=>{const e=homeEntrance(h),n=homeSouthRoadNode(h);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.lineTo(n.x,n.y);ctx.strokeStyle='#efdfbe';ctx.lineWidth=26;ctx.stroke();ctx.strokeStyle=townTexture('stone');ctx.lineWidth=20;ctx.stroke()});
+ townSteps(331,692,45,4);townSteps(217,813,51,4);townSteps(244,1015,45,3);
+ // Circular plaza with a single central tree, concentric stonework and clear benches.
+ ellipse(440,1137,245,184,'#b19a7b');ellipse(440,1127,243,181,'#fff0d0');
+ ctx.save();ctx.beginPath();ctx.ellipse(440,1127,235,174,0,0,Math.PI*2);ctx.clip();ctx.fillStyle=townTexture('brick');ctx.fillRect(190,940,500,380);ctx.fillStyle='rgba(255,231,202,.46)';ctx.fillRect(190,940,500,380);ctx.restore();
+ ctx.strokeStyle='#f6e7ca';ctx.lineWidth=3;
+ for(let ring=1;ring<6;ring++){ctx.beginPath();ctx.ellipse(440,1127,ring*39,ring*28,0,0,Math.PI*2);ctx.stroke()}
+ ellipse(440,1150,64,33,'#a58d6c');ellipse(440,1143,65,30,'#f0deba');ellipse(440,1138,57,24,'#8dac66');
+ for(let i=0;i<12;i++){const a=i*Math.PI/6;townFlowerPatch(440+Math.cos(a)*47,1139+Math.sin(a)*19,.42,i)}
+ townStoneWall([[214,1228],[255,1263],[322,1296]],23);townStoneWall([[538,1297],[615,1257],[661,1205]],23);
+ townSteps(430,1298,82,6);
+ // Dense, deliberate planted edges: open walking surfaces stay visible.
+ for(let i=0;i<39;i++){
+  const y=292+i*25,x=y<420?55+(420-y)*.27:53+10*Math.sin(i*.63);
+  townFlowerPatch(x+25,y,.72+(i%3)*.09,i);
+ }
+ for(let i=0;i<24;i++){
+  const y=228+i*44,x=riverEdgeX(y)-27;if(Number.isFinite(x))townFlowerPatch(x,y,.64+(i%3)*.1,i);
+ }
+ for(const [x,y,rx,ry,k] of [[588,579,34,15,0],[631,746,31,14,1],[591,854,28,12,2],[588,1024,41,18,0],[653,1168,27,16,1],[225,1260,28,14,2],[602,1245,31,14,0],[301,1334,36,14,1],[525,1340,35,14,2],[124,1116,33,18,1],[132,537,29,14,0]])townBedBorder(x,y,rx,ry,k);
+ // Small flecks across the lawns remove the flat, empty green fields.
+ for(let i=0;i<68;i++){
+  const x=575+(i*67)%165,y=500+(i*101)%565;
+  if(x<riverEdgeX(y)-35)townFlowerPatch(x,y,.22+(i%3)*.055,i);
+ }
+ const b=WORLD_ROAD_NETWORK.bridge;poly(b.base,'#976d47');poly(b.deck,'#ddb078','#a77a4d',2);
+ ctx.save();ctx.beginPath();b.deck.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.clip();
+ for(let i=0;i<11;i++){const x=752+i*11;ctx.strokeStyle='#9d7048';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,830);ctx.lineTo(x+18,902);ctx.stroke()}ctx.restore();
+ for(const [x,y] of [[758,842],[813,817],[864,795],[758,883],[814,857],[864,832]]){poly([[x-4,y-3],[x-4,y+27],[x+5,y+27],[x+5,y-3]],'#aa7949','#805737',1);ellipse(x,y-3,6,3,'#f1d0a0')}
  townRiverReedsAndBoat();
- // Gentle warm soil beneath the paved streets, leaving lush green parkland.
- ctx.save();ctx.globalAlpha=.1;
- poly([[65,370],[470,210],...townSoilShore,[438,1330],[56,1140]],'#e8d8ae',null);
- ctx.restore();
- // Draw every road edge first, every road surface second, then the paving.
- // Main street paint is applied last in each pass, so no branch remains visible inside it.
- const roadStyle=WORLD_ROAD_NETWORK.rendering;
- ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
- function strokeRoadGroup(group,width,color){
-  ctx.beginPath();
-  WORLD_ROAD_NETWORK.routes.filter(r=>group==='main'?!!r.main:group==='garden'?!!r.garden:!r.main&&!r.garden).forEach(route=>{
-   ctx.moveTo(route.start[0],route.start[1]);
-   route.curves.forEach(c=>ctx.bezierCurveTo(c[0][0],c[0][1],c[1][0],c[1][1],c[2][0],c[2][1]));
-  });
-  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
+}
+function townCachedGround(){
+ const key=JSON.stringify(Object.values(homes).map(h=>[h.id,h.x,h.y,h.layoutKey]))+[...Object.values(townMaterialImages),...Object.values(townDecorArt)].map(i=>i?.naturalWidth||0).join(',');
+ if(!townGroundCache||key!==townGroundCacheKey){
+  const surface=document.createElement('canvas');surface.width=1100;surface.height=1500;
+  const screenContext=ctx;ctx=surface.getContext('2d');
+  try{townDrawGround()}finally{ctx=screenContext}
+  townGroundCache=surface;townGroundCacheKey=key;
  }
- function strokeHomeAccess(width,color){
-  ctx.beginPath();
-  Object.values(homes||{}).forEach(home=>{
-   const door=homeEntrance(home);if(!door)return;
-   ctx.moveTo(door.x,door.y);ctx.lineTo(door.x,homeSouthRoadNode(home).y);
-  });
-  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
- }
- function strokeBridgeAccess(which,inset,color){
-  ctx.beginPath();
-  WORLD_ROAD_NETWORK.bridge.approaches.forEach(path=>{
-   ctx.moveTo(path.start[0],path.start[1]);
-   ctx.quadraticCurveTo(path.control[0],path.control[1],path.end[0],path.end[1]);
-  });
-  ctx.strokeStyle=color;ctx.lineWidth=(WORLD_ROAD_NETWORK.bridge.approaches[0]?.[which]||23)-inset;ctx.stroke();
- }
- // Each edge, surface and stone pattern is composed across the entire network.
- // The main street hides cross-street seams at junctions.
- strokeBridgeAccess('edgeWidth',0,roadStyle.edge);
- strokeRoadGroup('garden',roadStyle.gardenEdgeWidth,'#b9a47e');
- strokeHomeAccess(38,roadStyle.edge);
- strokeRoadGroup('branch',roadStyle.branchEdgeWidth,roadStyle.edge);
- strokeRoadGroup('main',roadStyle.mainEdgeWidth,roadStyle.edge);
- strokeBridgeAccess('surfaceWidth',0,roadStyle.surface);
- strokeRoadGroup('garden',roadStyle.gardenSurfaceWidth,'#fff2d3');
- strokeHomeAccess(26,roadStyle.surface);
- strokeRoadGroup('branch',roadStyle.branchSurfaceWidth,roadStyle.surface);
- strokeRoadGroup('main',roadStyle.mainSurfaceWidth,roadStyle.surface);
- strokeBridgeAccess('surfaceWidth',5,townTexture('brick'));
- strokeRoadGroup('garden',roadStyle.gardenSurfaceWidth-4,townTexture('stone'));
- strokeHomeAccess(21,townTexture('stone'));
- strokeRoadGroup('branch',roadStyle.branchSurfaceWidth-5,townTexture('brick'));
- strokeRoadGroup('main',roadStyle.mainSurfaceWidth-5,townTexture('brick'));
- // The reference artwork uses pale apricot stone, not the old deep-red bricks.
- // A translucent glaze retains every painted joint without losing texture.
- ctx.save();ctx.globalAlpha=.24;
- strokeRoadGroup('branch',roadStyle.branchSurfaceWidth-5,'#ffe3c6');
- strokeRoadGroup('main',roadStyle.mainSurfaceWidth-5,'#ffe3c6');
- ctx.restore();
- ctx.restore();
- // 南側は枝道を設けず、幹線の先をレンガ敷きの広場にする。
- ellipse(430,1118,245,180,'#aa8964');ellipse(430,1107,235,176,'#f2ddbd');
- ctx.save();ctx.beginPath();ctx.ellipse(430,1107,230,170,0,0,Math.PI*2);ctx.clip();
- ctx.fillStyle=townTexture('brick');ctx.fillRect(195,928,470,360);
- ctx.globalAlpha=.24;ctx.fillStyle='#ffe5c9';ctx.fillRect(195,928,470,360);ctx.restore();
- ctx.strokeStyle='#f8e9cb';ctx.lineWidth=9;ctx.beginPath();ctx.ellipse(430,1107,235,176,0,0,Math.PI*2);ctx.stroke();
- ellipse(430,1160,66,35,'#9e8568');ellipse(430,1152,64,31,'#e9d8b8');ellipse(430,1148,55,22,'#84aa64');
- // 円形広場のレンガ目地
- ctx.save();ctx.strokeStyle='rgba(166,139,99,.38)';ctx.lineWidth=2;
- for(let ring=1;ring<=5;ring++){ctx.beginPath();ctx.ellipse(430,1100,ring*38,ring*27,0,0,Math.PI*2);ctx.stroke()}
- ctx.restore();
-  // 小さな石畳
- for(const [x,y,z,t] of [[100,395,.85,0],[182,345,.9,1],[365,361,.75,2],[558,450,.7,0],[582,570,.76,1],[655,635,.7,2],
-  [552,840,.85,0],[642,903,.9,1],[602,1020,.75,2],[688,1100,.82,0],[250,1235,.8,1],[525,1263,.74,2],
-  [132,1070,.8,0],[129,620,.6,1],[248,970,.7,2],[480,1208,.75,0]])townFlowerPatch(x,y,z,t);
- townGardenTerrainFinish();
- // Walkable winding garden path replaces the former unconnected graphic.
- // カフェと商店は住人と同じ奥行き順で描画する。
- // 登録されている住居を、それぞれの所在地に描画
+ ctx.drawImage(townGroundCache,0,0);
+}
  function drawHouseExterior(home,index){
  const x=home.x,y=home.y,{w,h,left,right,front,back,roofY}=homeExteriorGeometry(home);
  const door=homeEntrance(home);
- const painted=townPaintedBuilding('cottage',door.x,door.y,176*w/150,.607,.823);
- if(painted){
-  // Keep custom house names from existing saves, and preserve the street map's labels.
-  ctx.save();ctx.textAlign='center';ctx.font='bold 10px sans-serif';
-  ctx.lineWidth=3;ctx.strokeStyle='rgba(82,58,41,.85)';ctx.fillStyle='#fff9df';
-  ctx.strokeText(home.name||'住居',home.x,painted.top-4);
-  ctx.fillText(home.name||'住居',home.x,painted.top-4);
-  ctx.restore();
-  return;
- }
+ const painted=townPaintedBuilding('cottage',door.x,door.y,205*w/150,.607,.823);
+ if(painted)return;
  const cream=['#fff0d7','#ffe9c9','#f9eddf'][index%3],side=['#e2c9a7','#dcc4a4','#e4d4be'][index%3];
  ctx.save();ctx.translate(x,y);
  // Garden footprint and soft contact shadow.
@@ -1283,93 +1290,38 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  ctx.strokeText(home.name||'住居',0,roofY-11);ctx.fillText(home.name||'住居',0,roofY-11);
  ctx.restore();
 }
-// 住宅も住人と共通の奥行き順で描く。屋根を含む矩形で住人を隠さない。
 
- // 西側住宅地の花壇は一旦撤去し、住宅と道路の見通しを優先。
- // 東側は川辺の公園。花壇、木陰、散歩道を集約する。
- // Flowerbed art is depth-sorted with residents instead of painted underneath everyone.
- // 木は屋外の住人と同じ奥行き順で描画する。
- for(let i=0;i<11;i++){let x=570+(i*47)%145,y=505+(i*83)%560;shrub(x,y,.30+(i%3)*.09)}
- // A planted square plaza centerpiece. It is decorative; walking routes remain unchanged.
- ellipse(430,1153,44,20,'#dbc8a1');
- townFlowerPatch(403,1145,.65,1);townFlowerPatch(454,1150,.65,0);
- // Small riverside flower baskets, beside rather than across walking paths.
- townFlowerPatch(739,850,.6,2);townFlowerPatch(719,961,.56,1);
- // Shore access was painted above as part of the road union.
- // The bridge deck now covers its endpoint instead of allowing a path painted over it.
- const bridgeData=WORLD_ROAD_NETWORK.bridge;
- poly(bridgeData.base,'#8b704f');poly(bridgeData.deck,'#c49a68');townPierPlanks(bridgeData);
- ctx.strokeStyle=bridgeData.railColor;ctx.lineWidth=bridgeData.railWidth;ctx.beginPath();
- const farRail=bridgeData.rails[0];ctx.moveTo(farRail[0][0],farRail[0][1]);ctx.lineTo(farRail[1][0],farRail[1][1]);ctx.stroke();
- // 案内板も住人やベンチと同じ奥行き順で描く。
- // キャラクターと建物を共通の奥行き順で描画する。
- // 建物の正面の接地位置が、前後の切り替え基準になる。
- const outdoorResidents=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
- const houseDrawItems=Object.values(homes||{}).map((home,index)=>{
-  const geometry=homeExteriorGeometry(home);
-  return {y:home.y+geometry.front+6,draw:()=>drawHouseExterior(home,index)};
- });
- const depthItems=[
-  ...houseDrawItems,
-  // Facility fronts are roughly 30px below their anchor point. Residents behind
-  // the storefront should disappear behind it; residents at the door stay visible.
-  {y:WORLD_BUILDINGS.cafe.y+23,draw:()=>drawCafe(WORLD_BUILDINGS.cafe.x,WORLD_BUILDINGS.cafe.y)},
-  {y:WORLD_BUILDINGS.shop.y+20,draw:()=>drawShop(WORLD_BUILDINGS.shop.x,WORLD_BUILDINGS.shop.y)},
-  ...WORLD_NATURE_OBJECTS.trees.map(item=>({y:item.y,draw:()=>item.id==='tree-east-middle'?townCherryBlossom(item.x,item.y,item.scale):tree(item.x,item.y,item.scale)})),
-  {y:889,draw:()=>townWisteriaArbor(708,881)},
-  {y:1325,draw:()=>townFlowerArch(430,1313)},
-  ...WORLD_NATURE_OBJECTS.flowerbeds.flatMap((item,index)=>{
-   const ys=item.soil.map(point=>point[1]),far=Math.min(...ys),near=Math.max(...ys);
-   return [
-    {y:(far+near)/2,draw:()=>townPaintedFlowerbed(item,index,'back')},
-    {y:near+7,draw:()=>townPaintedFlowerbed(item,index,'front')}
-   ];
-  }),
-  {y:Math.max(...WORLD_STREET_FURNITURE.sign.polygon.map(p=>p[1])),draw:()=>{
-   poly(WORLD_STREET_FURNITURE.sign.polygon,'#8a6d4b');
-   ctx.fillStyle='#fff3d4';ctx.font='bold 11px sans-serif';ctx.fillText('こみち',419,460);
-  }},
-  {y:Math.max(...bridgeData.deck.map(p=>p[1]))+15,draw:()=>{
-   const nearRail=bridgeData.rails[1];
-   ctx.strokeStyle=bridgeData.railColor;ctx.lineWidth=bridgeData.railWidth;ctx.beginPath();
-   ctx.moveTo(nearRail[0][0],nearRail[0][1]);ctx.lineTo(nearRail[1][0],nearRail[1][1]);ctx.stroke();
-  }},
-  ...WORLD_STREET_FURNITURE.benches.map(item=>({y:item.y-8,draw:()=>bench(item.x,item.y,'back')})),
-   ...WORLD_STREET_FURNITURE.benches.map(item=>({y:item.y+16,draw:()=>bench(item.x,item.y,'front')})),
-  ...WORLD_STREET_FURNITURE.lamps.map(item=>({y:item.y,draw:()=>lamp(item.x,item.y)})),
-  ...outdoorResidents.map(({p,i})=>({
-   // Ground depth follows the feet; bench residents stay between bench layers.
-   y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:15*(p.scale||1)),
-   draw:()=>drawChar(p,i,false)
-  }))
+function drawWorld(){
+ ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(interiorHomeId);return}
+ ctx.save();const fit=Math.min(W/1000,H/1400)*1.04;
+ ctx.translate(W/2,H/2);ctx.scale(fit*zoom,fit*zoom);ctx.translate(-450+panX,-720+panY);
+ townCachedGround();
+ const outdoors=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
+ const items=[
+  ...townDisplayHomes().map((home,index)=>({y:home.y+homeExteriorGeometry(home).front+6,draw:()=>drawHouseExterior(home,index)})),
+  {y:426,draw:()=>drawCafe(WORLD_BUILDINGS.cafe.x,WORLD_BUILDINGS.cafe.y)},
+  {y:794,draw:()=>drawShop(WORLD_BUILDINGS.shop.x,WORLD_BUILDINGS.shop.y)},
+  ...[[91,505,77],[87,692,73],[111,861,81],[106,1024,75],[111,1179,91],[190,1259,78],[587,1281,87],[323,501,72],[412,724,69],[301,862,73],[346,1040,70],[363,264,64],[558,284,65],[674,341,67],[765,490,69]].map(([x,y,w])=>({y,draw:()=>townPaintedDecoration('flowerbed',x,y,w)})),
+  ...WORLD_NATURE_OBJECTS.trees.map(t=>({y:t.y,draw:()=>t.id==='tree-east-middle'?townCherryBlossom(t.x,t.y,t.scale):tree(t.x,t.y,t.scale)})),
+  {y:678,draw:()=>townWisteriaArbor(708,693)},
+  {y:1311,draw:()=>townFlowerArch(430,1300)},
+  ...WORLD_NATURE_OBJECTS.flowerbeds.flatMap((b,i)=>[{y:(b.soil[0][1]+b.soil[2][1])/2,draw:()=>townPaintedFlowerbed(b,i,'back')},{y:Math.max(...b.soil.map(q=>q[1]))+7,draw:()=>townPaintedFlowerbed(b,i,'front')}]),
+  ...WORLD_STREET_FURNITURE.benches.flatMap(b=>[{y:b.y-8,draw:()=>bench(b.x,b.y,'back')},{y:b.y+16,draw:()=>bench(b.x,b.y,'front')}]),
+  ...WORLD_STREET_FURNITURE.lamps.map(l=>({y:l.y,draw:()=>lamp(l.x,l.y)})),
+  ...outdoors.map(({p,i})=>({y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:15*(p.scale||1)),draw:()=>drawChar(p,i,false)}))
  ];
- depthItems.sort((a,b)=>a.y-b.y);
- depthItems.forEach(item=>item.draw());
- // Residents' nameplates remain readable, independent of physical occlusion.
- outdoorResidents.forEach(({p})=>drawCharLabel(p));
- // 時刻に合わせた街の明るさ
- const nightFactor=hour>=22||hour<5?1:hour>=20?((hour-20)/2):hour>=5&&hour<7?((7-hour)/2):hour>=18?((hour-18)/2):0;
- if(nightFactor>0){
-  ctx.save();
-  ctx.fillStyle='rgba(35,48,75,'+(nightFactor*.38)+')';
-  ctx.fillRect(-200,-200,1300,1800);
-  ctx.globalAlpha=nightFactor;
-  ctx.fillStyle='#fff0c2';
-  ctx.beginPath();ctx.arc(430,245,24,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#52617a';
-  ctx.beginPath();ctx.arc(441,236,22,0,Math.PI*2);ctx.fill();
-  for(let i=0;i<34;i++){
-   const sx=35+(i*137)%690,sy=210+(i*83)%360;
-   ctx.globalAlpha=nightFactor*(.45+(i%4)*.13);
-   ctx.fillStyle='#fff5d8';ctx.beginPath();ctx.arc(sx,sy,i%5===0?2.2:1.2,0,Math.PI*2);ctx.fill();
-  }
-  ctx.globalAlpha=nightFactor*.8;
-  ctx.fillStyle='#ffe4a8';
-  ctx.fillRect(596,326,12,18);ctx.fillRect(686,333,12,18);
-  ctx.fillRect(201,826,12,18);ctx.fillRect(293,842,12,18);
-  ctx.restore();
- }
- ctx.restore()}
+ // Frame the top gardens with a forest behind the northern cottages.
+ items.sort((a,b)=>a.y-b.y);items.forEach(item=>item.draw());
+ // Pier rail and river edge remain part of the same shared layout geometry.
+ const bridge=WORLD_ROAD_NETWORK.bridge;
+ ctx.strokeStyle=bridge.railColor;ctx.lineWidth=4;
+ bridge.rails.forEach(rail=>{ctx.beginPath();ctx.moveTo(...rail[0]);ctx.lineTo(...rail[1]);ctx.stroke()});
+ outdoors.forEach(({p})=>drawCharLabel(p));
+ const night=hour>=22||hour<5?1:hour>=20?(hour-20)/2:hour>=5&&hour<7?(7-hour)/2:hour>=18?(hour-18)/2:0;
+ if(night>0){ctx.fillStyle='rgba(35,48,75,'+(night*.38)+')';ctx.fillRect(0,100,1100,1400)}
+ ctx.restore();
+}
+
 function drawHomeFurniture(homeId){
  const palette={bed:['#987b66','#e8dfd0'],fridge:['#d9ddd8','#aab5b1'],table:['#a9825e','#d8c2a3'],sofa:['#8caa9c','#d7e0d7'],bookshelf:['#9b7658','#e0c9a8'],desk:['#9b7658','#e0c9a8'],chair:['#a9825e','#d8c2a3'],lamp:['#d7bd82','#f6e6ae']};
  furniture.filter(item=>item.homeId===homeId&&item.placed!==false).forEach(item=>{
@@ -1447,66 +1399,32 @@ function recordMemory(id,title,text,pairId=null){
 }
 
 // 道路の接続点。描画用の道路と同じ座標系で経路を管理する。
-const roadNodes=[
- // 中央メインストリート
- {id:'main-north',x:470,y:170,links:['main-upper']},
- {id:'main-upper',x:505,y:350,links:['main-north','main-curve-upper','cafe-approach-1']},
- {id:'main-curve-upper',x:516,y:435,links:['main-upper','main-curve-mid','shop-approach-1']},
- {id:'main-curve-mid',x:505,y:495,links:['main-curve-upper','main-mid']},
- {id:'main-mid',x:490,y:555,links:['main-curve-mid','main-lower-curve-1','res-row1-east']},
- // カフェのBezier曲線に沿って中継ノードを置き、直線ショートカットを防ぐ。
- {id:'cafe-approach-1',x:423,y:340,links:['main-upper','cafe-approach-2']},
- {id:'cafe-approach-2',x:335,y:333,links:['cafe-approach-1','cafe-entry']},
- // 商店への曲線枝道に沿って中継ノードを置き、直線ショートカットを防ぐ。
- {id:'shop-approach-1',x:574,y:456,links:['main-curve-upper','shop-approach-3']},
- {id:'shop-approach-3',x:626,y:480,links:['shop-approach-1','shop-entry']},
- {id:'shop-entry',x:700,y:490,links:['shop-approach-3'],facility:true},
- {id:'main-lower-curve-1',x:475,y:675,links:['main-mid','main-row2']},
- {id:'main-row2',x:461,y:705,links:['main-lower-curve-1','main-lower','res-row2-east']},
- {id:'main-lower',x:465,y:790,links:['main-row2','main-row3','park-entry']},
- {id:'main-row3',x:447,y:898,links:['main-lower','main-lower-curve-2','res-row3-east']},
- {id:'main-lower-curve-2',x:448,y:930,links:['main-row3','main-plaza']},
- {id:'main-plaza',x:445,y:1010,links:['main-lower-curve-2','plaza-center','park-garden-end']},
- {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
- // 住宅街は西側の縦道と、各段の横道でつなぐ。
- {id:'west-north',x:60,y:535,links:['west-mid','res-row1-center']},
- {id:'west-mid',x:60,y:705,links:['west-north','west-south','res-row2-center','bench-path-entry']},
- {id:'west-south',x:60,y:898,links:['west-mid','res-row3-center']},
- {id:'res-row1-center',x:250,y:535,links:['west-north','res-row1-east']},
- {id:'res-row1-east',x:430,y:535,links:['res-row1-center','main-mid']},
- {id:'res-row2-center',x:250,y:705,links:['west-mid','res-row2-east']},
- {id:'res-row2-east',x:430,y:705,links:['res-row2-center','main-row2']},
- {id:'res-row3-center',x:250,y:898,links:['west-south','res-row3-east']},
- {id:'res-row3-east',x:430,y:898,links:['res-row3-center','main-row3']},
- {id:'cafe-entry',x:250,y:330,links:['cafe-approach-2'],facility:true},
- {id:'bench-path-entry',x:60,y:755,links:['west-mid'],facility:true},
- // 公園への接続は中央メインストリートの一点のみ。
- {id:'park-entry',x:610,y:760,links:['main-lower','bridge-entry','park-garden-mid']},
- {id:'bridge-entry',x:690,y:760,links:['park-entry','river-bench'],facility:true},
- {id:'river-bench',x:735,y:745,links:['bridge-entry'],facility:true},
- {id:'park-garden-mid',x:624,y:872,links:['park-entry','park-garden-south']},
- {id:'park-garden-south',x:607,y:951,links:['park-garden-mid','park-garden-end']},
- {id:'park-garden-end',x:617,y:1015,links:['park-garden-south','main-plaza']}
-];
-// Match navigation segments to the Bézier centerlines used by street painting.
-const WALK_CURVES=[
- [0,0,'main-north main-upper main-curve-upper main-curve-mid main-mid'],
- [0,1,'main-mid main-lower-curve-1 main-row2 main-lower main-row3 main-lower-curve-2 main-plaza'],
- [1,0,'main-upper cafe-approach-1 cafe-approach-2 cafe-entry'],
- [2,0,'main-curve-upper shop-approach-1 shop-approach-3 shop-entry'],
- [3,0,'main-lower park-entry'],
- [8,0,'res-row1-east main-mid'],
- [4,0,'west-north west-mid'],
- [4,1,'west-mid west-south'],
- [5,0,'west-north res-row1-center'],
- [5,1,'res-row1-center res-row1-east'],
- [6,0,'west-mid res-row2-center'],
- [6,1,'res-row2-center res-row2-east'],
- [7,0,'west-south res-row3-center'],
- [7,1,'res-row3-center res-row3-east'],
- [9,0,'park-entry park-garden-mid'],
- [9,1,'park-garden-mid park-garden-south park-garden-end']
-].map(([r,c,ids])=>({r,c,ids:ids.split(' ')}));
+const roadNodes=[];
+const WALK_CURVES=[];
+roadRoutes.forEach((route,r)=>{
+ let start=route.start,previous=null;
+ route.curves.forEach((segment,c)=>{
+  const length=Math.hypot(segment[0][0]-start[0],segment[0][1]-start[1])+Math.hypot(segment[1][0]-segment[0][0],segment[1][1]-segment[0][1])+Math.hypot(segment[2][0]-segment[1][0],segment[2][1]-segment[1][1]);
+  const count=Math.max(2,Math.ceil(length/48)),ids=[];
+  for(let j=0;j<=count;j++){
+   const q=roadCurvePosition([start,...segment],j/count);
+   let node=roadNodes.find(n=>Math.hypot(n.x-q.x,n.y-q.y)<5);
+   if(!node){node={id:'road-'+r+'-'+c+'-'+j,x:q.x,y:q.y,links:[]};roadNodes.push(node)}
+   if(previous&&previous!==node){if(!previous.links.includes(node.id))previous.links.push(node.id);if(!node.links.includes(previous.id))node.links.push(previous.id)}
+   ids.push(node.id);previous=node;
+  }
+  WALK_CURVES.push({r,c,ids});start=segment[2];
+ });
+});
+// Connect both ends of every painted lane, including branches ending mid-curve.
+roadRoutes.forEach(route=>{
+ for(const point of [route.start,route.curves.at(-1)[2]]){
+  const node=roadNodes.find(n=>Math.hypot(n.x-point[0],n.y-point[1])<5);if(!node)continue;
+  roadNodes.filter(n=>n!==node&&Math.hypot(n.x-node.x,n.y-node.y)<47).forEach(n=>{
+   if(!node.links.includes(n.id))node.links.push(n.id);if(!n.links.includes(node.id))n.links.push(node.id);
+  });
+ }
+});
 function roadCurvePosition(curve,t){
  const u=1-t;
  return {x:u*u*u*curve[0][0]+3*u*u*t*curve[1][0]+3*u*t*t*curve[2][0]+t*t*t*curve[3][0],
@@ -1551,25 +1469,21 @@ function curvedRoadEdge(a,b,resident){
 function homeEntrance(home){return home?{x:home.x+2,y:home.y+78}:null}
 function homeSouthRoadNode(home){
  if(!home)return roadNodes[0];
- const row=home.y<520?'row1':home.y<700?'row2':'row3';
- const entrance=homeEntrance(home),roadY=row==='row1'?535:row==='row2'?705:898;
- // Connect directly below the front door to the matching rendered horizontal road.
- const accessX=entrance.x;
- const rowNodes={
-  row1:[{id:'west-north',x:60},{id:'res-row1-center',x:250},{id:'res-row1-east',x:430}],
-  row2:[{id:'west-mid',x:60},{id:'res-row2-center',x:250},{id:'res-row2-east',x:430}],
-  row3:[{id:'west-south',x:60},{id:'res-row3-center',x:250},{id:'res-row3-east',x:430}]
- }[row];
- const rightIndex=Math.max(1,Math.min(rowNodes.length-1,rowNodes.findIndex(node=>node.x>=accessX)));
- const links=[rowNodes[rightIndex-1].id,rowNodes[rightIndex].id];
- return {id:'home-access-'+home.id,x:accessX,y:roadY,links};
+ const e=homeEntrance(home);
+ const candidates=roadNodes.filter(n=>n.y>=e.y-2&&n.y<=e.y+130);
+ const target=(candidates.length?candidates:roadNodes).reduce((best,n)=>Math.hypot(n.x-e.x,n.y-e.y)<Math.hypot(best.x-e.x,best.y-e.y)?n:best);
+ return {id:'home-access-'+home.id,x:target.x,y:target.y,links:[target.id]};
 }
-function roadNodePath(start,goal,resident=null){
+function roadNodePath(start,goal,resident=null,clearanceCache=new Map()){
  if(!start||!goal)return start?[start]:[];
  if(start.id===goal.id)return [start];
  // 道路グラフの接続線そのものが建物・家具・川岸を横切らないか確認する。
  const graphNodes=[...roadNodes];
  [start,goal].forEach(node=>{if(!graphNodes.some(n=>n.id===node.id))graphNodes.push(node)});
+ const byId=new Map(graphNodes.map(n=>[n.id,n]));
+ const adjacency=new Map(graphNodes.map(n=>[n.id,new Set(n.links||[])]));
+ graphNodes.forEach(n=>(n.links||[]).forEach(id=>adjacency.get(id)?.add(n.id)));
+ const edgeClear=(a,b)=>{if(!resident)return true;const key=[a.id,b.id].sort().join('|');if(!clearanceCache.has(key))clearanceCache.set(key,movementSegmentClear(a.x,a.y,b.x,b.y,resident));return clearanceCache.get(key)};
  const distance=new Map(graphNodes.map(n=>[n.id,Infinity]));
  const previous=new Map(),unvisited=new Set(graphNodes.map(n=>n.id));
  distance.set(start.id,0);
@@ -1579,8 +1493,8 @@ function roadNodePath(start,goal,resident=null){
   if(currentId===null||!Number.isFinite(currentDistance))break;
   if(currentId===goal.id)break;
   unvisited.delete(currentId);
-  const current=graphNodes.find(n=>n.id===currentId);
-  const neighbors=graphNodes.filter(n=>unvisited.has(n.id)&&((current?.links||[]).includes(n.id)||(n.links||[]).includes(currentId))&&(!resident||movementSegmentClear(current.x,current.y,n.x,n.y,resident)));
+  const current=byId.get(currentId);
+  const neighbors=[...adjacency.get(currentId)].map(id=>byId.get(id)).filter(n=>n&&unvisited.has(n.id)&&edgeClear(current,n));
   neighbors.forEach(next=>{
    const edge=Math.hypot(next.x-current.x,next.y-current.y);
    const candidate=currentDistance+edge;
@@ -1639,16 +1553,17 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
    // Prevent distant line-of-sight shortcuts that abandon the painted roads.
    const closest=Math.hypot(visible[0].x-x,visible[0].y-y);
    const reach=Math.max(145,Math.min(185,closest+65));
-   return visible.filter(n=>Math.hypot(n.x-x,n.y-y)<=reach).slice(0,7);
+   return visible.filter(n=>Math.hypot(n.x-x,n.y-y)<=reach).slice(0,3);
   }
   return roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p))
-   .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y)).slice(0,7);
+   .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y)).slice(0,3);
  };
  const starts=fixedStart?[fixedStart]:candidates(fromX,fromY,resident);
  const goals=fixedGoal?[fixedGoal]:candidates(toX,toY,resident);
+ const clearanceCache=new Map();
  let start=starts[0],goal=goals[0],nodes=null,bestScore=Infinity;
  starts.forEach(a=>goals.forEach(b=>{
-  const path=roadNodePath(a,b,resident);
+  const path=roadNodePath(a,b,resident,clearanceCache);
   if(!path.length||path[path.length-1].id!==b.id)return;
   if((!startHome&&!movementSegmentClear(fromX,fromY,a.x,a.y,resident))||(!destinationHome&&!movementSegmentClear(b.x,b.y,toX,toY,resident)))return;
   let roadDistance=0;
@@ -1677,6 +1592,18 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const result=compactRoutePoints(points,resident);
  if(resident&&result.some((q,i)=>i>0&&!movementSegmentClear(result[i-1].x,result[i-1].y,q.x,q.y,resident)))return [];
  return result;
+}
+// Move only obsolete outdoor travel plans onto the new town. Resident data and
+// household membership are preserved; indoor sleepers and external work stay intact.
+if(previousTownRevision!==TOWN_LAYOUT_REVISION){
+ chars.forEach(p=>{
+  if(p.action==='workOutside'||((p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'))return;
+  if(isBlockedByStructure(p.x,p.y,p)){
+   const n=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p)).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
+   if(n){p.x=n.x;p.y=n.y}
+  }
+  p.tx=p.x;p.ty=p.y;p.action='idle';p.phaseState='idle';p.stay=0;p.socialPartnerId=null;p.benchSeat=null;p.benchExit=null;p.routePoints=[];p.routeIndex=0;p.activity='街で過ごしている';
+ });
 }
 // 道路データと住人・住宅の初期化が完了してから保存済み経路を再構築する。
 chars.forEach(p=>{
@@ -1921,7 +1848,7 @@ function hobbyChoicesFor(p){
   else if(/写真|撮影|photography|camera/.test(t)){kind='photography';mode='walk';label='写真を撮っている';pose='stand';spot={id:'hobby-photo-'+index,x:770,y:540,label:'川沿い'}}
   else if(/買い物|ショッピング|shopping/.test(t)){kind='shopping';mode='walk';label='買い物をしている';pose='stand';spot={id:'hobby-shop-'+index,x:500,y:500,label:'街のお店'}}
   else if(/園芸|ガーデニング|植物|gardening/.test(t)){kind='gardening';mode='flowers';label='植物の手入れをしている';pose='look';spot={id:'hobby-garden-'+index,x:700,y:720}}
-  else if(/釣り|fishing/.test(t)){kind='fishing';mode='walk';label='釣りをしている';pose='sit';spot={id:'hobby-fishing-'+index,x:755,y:900,label:'川辺'}}
+  else if(/釣り|fishing/.test(t)){kind='fishing';mode='walk';label='釣りをしている';pose='sit';spot={id:'hobby-fishing-'+index,x:790,y:850,label:'川辺の桟橋'}}
   else if(/カフェ巡り|喫茶店巡り/.test(t)){kind='cafe';mode='cafe';label='喫茶店で過ごしている';pose='sit'}
   const timeRule=/朝|午前|昼|午後|夕方|夜|深夜/.test(name)?(/朝|午前/.test(name)?'morning':/昼/.test(name)?'noon':/午後/.test(name)?'afternoon':/夕方/.test(name)?'evening':/深夜/.test(name)?'lateNight':'night'):'any';
    const weatherRule=/雨/.test(name)?'rainy':/晴れ/.test(name)?'sunny':/曇り/.test(name)?'cloudy':/雪/.test(name)?'snowy':'any';
@@ -2082,11 +2009,11 @@ function chooseRoutine(p,i){
    if(hobby.mode==='cafe'){const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている',hobby.label,'sit',16+Math.random()*20);return}
    const q=hobby.mode==='flowers'?chooseFreshSpot(p,[{id:'garden-east',x:620,y:740,label:'東の花壇'},{id:'garden-south',x:600,y:1110,label:'南の花壇'}]):(hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:740,y:540,label:'川沿い'},{id:'hobby-path-'+hobby.priority,x:420,y:650,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:600,y:760,label:'川辺の広場'}]));
    if(hobby.mode==='flowers'){p.flowerScene={kind:'gardening',stay:hobby.label,diary:hobby.label+'を楽しんだ'};}
-   const shoppingPlace=hobby.kind==='shopping'?getPlace('shop'):null;if(shoppingPlace)p.shoppingTrip=true;setAction(p,i,hobby.mode==='flowers'?'flowers':'walk',shoppingPlace?649:q.x,ySafe(shoppingPlace?462:q.y),shoppingPlace?shoppingPlace.name+'へ向かっている':q.label?(q.label+'へ向かっている'):'趣味の場所へ向かっている',hobby.label,hobby.pose,14+Math.random()*22);if(hobby.kind==='fishing')p.fishingTrip=true;if(hobby.kind==='photography')p.photoTrip=true;
+   const shoppingPlace=hobby.kind==='shopping'?getPlace('shop'):null;if(shoppingPlace)p.shoppingTrip=true;setAction(p,i,hobby.mode==='flowers'?'flowers':'walk',shoppingPlace?WORLD_BUILDINGS.shop.door.x:q.x,ySafe(shoppingPlace?WORLD_BUILDINGS.shop.door.maxY+22:q.y),shoppingPlace?shoppingPlace.name+'へ向かっている':q.label?(q.label+'へ向かっている'):'趣味の場所へ向かっている',hobby.label,hobby.pose,14+Math.random()*22);if(hobby.kind==='fishing')p.fishingTrip=true;if(hobby.kind==='photography')p.photoTrip=true;
   }})});
  });
  if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=[{id:'flower-east',x:620,y:740},{id:'flower-southeast',x:600,y:1110}];const q=chooseFreshSpot(p,spots);const scene=flowerSceneFor(p);p.flowerScene=scene;setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている',scene.stay,'look',12+Math.random()*18)}});
- if(previous!=='walk')options.push({action:'walk',weight:2.5+(p.activityLevel??50)/20+(p.curiosity??50)/60,run:()=>{const spots=[{id:'riverside-north',x:740,y:520,label:'川沿い'},{id:'plaza',x:430,y:1095,label:'川辺の広場'},{id:'tree-south',x:350,y:1040,label:'木陰'},{id:'path-center',x:420,y:650,label:'こみちの途中'},{id:'riverside-south',x:710,y:1030,label:'川辺'},{id:'garden-wisteria',x:624,y:872,label:'藤棚の小径'},{id:'garden-cherry',x:607,y:950,label:'桜並木'},{id:'garden-plaza',x:615,y:1015,label:'庭園の出口'}];const q=chooseFreshSpot(p,spots);const scene=walkSceneFor(p,q);p.walkScene=scene;setAction(p,i,'walk',q.x,ySafe(q.y),q.label+'まで散歩中',scene.stay,'stand',8+Math.random()*12+(p.activityLevel??50)*.12)}});
+ if(previous!=='walk')options.push({action:'walk',weight:2.5+(p.activityLevel??50)/20+(p.curiosity??50)/60,run:()=>{const spots=[{id:'riverside-north',x:716,y:516,label:'川沿い'},{id:'plaza',x:430,y:1095,label:'川辺の広場'},{id:'tree-south',x:350,y:1040,label:'木陰'},{id:'path-center',x:420,y:650,label:'こみちの途中'},{id:'riverside-south',x:710,y:1030,label:'川辺'},{id:'garden-wisteria',x:686,y:782,label:'藤棚の小径'},{id:'garden-cherry',x:681,y:917,label:'桜のそば'},{id:'garden-plaza',x:630,y:1103,label:'庭園の出口'}];const q=chooseFreshSpot(p,spots);const scene=walkSceneFor(p,q);p.walkScene=scene;setAction(p,i,'walk',q.x,ySafe(q.y),q.label+'まで散歩中',scene.stay,'stand',8+Math.random()*12+(p.activityLevel??50)*.12)}});
  if(previous!=='cafe'&&p.needs.hunger>=42&&(p.money??5000)>=450)options.push({action:'cafe',weight:1.5+(p.curiosity??50)/100,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている','喫茶店でひと休み','sit',12+Math.random()*12)}});
  if(previous!=='bench'&&p.needs.energy>=38)options.push({action:'bench',weight:2,run:()=>{const scene=benchSceneFor(p);if(!startBenchVisit(p,i,scene.stay,10+Math.random()*14,scene))setAction(p,i,'walk',430,1100,'広場へ向かっている','広場でひと休みしている','stand',10+Math.random()*14)} });
  applyScheduleWeights(options,p);
@@ -2641,7 +2568,7 @@ function select(i){if(!chars[i])return;selected=i;if(!interiorHomeId){panX=450-c
 });
 
 const activePointers=new Map();let gesture=null;
-function screenToWorld(x,y){const fit=Math.min(W/900,H/1400)*1.04,scale=fit*zoom;return{x:(x-W/2)/scale+450-panX,y:(y-H/2)/scale+720-panY}}
+function screenToWorld(x,y){const fit=Math.min(W/1000,H/1400)*1.04,scale=fit*zoom;return{x:(x-W/2)/scale+450-panX,y:(y-H/2)/scale+720-panY}}
 function pointerMid(){const pts=[...activePointers.values()];return{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}}
 function pointerDistance(){const pts=[...activePointers.values()];return Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)}
 c.addEventListener('pointerdown',e=>{e.preventDefault();c.setPointerCapture(e.pointerId);const r=c.getBoundingClientRect(),pt={x:e.clientX-r.left,y:e.clientY-r.top,startX:e.clientX-r.left,startY:e.clientY-r.top};activePointers.set(e.pointerId,pt);if(activePointers.size===1){gesture={type:'tap',start:pt, moved:false}}else if(activePointers.size===2){const mid=pointerMid();gesture={type:interiorHomeId?'interior':'map',distance:pointerDistance(),zoom:interiorHomeId?interiorZoom:zoom,panX:interiorHomeId?interiorPanX:panX,panY:interiorHomeId?interiorPanY:panY,world:screenToWorld(mid.x,mid.y),mid}}});
