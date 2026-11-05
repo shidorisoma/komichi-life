@@ -9,7 +9,7 @@
 .panel{z-index:5;top:calc(env(safe-area-inset-top) + 150px);bottom:calc(env(safe-area-inset-bottom) + 96px);left:4%;right:4%;width:auto;max-width:none;max-height:none;transform:none;overflow-y:auto;overscroll-behavior:contain;padding:16px} .panel.mapPanel{left:4%;right:4%;width:auto;max-width:none;transform:none;padding:16px}.panel.homePanel{display:none!important}.homeHeader{display:flex;align-items:center;gap:6px}.homeHeader h3{margin:0 auto 0 0;font-size:15px}.homeHeader button{border:0;border-radius:10px;padding:7px 9px;background:#edf0e5;color:var(--ink);font:inherit;font-size:11px;white-space:nowrap}.homeResidents{display:none;margin-top:8px}.homeResidents.open{display:block}.homeResidents .entry{font-size:11px;padding:5px 0}.homeBack{background:var(--green)!important;color:white!important}.residentEditHeader{position:sticky;top:-16px;z-index:8;margin:-16px -16px 10px;padding:10px 14px;background:var(--cream);min-height:56px}.residentEditHeader b{white-space:nowrap}.headerActions{margin-left:auto;display:flex;gap:6px}.residentEditHeader .headerActions button{border:0;border-radius:10px;padding:8px 10px;font:inherit;font-size:11px;font-weight:700;white-space:nowrap}.residentEditHeader .headerSave{background:var(--green);color:white}.residentEditHeader .headerCancel{background:#e9e4d8;color:var(--ink)}.residentForm{margin-top:0}.fixedWorkTimes{display:none}.timeRange{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:8px}.timeRange>span{padding-bottom:12px;font-size:14px}.timeRange label{min-width:0}.checkSetting{display:flex!important;flex-direction:row;align-items:center;gap:9px!important;padding:8px 2px}.residentForm .checkSetting input[type=checkbox]{width:20px;height:20px;flex:none;margin:0;accent-color:var(--green)}.residentForm .checkSetting span{font-size:12px;color:var(--ink)}.residentForm .formActions{display:none}.timeRange{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:end;justify-content:center;gap:5px}.timeRange>span{padding:0 1px 11px;font-size:14px;white-space:nowrap;pointer-events:none}.timeRange label{min-width:0;width:calc(100% - 2ch)}.timeRange input{width:100%;min-width:0;padding:7px 3px;text-align:center;font-size:12px}.workTwoCols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.workTwoCols label{min-width:0}.callSettingRow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:8px}.callSettingRow .checkSetting{min-width:0}.callFrequencyField{min-width:0}.callFrequencyField select{width:100%;border:1px solid var(--line);border-radius:9px;padding:8px;background:#fffdf7;color:var(--ink);font:inherit;font-size:13px}
 .zoom .mapIcon{display:none}.zoom .mapIcon.returnCity{display:block}.residentNameLine{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.residentMoney{font-size:13px;color:#8a795f;background:rgba(235,228,209,.75);border-radius:12px;padding:4px 8px;white-space:nowrap}.residentInfo{min-width:0;flex:1}.historyToggle{width:100%;margin:8px 0 4px;padding:11px 12px;border:0;border-radius:12px;background:#edf0e5;color:var(--ink);font:inherit;font-size:12px;text-align:left}.moneyHistory.collapsed{display:none}.moneyHistory{margin:4px 0 10px}button:active{transform:scale(.97);filter:brightness(.94)}
 #saveToast{position:fixed;left:50%;bottom:calc(112px + env(safe-area-inset-bottom));z-index:9999;transform:translate(-50%,14px);opacity:0;pointer-events:none;background:rgba(54,69,53,.94);color:#fffdf3;padding:12px 20px;border-radius:24px;font-size:13px;font-weight:700;box-shadow:0 5px 20px rgba(35,42,30,.2);transition:opacity .22s ease,transform .22s ease;white-space:nowrap}
-#saveToast.show{opacity:1;transform:translate(-50%,0)}</style></head><body><div id="app"><canvas id="world"></canvas>
+#saveToast.show{opacity:1;transform:translate(-50%,0)}.actionBtn:disabled{opacity:.45;cursor:default}</style></head><body><div id="app"><canvas id="world"></canvas>
 <div class="top"><div class="sun">☀</div><div class="topInfo"><div class="place" id="placeTitle">川辺のこみち</div><div class="weather" id="placeSubtitle">春のさんぽ日和</div><div class="clock" id="clock">15:25（火）</div><div class="placeActions" id="placeActions"></div></div></div>
 <div class="zoom"><button id="zin" aria-label="拡大">＋</button><button class="minus" id="zout" aria-label="縮小">－</button><button class="center" id="reset" aria-label="位置を戻す">⊙</button><button class="uiToggle" id="uiToggle" aria-label="下部メニューを隠す" title="住人表示とメニューを隠す">⌄</button><button class="mapIcon" id="mapToggle" aria-label="地図">🗺️</button></div>
 <div class="hint" id="hint">住人をタップすると様子が見られます</div>
@@ -91,6 +91,7 @@ const places=[
 function getPlace(id){return places.find(place=>place.id===id)||null}
 const SAVE_KEY='komichi-life-save-v1';
 const SAVE_BACKUP_KEY=SAVE_KEY+'.backup';
+const SAVE_BEFORE_IMPORT_KEY=SAVE_KEY+'.before-import';
 let saveWritesBlocked=false,saveReady=false,loadedSaveData=null,saveWarningMessage='';
 const TOWN_LAYOUT_REVISION=10;let previousTownRevision=0;
 // 家具・住居データ。購入者、所有者、利用者、設置場所を独立して管理する。
@@ -555,15 +556,23 @@ function parseSaveData(raw){
   if(!record(world))throw Error('invalid-world');
   for(const key of ['homes','households','rooms'])if(world[key]!=null&&(!record(world[key])||Object.values(world[key]).some(v=>!record(v))))throw Error('invalid-'+key);
   if(world.furniture!=null&&(!Array.isArray(world.furniture)||world.furniture.some(v=>!record(v))))throw Error('invalid-furniture');
+  for(const home of Object.values(world.homes||{})){
+   if(home.roomIds!=null&&(!Array.isArray(home.roomIds)||home.roomIds.some(id=>typeof id!=='string')))throw Error('invalid-room-ids');
+   if(home.rooms!=null&&(!Array.isArray(home.rooms)||home.rooms.some(r=>!record(r)||typeof r.id!=='string')))throw Error('invalid-home-rooms');
+  }
+  for(const household of Object.values(world.households||{}))if(household.residentIds!=null&&(!Array.isArray(household.residentIds)||household.residentIds.some(id=>typeof id!=='string')))throw Error('invalid-household-members');
  }
  return data;
+}
+function serializeCurrentSave(){
+ const data={version:5,stampEpoch:'calendar',furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},townLayoutRevision:TOWN_LAYOUT_REVISION,residents:chars.map(p=>{const {passing,passingCooldown,trafficWait,...saved}=p;return {...saved,profile:{...p.profile},needs:{...p.needs}}})};
+ return JSON.stringify(data);
 }
 function saveGame(notify=false){
  if(saveWritesBlocked){showSaveWarning(saveWarningMessage||'保存済みデータを保護しています。自動保存は停止中です。');return false}
  if(!saveReady)return false;
  try{
-  const data={version:5,stampEpoch:'calendar',furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},townLayoutRevision:TOWN_LAYOUT_REVISION,residents:chars.map(p=>{const {passing,passingCooldown,trafficWait,...saved}=p;return {...saved,profile:{...p.profile},needs:{...p.needs}}})};
-  const serialized=JSON.stringify(data),previous=localStorage.getItem(SAVE_KEY);let backupFailed=false;
+  const serialized=serializeCurrentSave(),previous=localStorage.getItem(SAVE_KEY);let backupFailed=false;
   let previousValid=false;if(previous){try{parseSaveData(previous);previousValid=true}catch{}}
   if(previousValid){try{localStorage.setItem(SAVE_BACKUP_KEY,previous)}catch{backupFailed=true}}
   localStorage.setItem(SAVE_KEY,serialized);
@@ -571,6 +580,58 @@ function saveGame(notify=false){
   showSaveWarning(backupFailed?'保存はできましたが、予備データを更新できませんでした。':'');
   if(notify)showSaveToast();return true;
  }catch(e){showSaveWarning('保存できませんでした。画面を閉じる前に、端末の空き容量やブラウザの保存設定を確認してください。');console.warn('セーブに失敗しました',e);return false}
+}
+function backupSaveText(source='current'){
+ if(source==='current'){
+  if(saveWritesBlocked)throw Error('保存保護中です。「保存済みデータ」を書き出してください。');
+  return serializeCurrentSave();
+ }
+ const key={stored:SAVE_KEY,backup:SAVE_BACKUP_KEY,beforeImport:SAVE_BEFORE_IMPORT_KEY}[source];
+ if(!key)throw Error('書き出すデータを選んでください。');
+ const raw=localStorage.getItem(key);if(!raw)throw Error('書き出せるデータがありません。');return raw;
+}
+function validateSaveImport(raw){
+ if(typeof raw!=='string'||raw.length>10*1024*1024)throw Error('ファイルが大きすぎます。');
+ const data=parseSaveData(raw.replace(/^\uFEFF/,''));
+ return {data,raw:JSON.stringify(data),residents:(data.residents||data.chars).length,homes:Object.keys(data.furnitureWorld?.homes||{}).length};
+}
+function commitSaveImport(raw){
+ const candidate=validateSaveImport(raw);
+ // Capture the latest state at the moment of restoration, including changes
+ // made while the file preview was open. Never replace protected original data.
+ const previous=saveWritesBlocked?localStorage.getItem(SAVE_KEY):serializeCurrentSave();
+ if(previous)localStorage.setItem(SAVE_BEFORE_IMPORT_KEY,previous);
+ localStorage.setItem(SAVE_KEY,candidate.raw);
+ saveWritesBlocked=true;showSaveWarning('復元データを保存しました。再読み込みして街を開き直します。');
+ return true;
+}
+function downloadSave(source){
+ try{
+  const text=backupSaveText(source),blob=new Blob([text],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download='komichi-life-'+source+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+ }catch(error){showSaveWarning('書き出せませんでした。'+error.message)}
+}
+function renderSavePanel(){
+ const body=document.getElementById('panelBody');document.getElementById('panelTitle').textContent='データの保存・復旧';
+ body.innerHTML='<button class="relationBack" id="savePanelBack" aria-label="住人一覧へ戻る">‹</button><p class="subtle">バックアップをファイルに保存すると、別の端末でも街を引き継げます。ダウンロード後にファイルが保存されたことを確認してください。</p><button class="actionBtn" id="exportCurrentSave">現在の街を書き出す</button><button class="actionBtn" id="exportStoredSave">保存済みデータを書き出す</button><button class="actionBtn" id="exportBackupSave">予備データを書き出す</button><button class="actionBtn" id="exportBeforeImportSave">前回の復元前データを書き出す</button><div class="metricTitle">ファイルから復元</div><label class="subtle" for="importSaveFile">バックアップ（JSON）を選ぶ</label><input id="importSaveFile" type="file" accept=".json,application/json" style="width:100%;margin:10px 0"><div class="subtle" id="importSavePreview" role="status">ファイルを選ぶと内容を確認できます。復元すると現在の街を置き換えます。復元前の街も端末内に保管します。</div><button class="actionBtn" id="applySaveImport" disabled>この内容で復元して再読み込み</button>';
+ document.getElementById('savePanelBack').onclick=renderResidentManager;
+ document.getElementById('exportCurrentSave').disabled=saveWritesBlocked;
+ for(const [id,source] of [['exportCurrentSave','current'],['exportStoredSave','stored'],['exportBackupSave','backup'],['exportBeforeImportSave','beforeImport']])document.getElementById(id).onclick=()=>downloadSave(source);
+ const input=document.getElementById('importSaveFile'),preview=document.getElementById('importSavePreview'),apply=document.getElementById('applySaveImport');let candidate=null,selection=0;apply.disabled=true;
+ input.onchange=async()=>{
+  const token=++selection;candidate=null;apply.disabled=true;const file=input.files?.[0];
+  if(!file){preview.textContent='ファイルが選ばれていません。';return}
+  if(file.size>10*1024*1024){preview.textContent='ファイルが大きすぎます。';return}
+  preview.textContent='ファイルを確認しています…';
+  try{const checked=validateSaveImport(await file.text());if(token!==selection)return;candidate=checked;preview.textContent='住人 '+checked.residents+'人 ／ 住宅 '+checked.homes+'軒。この内容で現在の街を置き換えます。';apply.disabled=false}
+  catch{if(token===selection)preview.textContent='読み込めませんでした。対応するバックアップファイルを選んでください。現在の街は変更していません。'}
+ };
+ apply.onclick=()=>{
+  if(!candidate||apply.disabled)return;
+  try{commitSaveImport(candidate.raw);apply.disabled=true}
+  catch{preview.textContent='復元データを保存できませんでした。端末の空き容量やブラウザの保存設定を確認してください。';apply.disabled=false;return}
+  try{window.location.reload()}catch{preview.textContent='復元データは保存済みです。画面を更新して街を開き直してください。'}
+ };
 }
 function loadGame(){
  try{
@@ -601,8 +662,9 @@ function loadGame(){
     const base=defaultResidents.find(p=>p.id===saved.id)||defaultResidents[i]||{};
     const coordinate=(value,fallback)=>Number.isFinite(value)?value:fallback;
     const px=coordinate(saved.x,base.x??450),py=coordinate(saved.y,base.y??720),repairPosition=!Number.isFinite(saved.x)||!Number.isFinite(saved.y);
+    const knownAction=['idle','walk','flowers','bench','cafe','date','home','sleep','work','workOutside','social'].includes(saved.action);
     const needs={};for(const key of ['energy','hunger','mood'])needs[key]=Number.isFinite(saved.needs?.[key])?Math.max(0,Math.min(100,saved.needs[key])):(base.needs?.[key]??80);
-    return {...base,...saved,id:saved.id||base.id||'legacy-'+i,name:String(saved.name||base.name||'住人'),x:px,y:py,tx:coordinate(saved.tx,px),ty:coordinate(saved.ty,py),phase:coordinate(saved.phase,0),stay:Math.max(0,coordinate(saved.stay,0)),needsPositionRepair:repairPosition,money:Number.isFinite(saved.money)?Math.max(0,saved.money):5000,workPayDay:Number.isFinite(saved.workPayDay)?saved.workPayDay:-1,workDaysPerWeek:Number.isFinite(saved.workDaysPerWeek)?Math.max(1,Math.min(7,saved.workDaysPerWeek)):3,workDays:Array.isArray(saved.workDays)?saved.workDays:[],workWeekKey:Number.isFinite(saved.workWeekKey)?saved.workWeekKey:-1,workWeekDays:Array.isArray(saved.workWeekDays)?saved.workWeekDays:[],incomeMode:['fixed','mixed','random'].includes(saved.incomeMode)?saved.incomeMode:'fixed',fixedIncome:Number.isFinite(saved.fixedIncome)?Math.max(0,saved.fixedIncome):1500,randomIncomeMin:Number.isFinite(saved.randomIncomeMin)?Math.max(0,saved.randomIncomeMin):0,randomIncomeMax:Number.isFinite(saved.randomIncomeMax)?Math.max(0,saved.randomIncomeMax):0,moneyHistory:Array.isArray(saved.moneyHistory)?saved.moneyHistory.slice(0,100):[],profile:{...(base.profile||{}),...(saved.profile||{})},needs,sociability:Number.isFinite(saved.sociability)?Math.max(0,Math.min(100,saved.sociability)):50,curiosity:Number.isFinite(saved.curiosity)?Math.max(0,Math.min(100,saved.curiosity)):50,activityLevel:Number.isFinite(saved.activityLevel)?Math.max(0,Math.min(100,saved.activityLevel)):50,walkPreference:Number.isFinite(saved.walkPreference)?Math.max(0,Math.min(100,saved.walkPreference)):50,naturePreference:Number.isFinite(saved.naturePreference)?Math.max(0,Math.min(100,saved.naturePreference)):50,cafePreference:Number.isFinite(saved.cafePreference)?Math.max(0,Math.min(100,saved.cafePreference)):50,lastInitiatedSocialStamp:Number.isFinite(saved.lastInitiatedSocialStamp)?saved.lastInitiatedSocialStamp:-1,lastSocialStamp:Number.isFinite(saved.lastSocialStamp)?saved.lastSocialStamp:-1};
+    return {...base,...saved,id:saved.id||base.id||'legacy-'+i,name:String(saved.name||base.name||'住人'),x:px,y:py,tx:coordinate(saved.tx,px),ty:coordinate(saved.ty,py),phase:coordinate(saved.phase,0),stay:Math.max(0,coordinate(saved.stay,0)),action:knownAction?saved.action:'idle',phaseState:knownAction&&['moving','staying','idle'].includes(saved.phaseState)?saved.phaseState:'idle',needsPositionRepair:repairPosition,money:Number.isFinite(saved.money)?Math.max(0,saved.money):5000,workPayDay:Number.isFinite(saved.workPayDay)?saved.workPayDay:-1,workDaysPerWeek:Number.isFinite(saved.workDaysPerWeek)?Math.max(1,Math.min(7,saved.workDaysPerWeek)):3,workDays:Array.isArray(saved.workDays)?saved.workDays:[],workWeekKey:Number.isFinite(saved.workWeekKey)?saved.workWeekKey:-1,workWeekDays:Array.isArray(saved.workWeekDays)?saved.workWeekDays:[],incomeMode:['fixed','mixed','random'].includes(saved.incomeMode)?saved.incomeMode:'fixed',fixedIncome:Number.isFinite(saved.fixedIncome)?Math.max(0,saved.fixedIncome):1500,randomIncomeMin:Number.isFinite(saved.randomIncomeMin)?Math.max(0,saved.randomIncomeMin):0,randomIncomeMax:Number.isFinite(saved.randomIncomeMax)?Math.max(0,saved.randomIncomeMax):0,moneyHistory:Array.isArray(saved.moneyHistory)?saved.moneyHistory.filter(h=>h&&typeof h==='object').slice(0,100):[],profile:{...(base.profile||{}),...(saved.profile||{})},needs,sociability:Number.isFinite(saved.sociability)?Math.max(0,Math.min(100,saved.sociability)):50,curiosity:Number.isFinite(saved.curiosity)?Math.max(0,Math.min(100,saved.curiosity)):50,activityLevel:Number.isFinite(saved.activityLevel)?Math.max(0,Math.min(100,saved.activityLevel)):50,walkPreference:Number.isFinite(saved.walkPreference)?Math.max(0,Math.min(100,saved.walkPreference)):50,naturePreference:Number.isFinite(saved.naturePreference)?Math.max(0,Math.min(100,saved.naturePreference)):50,cafePreference:Number.isFinite(saved.cafePreference)?Math.max(0,Math.min(100,saved.cafePreference)):50,lastInitiatedSocialStamp:Number.isFinite(saved.lastInitiatedSocialStamp)?saved.lastInitiatedSocialStamp:-1,lastSocialStamp:Number.isFinite(saved.lastSocialStamp)?saved.lastSocialStamp:-1};
    });
    chars.splice(0,chars.length,...restored);
   }
@@ -2865,9 +2927,10 @@ function renderResidentManager(){
   document.getElementById('toggleMoneyHistory').onclick=e=>{const open=e.currentTarget.getAttribute('aria-expanded')!=='true';e.currentTarget.setAttribute('aria-expanded',String(open));e.currentTarget.textContent=open?'通帳を閉じる ▴':'通帳を開く ▾';document.getElementById('moneyHistoryPanel').classList.toggle('collapsed',!open)};document.getElementById('editResidentFromDetail').onclick=()=>{editingResidentId=viewing.id;renderResidentManager()};
   return;
  }
- body.innerHTML='<div class="residentTools"><button id="addResidentBtn">＋ 住人を追加</button></div>'+
+ body.innerHTML='<div class="residentTools"><button id="addResidentBtn">＋ 住人を追加</button><button id="openSavePanel">データの保存・復旧</button></div>'+
  chars.map(p=>'<div class="residentRow">'+residentAvatar(p)+'<div class="residentInfo"><div class="residentNameLine"><button class="residentNameButton" data-view-resident="'+escapeHtml(p.id)+'">'+escapeHtml(p.name)+'</button><span class="residentMoney">¥'+Math.floor(Number(p.money)||0).toLocaleString()+'</span></div><div class="subtle">'+escapeHtml(p.activity||'街を散歩中')+'</div></div><button data-edit-resident="'+escapeHtml(p.id)+'">編集</button><button data-remove-resident="'+escapeHtml(p.id)+'">退去</button></div>').join('')+
  '<div class="subtle">名前を押すと住人の詳細を確認できます。</div>';
+ document.getElementById('openSavePanel').onclick=renderSavePanel;
  document.getElementById('addResidentBtn').onclick=()=>{const p=addResident({name:'新しい住人',detail:'',hair:'#655b4c',color:'#778768'});if(p){residentPageId=p.id;renderResidentManager()}};
  body.querySelectorAll('[data-view-resident]').forEach(b=>b.onclick=()=>{residentPageId=b.dataset.viewResident;renderResidentManager()});
  body.querySelectorAll('[data-edit-resident]').forEach(b=>b.onclick=()=>{editingResidentId=b.dataset.editResident;renderResidentManager()});
