@@ -899,6 +899,17 @@ function townRiverOutline(){
  ctx.beginPath();ctx.moveTo(760,180);ctx.bezierCurveTo(690,360,880,470,790,650);
  ctx.bezierCurveTo(710,830,900,940,790,1170);ctx.lineTo(1030,1300);ctx.lineTo(1030,100);ctx.closePath();
 }
+// The grassy town edge must trace the same winding shoreline as the river.
+// Keeping this derived from riverEdgeX also prevents a ruler-straight island wall.
+const townShoreContour=Array.from({length:32},(_,i)=>{
+ const y=240+i*30;
+ return [riverEdgeX(y)-8,y];
+});
+const townIslandOutline=[[0,336],[470,154],...townShoreContour,[433,1372],[0,1165]];
+const townSoilShore=Array.from({length:29},(_,i)=>{
+ const y=320+i*28;
+ return [riverEdgeX(y)-85,y];
+});
 // Flower graphics are baked into a tiny sprite, not rebuilt every animation frame.
 const townFlowerSprites={};
 function townFlowerPatch(x,y,scale=1,shade=0){
@@ -930,7 +941,7 @@ function townGardenFence(cx,y,left,right){
 function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(interiorHomeId);return}ctx.save();const fit=Math.min(W/900,H/1400)*1.04;ctx.translate(W/2,H/2);ctx.scale(fit*zoom,fit*zoom);ctx.translate(-450+panX,-720+panY);
  // Warm garden floor and stone-edged miniature neighborhood.
  ctx.fillStyle='#e8d5ab';ctx.fillRect(-200,-200,1300,1800);
- const island=[[0,336],[470,154],[757,316],[783,1141],[433,1372],[0,1165]];
+ const island=townIslandOutline;
  ctx.save();ctx.shadowColor='rgba(75,96,45,.24)';ctx.shadowBlur=20;ctx.shadowOffsetY=16;
  poly(island,'#a0bd6d','#927e51',12);ctx.restore();
  poly(island,townTexture('grass'),'#e8d6af',10);
@@ -958,7 +969,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  }
  // Gentle warm soil beneath the paved streets, leaving lush green parkland.
  ctx.save();ctx.globalAlpha=.1;
- poly([[65,370],[470,210],[733,340],[737,1116],[438,1330],[56,1140]],'#e8d8ae',null);
+ poly([[65,370],[470,210],...townSoilShore,[438,1330],[56,1140]],'#e8d8ae',null);
  ctx.restore();
  // Draw every road edge first, every road surface second, then the paving.
  // Main street paint is applied last in each pass, so no branch remains visible inside it.
