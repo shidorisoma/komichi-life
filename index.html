@@ -357,24 +357,15 @@ function pointInPolygon(x,y,polygon){
 }
  // 道路ネットワーク。中央幹線から北・西の住宅地へ接続。
  const roadRoutes=[
-  // 一本の幅広い中央メインストリート
-  {main:true,start:[470,170],curves:[[[505,280],[525,430],[490,555]],[[455,700],[445,870],[445,1010]]]},
-  // カフェへはメインストリートから短く分岐
-  {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
-  // こみち商店へ向かう短い枝道
-  // 商店へは建物の南側を回り、正面入口へ南から近づく。
-  {start:[505,350],curves:[[[505,405],[505,490],[700,490]]]},
-  // 川辺の広場へは中央下側の幹線から東へ枝道を伸ばす。
-  {start:[465,790],curves:[[[510,780],[560,765],[610,760]]]},
-  // 住宅街の縦道と、各段の住宅前を通る横道。
-  {start:[60,535],curves:[[[60,592],[60,647],[60,705]],[[60,770],[60,834],[60,898]]]},
-  {start:[60,535],curves:[[[145,535],[195,535],[250,535]],[[310,535],[370,535],[430,535]]]},
-  {start:[60,705],curves:[[[145,705],[195,705],[250,705]],[[310,705],[370,705],[430,705]]]},
-  {start:[60,898],curves:[[[145,898],[195,898],[250,898]],[[310,898],[370,898],[430,898]]]},
-  // 各段の東端から中央の幹線へ接続。
-  {start:[430,535],curves:[[[455,535],[475,535],[490,555]]]},
-  {start:[430,705],curves:[[[445,735],[455,765],[465,790]]]},
-  {start:[430,898],curves:[[[440,935],[442,975],[445,1010]]]}
+ {main:true,start:[470,170],curves:[[[505,280],[525,430],[490,555]],[[455,700],[445,870],[445,1010]]]},
+ {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
+ {start:[545,444],curves:[[[584,451],[632,488],[700,490]]]},
+ {start:[465,790],curves:[[[510,780],[560,765],[610,760]]]},
+ {start:[60,535],curves:[[[60,592],[60,647],[60,705]],[[60,770],[60,834],[60,898]]]},
+ {start:[60,535],curves:[[[145,535],[195,535],[250,535]],[[310,535],[370,535],[430,535]]]},
+ {start:[60,705],curves:[[[145,705],[195,705],[250,705]],[[310,705],[370,705],[430,705]]]},
+ {start:[60,898],curves:[[[145,898],[195,898],[250,898]],[[310,898],[370,898],[430,898]]]},
+ {start:[430,535],curves:[[[452,539],[473,548],[490,555]]]}
  ];
  const roadRendering={edge:'#a98d68',surface:'#ead5ad',mainEdgeWidth:112,mainSurfaceWidth:94,branchEdgeWidth:46,branchSurfaceWidth:34};
  // 道路の描画と橋の歩行可能範囲は、このネットワーク定義を参照する。
@@ -384,8 +375,7 @@ function pointInPolygon(x,y,polygon){
   rails:[[[698,738],[817,684]],[[715,766],[835,711]]],
   railColor:'#765b40',railWidth:5,
   approaches:[
-   {start:[610,760],control:[650,760],end:[690,760],edgeWidth:34,surfaceWidth:23},
-   {start:[690,760],control:[733,770],end:[760,800],edgeWidth:30,surfaceWidth:20}
+   {start:[610,760],control:[650,760],end:[690,760],edgeWidth:34,surfaceWidth:23}
   ]
  };
  const WORLD_ROAD_NETWORK={routes:roadRoutes,rendering:roadRendering,bridge};
@@ -1245,26 +1235,23 @@ function recordMemory(id,title,text,pairId=null){
 const roadNodes=[
  // 中央メインストリート
  {id:'main-north',x:470,y:170,links:['main-upper']},
- {id:'main-upper',x:505,y:350,links:['main-north','main-curve-upper','cafe-approach-1','shop-approach-1']},
- {id:'main-curve-upper',x:516,y:435,links:['main-upper','main-curve-mid']},
+ {id:'main-upper',x:505,y:350,links:['main-north','main-curve-upper','cafe-approach-1']},
+ {id:'main-curve-upper',x:516,y:435,links:['main-upper','main-curve-mid','shop-approach-1']},
  {id:'main-curve-mid',x:505,y:495,links:['main-curve-upper','main-mid']},
  {id:'main-mid',x:490,y:555,links:['main-curve-mid','main-lower-curve-1','res-row1-east']},
  // カフェのBezier曲線に沿って中継ノードを置き、直線ショートカットを防ぐ。
  {id:'cafe-approach-1',x:423,y:340,links:['main-upper','cafe-approach-2']},
  {id:'cafe-approach-2',x:335,y:333,links:['cafe-approach-1','cafe-entry']},
  // 商店への曲線枝道に沿って中継ノードを置き、直線ショートカットを防ぐ。
- {id:'shop-approach-1',x:508,y:395,links:['main-upper','shop-approach-2']},
- {id:'shop-approach-2',x:529,y:441,links:['shop-approach-1','shop-approach-3']},
- {id:'shop-approach-3',x:587,y:476,links:['shop-approach-2','shop-entry']},
+ {id:'shop-approach-1',x:574,y:456,links:['main-curve-upper','shop-approach-3']},
+ {id:'shop-approach-3',x:626,y:480,links:['shop-approach-1','shop-entry']},
  {id:'shop-entry',x:700,y:490,links:['shop-approach-3'],facility:true},
- {id:'main-lower-curve-1',x:475,y:675,links:['main-mid','main-lower']},
- {id:'main-lower-curve-2',x:448,y:930,links:['main-lower','main-plaza']},
- {id:'main-lower',x:465,y:790,links:['main-lower-curve-1','main-lower-curve-2','row2-approach-2','park-entry']},
- {id:'row2-approach-1',x:445,y:735,links:['res-row2-east','row2-approach-2']},
- {id:'row2-approach-2',x:455,y:765,links:['row2-approach-1','main-lower']},
- {id:'main-plaza',x:445,y:1010,links:['main-lower-curve-2','plaza-center','row3-approach-2']},
- {id:'row3-approach-1',x:440,y:935,links:['res-row3-east','row3-approach-2']},
- {id:'row3-approach-2',x:442,y:975,links:['row3-approach-1','main-plaza']},
+ {id:'main-lower-curve-1',x:475,y:675,links:['main-mid','main-row2']},
+ {id:'main-row2',x:461,y:705,links:['main-lower-curve-1','main-lower','res-row2-east']},
+ {id:'main-lower',x:465,y:790,links:['main-row2','main-row3','park-entry']},
+ {id:'main-row3',x:447,y:898,links:['main-lower','main-lower-curve-2','res-row3-east']},
+ {id:'main-lower-curve-2',x:448,y:930,links:['main-row3','main-plaza']},
+ {id:'main-plaza',x:445,y:1010,links:['main-lower-curve-2','plaza-center']},
  {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
  // 住宅街は西側の縦道と、各段の横道でつなぐ。
  {id:'west-north',x:60,y:535,links:['west-mid','res-row1-center']},
@@ -1273,9 +1260,9 @@ const roadNodes=[
  {id:'res-row1-center',x:250,y:535,links:['west-north','res-row1-east']},
  {id:'res-row1-east',x:430,y:535,links:['res-row1-center','main-mid']},
  {id:'res-row2-center',x:250,y:705,links:['west-mid','res-row2-east']},
- {id:'res-row2-east',x:430,y:705,links:['res-row2-center','row2-approach-1']},
+ {id:'res-row2-east',x:430,y:705,links:['res-row2-center','main-row2']},
  {id:'res-row3-center',x:250,y:898,links:['west-south','res-row3-east']},
- {id:'res-row3-east',x:430,y:898,links:['res-row3-center','row3-approach-1']},
+ {id:'res-row3-east',x:430,y:898,links:['res-row3-center','main-row3']},
  {id:'cafe-entry',x:250,y:330,links:['cafe-approach-2'],facility:true},
  {id:'bench-path-entry',x:60,y:755,links:['west-mid'],facility:true},
  // 公園への接続は中央メインストリートの一点のみ。
@@ -1286,13 +1273,11 @@ const roadNodes=[
 // Match navigation segments to the Bézier centerlines used by street painting.
 const WALK_CURVES=[
  [0,0,'main-north main-upper main-curve-upper main-curve-mid main-mid'],
- [0,1,'main-mid main-lower-curve-1 main-lower main-lower-curve-2 main-plaza'],
+ [0,1,'main-mid main-lower-curve-1 main-row2 main-lower main-row3 main-lower-curve-2 main-plaza'],
  [1,0,'main-upper cafe-approach-1 cafe-approach-2 cafe-entry'],
- [2,0,'main-upper shop-approach-1 shop-approach-2 shop-approach-3 shop-entry'],
+ [2,0,'main-curve-upper shop-approach-1 shop-approach-3 shop-entry'],
  [3,0,'main-lower park-entry'],
- [8,0,'res-row1-east main-mid'],
- [9,0,'res-row2-east row2-approach-1 row2-approach-2 main-lower'],
- [10,0,'res-row3-east row3-approach-1 row3-approach-2 main-plaza']
+ [8,0,'res-row1-east main-mid']
 ].map(([r,c,ids])=>({r,c,ids:ids.split(' ')}));
 function roadCurvePosition(curve,t){
  const u=1-t;
@@ -1420,9 +1405,14 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  // 直線で安全に接続できる道路ノードを複数候補にし、道路上の移動距離も含めて最短の組み合わせを選ぶ。
  const candidates=(x,y,p)=>{
   const visible=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p)&&movementSegmentClear(x,y,n.x,n.y,p))
-   .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y)).slice(0,7);
+   .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y));
   // 直線で届く道路がない場合も、塞がれていない近隣ノードを複数残して迂回経路を比較する。
-  if(visible.length)return visible;
+  if(visible.length){
+   // Prevent distant line-of-sight shortcuts that abandon the painted roads.
+   const closest=Math.hypot(visible[0].x-x,visible[0].y-y);
+   const reach=Math.max(145,Math.min(185,closest+65));
+   return visible.filter(n=>Math.hypot(n.x-x,n.y-y)<=reach).slice(0,7);
+  }
   return roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p))
    .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y)).slice(0,7);
  };
