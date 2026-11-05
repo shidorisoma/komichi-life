@@ -90,6 +90,8 @@ const places=[
 ];
 function getPlace(id){return places.find(place=>place.id===id)||null}
 const SAVE_KEY='komichi-life-save-v1';
+const SAVE_BACKUP_KEY=SAVE_KEY+'.backup';
+let saveWritesBlocked=false,saveReady=false,loadedSaveData=null,saveWarningMessage='';
 const TOWN_LAYOUT_REVISION=10;let previousTownRevision=0;
 // 家具・住居データ。購入者、所有者、利用者、設置場所を独立して管理する。
 const furnitureCatalog={
@@ -534,17 +536,59 @@ function restoreRelationships(saved,legacyBond){
 function relationMeter(label,value,key){return '<div class="meter" data-relation-stat="'+key+'"><span>'+label+'</span><div class="track"><div class="fill" style="width:'+Math.round(value)+'%"></div></div><b>'+Math.round(value)+'</b></div>'}
 let saveToastTimer=null;
 function showSaveToast(message='保存しました'){let toast=document.getElementById('saveToast');if(!toast){toast=document.createElement('div');toast.id='saveToast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');document.body.appendChild(toast)}toast.textContent='✓ '+message;toast.classList.add('show');clearTimeout(saveToastTimer);saveToastTimer=setTimeout(()=>toast.classList.remove('show'),2000)}
+function showSaveWarning(message){
+ saveWarningMessage=message;
+ let warning=document.getElementById('saveWarning');
+ if(!warning){warning=document.createElement('div');warning.id='saveWarning';document.body.appendChild(warning)}
+ warning.setAttribute('role','alert');warning.textContent=message;
+ Object.assign(warning.style,{display:message?'block':'none',position:'fixed',top:'calc(env(safe-area-inset-top) + 96px)',left:'5%',right:'5%',zIndex:10000,padding:'10px 14px',borderRadius:'12px',background:'#fff2df',color:'#8a463b',fontSize:'12px',boxShadow:'0 3px 16px #55452b25'});
+}
+function parseSaveData(raw){
+ const data=JSON.parse(raw),record=v=>v&&typeof v==='object'&&!Array.isArray(v);
+ if(!record(data)||![1,2,3,4,5].includes(data.version))throw Error('unsupported-save');
+ const residents=Array.isArray(data.residents)?data.residents:data.chars;
+ if(!Array.isArray(residents)||!residents.length||residents.some(p=>!record(p)))throw Error('invalid-residents');
+ const ids=residents.map((p,i)=>p.id||defaultResidents[i]?.id||'legacy-'+i);
+ if(ids.some(id=>typeof id!=='string')||new Set(ids).size!==ids.length)throw Error('invalid-resident-ids');
+ const world=data.furnitureWorld;
+ if(world!=null){
+  if(!record(world))throw Error('invalid-world');
+  for(const key of ['homes','households','rooms'])if(world[key]!=null&&(!record(world[key])||Object.values(world[key]).some(v=>!record(v))))throw Error('invalid-'+key);
+  if(world.furniture!=null&&(!Array.isArray(world.furniture)||world.furniture.some(v=>!record(v))))throw Error('invalid-furniture');
+ }
+ return data;
+}
 function saveGame(notify=false){
+ if(saveWritesBlocked){showSaveWarning(saveWarningMessage||'保存済みデータを保護しています。自動保存は停止中です。');return false}
+ if(!saveReady)return false;
  try{
   const data={version:5,stampEpoch:'calendar',furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},townLayoutRevision:TOWN_LAYOUT_REVISION,residents:chars.map(p=>{const {passing,passingCooldown,trafficWait,...saved}=p;return {...saved,profile:{...p.profile},needs:{...p.needs}}})};
-  localStorage.setItem(SAVE_KEY,JSON.stringify(data));if(notify)showSaveToast();
- }catch(e){console.warn('セーブに失敗しました',e)}
+  const serialized=JSON.stringify(data),previous=localStorage.getItem(SAVE_KEY);let backupFailed=false;
+  let previousValid=false;if(previous){try{parseSaveData(previous);previousValid=true}catch{}}
+  if(previousValid){try{localStorage.setItem(SAVE_BACKUP_KEY,previous)}catch{backupFailed=true}}
+  localStorage.setItem(SAVE_KEY,serialized);
+  if(!previous){try{localStorage.setItem(SAVE_BACKUP_KEY,serialized)}catch{backupFailed=true}}
+  showSaveWarning(backupFailed?'保存はできましたが、予備データを更新できませんでした。':'');
+  if(notify)showSaveToast();return true;
+ }catch(e){showSaveWarning('保存できませんでした。画面を閉じる前に、端末の空き容量やブラウザの保存設定を確認してください。');console.warn('セーブに失敗しました',e);return false}
 }
 function loadGame(){
  try{
-  const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;
-  const data=JSON.parse(raw);if(!data||![1,2,3,4,5].includes(data.version))return false;previousTownRevision=data.townLayoutRevision||0;lastSocialPairId=typeof data.lastSocialPairId==='string'?data.lastSocialPairId:'';sameSocialPairCount=Number.isFinite(data.sameSocialPairCount)?Math.max(0,data.sameSocialPairCount):0;
-  if(data.clock){hour=Number.isFinite(data.clock.hour)?data.clock.hour:hour;minute=Number.isFinite(data.clock.minute)?data.clock.minute:minute;day=Number.isFinite(data.clock.day)?data.clock.day:day;calendarDay=Number.isFinite(data.clock.calendarDay)?data.clock.calendarDay:calendarDay}if(data.weather&&['sunny','cloudy','rainy'].includes(data.weather.type)){weatherType=data.weather.type;weatherDay=Number.isFinite(data.weather.day)?data.weather.day:calendarDay}
+  const raw=localStorage.getItem(SAVE_KEY);let data;
+  if(raw){
+   try{data=parseSaveData(raw)}catch(error){
+    let version;try{version=JSON.parse(raw)?.version}catch{}
+    if(typeof version==='number'&&version>5){saveWritesBlocked=true;showSaveWarning('このデータは新しい版で保存されています。元データを保護するため自動保存を停止しています。');return false}
+   }
+  }
+  if(!data){
+   const backup=localStorage.getItem(SAVE_BACKUP_KEY);
+   if(backup){try{data=parseSaveData(backup)}catch{}}
+   if(!data){if(raw||backup){saveWritesBlocked=true;showSaveWarning('保存データを読み込めませんでした。元データを保護するため自動保存を停止しています。')}return false}
+   showSaveToast('予備データから復旧しました');
+  }
+  loadedSaveData=data;previousTownRevision=data.townLayoutRevision||0;lastSocialPairId=typeof data.lastSocialPairId==='string'?data.lastSocialPairId:'';sameSocialPairCount=Number.isFinite(data.sameSocialPairCount)?Math.max(0,data.sameSocialPairCount):0;
+  if(data.clock){const bounded=(v,min,max,fallback)=>Number.isFinite(v)?Math.max(min,Math.min(max,Math.floor(v))):fallback;hour=bounded(data.clock.hour,0,23,hour);minute=bounded(data.clock.minute,0,59,minute);day=bounded(data.clock.day,1,7,day);calendarDay=bounded(data.clock.calendarDay,0,Number.MAX_SAFE_INTEGER,calendarDay)}if(data.weather&&['sunny','cloudy','rainy'].includes(data.weather.type)){weatherType=data.weather.type;weatherDay=Number.isFinite(data.weather.day)?data.weather.day:calendarDay}
   
   if(data.bond)Object.keys(bond).forEach(k=>{if(Number.isFinite(data.bond[k]))bond[k]=Math.max(0,Math.min(100,data.bond[k]))});
   if(Array.isArray(data.diary))diary=data.diary.filter(d=>d&&typeof d.time==='string'&&typeof d.text==='string').slice(0,300);if(Array.isArray(data.memories))memories=data.memories.filter(m=>m&&typeof m.time==='string'&&typeof m.title==='string'&&typeof m.text==='string'&&(m.pairId||m.title==='ふたりの喫茶店時間')).map(m=>m.title==='ふたりの喫茶店時間'?{...m,pairId:m.pairId||'nagisumi-yaku'}:m).slice(0,100);if(data.unlockedEvents&&typeof data.unlockedEvents==='object')unlockedEvents=data.unlockedEvents;
@@ -555,7 +599,10 @@ function loadGame(){
   if(savedResidents){
    const restored=savedResidents.map((saved,i)=>{
     const base=defaultResidents.find(p=>p.id===saved.id)||defaultResidents[i]||{};
-    return {...base,...saved,money:Number.isFinite(saved.money)?Math.max(0,saved.money):5000,workPayDay:Number.isFinite(saved.workPayDay)?saved.workPayDay:-1,workDaysPerWeek:Number.isFinite(saved.workDaysPerWeek)?Math.max(1,Math.min(7,saved.workDaysPerWeek)):3,workDays:Array.isArray(saved.workDays)?saved.workDays:[],workWeekKey:Number.isFinite(saved.workWeekKey)?saved.workWeekKey:-1,workWeekDays:Array.isArray(saved.workWeekDays)?saved.workWeekDays:[],incomeMode:['fixed','mixed','random'].includes(saved.incomeMode)?saved.incomeMode:'fixed',fixedIncome:Number.isFinite(saved.fixedIncome)?Math.max(0,saved.fixedIncome):1500,randomIncomeMin:Number.isFinite(saved.randomIncomeMin)?Math.max(0,saved.randomIncomeMin):0,randomIncomeMax:Number.isFinite(saved.randomIncomeMax)?Math.max(0,saved.randomIncomeMax):0,moneyHistory:Array.isArray(saved.moneyHistory)?saved.moneyHistory.slice(0,100):[],profile:{...(base.profile||{}),...(saved.profile||{})},needs:{energy:80,hunger:75,mood:80,...(base.needs||{}),...(saved.needs||{})},sociability:Number.isFinite(saved.sociability)?Math.max(0,Math.min(100,saved.sociability)):50,curiosity:Number.isFinite(saved.curiosity)?Math.max(0,Math.min(100,saved.curiosity)):50,activityLevel:Number.isFinite(saved.activityLevel)?Math.max(0,Math.min(100,saved.activityLevel)):50,walkPreference:Number.isFinite(saved.walkPreference)?Math.max(0,Math.min(100,saved.walkPreference)):50,naturePreference:Number.isFinite(saved.naturePreference)?Math.max(0,Math.min(100,saved.naturePreference)):50,cafePreference:Number.isFinite(saved.cafePreference)?Math.max(0,Math.min(100,saved.cafePreference)):50,lastInitiatedSocialStamp:Number.isFinite(saved.lastInitiatedSocialStamp)?saved.lastInitiatedSocialStamp:-1,lastSocialStamp:Number.isFinite(saved.lastSocialStamp)?saved.lastSocialStamp:-1};
+    const coordinate=(value,fallback)=>Number.isFinite(value)?value:fallback;
+    const px=coordinate(saved.x,base.x??450),py=coordinate(saved.y,base.y??720),repairPosition=!Number.isFinite(saved.x)||!Number.isFinite(saved.y);
+    const needs={};for(const key of ['energy','hunger','mood'])needs[key]=Number.isFinite(saved.needs?.[key])?Math.max(0,Math.min(100,saved.needs[key])):(base.needs?.[key]??80);
+    return {...base,...saved,id:saved.id||base.id||'legacy-'+i,name:String(saved.name||base.name||'住人'),x:px,y:py,tx:coordinate(saved.tx,px),ty:coordinate(saved.ty,py),phase:coordinate(saved.phase,0),stay:Math.max(0,coordinate(saved.stay,0)),needsPositionRepair:repairPosition,money:Number.isFinite(saved.money)?Math.max(0,saved.money):5000,workPayDay:Number.isFinite(saved.workPayDay)?saved.workPayDay:-1,workDaysPerWeek:Number.isFinite(saved.workDaysPerWeek)?Math.max(1,Math.min(7,saved.workDaysPerWeek)):3,workDays:Array.isArray(saved.workDays)?saved.workDays:[],workWeekKey:Number.isFinite(saved.workWeekKey)?saved.workWeekKey:-1,workWeekDays:Array.isArray(saved.workWeekDays)?saved.workWeekDays:[],incomeMode:['fixed','mixed','random'].includes(saved.incomeMode)?saved.incomeMode:'fixed',fixedIncome:Number.isFinite(saved.fixedIncome)?Math.max(0,saved.fixedIncome):1500,randomIncomeMin:Number.isFinite(saved.randomIncomeMin)?Math.max(0,saved.randomIncomeMin):0,randomIncomeMax:Number.isFinite(saved.randomIncomeMax)?Math.max(0,saved.randomIncomeMax):0,moneyHistory:Array.isArray(saved.moneyHistory)?saved.moneyHistory.slice(0,100):[],profile:{...(base.profile||{}),...(saved.profile||{})},needs,sociability:Number.isFinite(saved.sociability)?Math.max(0,Math.min(100,saved.sociability)):50,curiosity:Number.isFinite(saved.curiosity)?Math.max(0,Math.min(100,saved.curiosity)):50,activityLevel:Number.isFinite(saved.activityLevel)?Math.max(0,Math.min(100,saved.activityLevel)):50,walkPreference:Number.isFinite(saved.walkPreference)?Math.max(0,Math.min(100,saved.walkPreference)):50,naturePreference:Number.isFinite(saved.naturePreference)?Math.max(0,Math.min(100,saved.naturePreference)):50,cafePreference:Number.isFinite(saved.cafePreference)?Math.max(0,Math.min(100,saved.cafePreference)):50,lastInitiatedSocialStamp:Number.isFinite(saved.lastInitiatedSocialStamp)?saved.lastInitiatedSocialStamp:-1,lastSocialStamp:Number.isFinite(saved.lastSocialStamp)?saved.lastSocialStamp:-1};
    });
    chars.splice(0,chars.length,...restored);
   }
@@ -582,10 +629,10 @@ function loadGame(){
   }
   renderResidentStatus();
   return true;
- }catch(e){console.warn('セーブデータを読み込めませんでした',e);return false}
+ }catch(e){saveWritesBlocked=true;loadedSaveData=null;showSaveWarning('保存データを読み込めませんでした。元データを保護するため自動保存を停止しています。');console.warn('セーブデータを読み込めませんでした',e);return false}
 }
 const hasSave=loadGame();
-ensureFurnitureWorld((()=>{try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'{}').furnitureWorld||null}catch(e){return null}})());
+ensureFurnitureWorld(loadedSaveData?.furnitureWorld||null);
 syncHomePlaces();
 
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
@@ -700,6 +747,11 @@ function resumeGame(){
  pageSuspended=!!document.hidden;clearPointerGesture();
  if(!pageSuspended){resize();drawWorld();requestAnimationFrame(loop)}
 }
+window.addEventListener('storage',event=>{
+ if(event.key!==SAVE_KEY&&event.key!==null)return;
+ saveWritesBlocked=true;
+ showSaveWarning('別の画面で保存データが変更されました。この画面の自動保存を停止しています。更新して最新の状態を読み込んでください。');
+});
 window.addEventListener('pagehide',suspendGame);
 window.addEventListener('pageshow',resumeGame);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)suspendGame();else resumeGame()});
@@ -1728,6 +1780,12 @@ if(previousTownRevision!==TOWN_LAYOUT_REVISION){
 }
 // 道路データと住人・住宅の初期化が完了してから保存済み経路を再構築する。
 chars.forEach(p=>{
+ if(p.needsPositionRepair){
+  const safe=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p)).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
+  if(safe){p.x=safe.x;p.y=safe.y;p.tx=p.x;p.ty=p.y}
+  p.action='idle';p.phaseState='idle';p.routePoints=[];p.routeIndex=0;p.stay=0;p.socialPartnerId=null;p.benchSeat=null;p.benchExit=null;
+ }
+ delete p.needsPositionRepair;
  // Migrate homebound saved residents onto the new staggered household plots.
  if((p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'){
   const entrance=homeEntrance(homes[householdForResident(p).homeId]);
@@ -1739,7 +1797,7 @@ chars.forEach(p=>{
   p.routeIndex=1;p.stuckTime=0;p.routeRetries=0;
  }
 });
-saveGame();
+saveReady=true;saveGame();
 function paintedActivityDestination(x,y,p){
  const sorted=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p)).sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y));
  if(!sorted.length)return {x,y};const nearest=sorted[0];
