@@ -814,10 +814,12 @@ function townPaintedBench(x,y,layer){
  if(!image||!image.complete||!image.naturalWidth||!image.naturalHeight)return false;
  const w=76,h=w*image.naturalHeight/image.naturalWidth;
  const top=y+16-h,left=x-w/2;
- // Backrest and seat rear behind the resident, front lip and legs in front.
- const split=.64,sourceCut=image.naturalHeight*split;
- if(layer!=='front')ctx.drawImage(image,0,0,image.naturalWidth,sourceCut,left,top,w,h*split);
- if(layer!=='back')ctx.drawImage(image,0,sourceCut,image.naturalWidth,image.naturalHeight-sourceCut,left,top+h*split,w,h*(1-split));
+ // Only the very bottom of the bench is in front of a seated person.
+ // A .64 split covered residents' chests; their torso now stays visible.
+ const sourceCut=Math.round(image.naturalHeight*.82);
+ const displayCut=h*sourceCut/image.naturalHeight;
+ if(layer!=='front')ctx.drawImage(image,0,0,image.naturalWidth,sourceCut,left,top,w,displayCut);
+ if(layer!=='back')ctx.drawImage(image,0,sourceCut,image.naturalWidth,image.naturalHeight-sourceCut,left,top+displayCut,w,h-displayCut);
  return true;
 }
 // Painted flowers are taller than their stone base, so separate their depth.
