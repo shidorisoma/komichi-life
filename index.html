@@ -2237,21 +2237,7 @@ function residentWalkDirection(p){
  if(len<5){vx=p.tx-p.x;vy=p.ty-p.y;len=Math.hypot(vx,vy)}
  return len>=5?{x:vx/len,y:vy/len}:null;
 }
-function sidestepPastResident(moving,other,amount){
- const heading=residentWalkDirection(moving);
- if(!heading)return false;
- const distance=Math.hypot(moving.x-other.x,moving.y-other.y);
- // Prefer the pedestrian's right, but try the left if the sidewalk is blocked.
- for(const sign of [1,-1]){
-  const x=moving.x-heading.y*amount*sign,y=moving.y+heading.x*amount*sign;
-  if(Math.hypot(x-other.x,y-other.y)<=distance+.15)continue;
-  if(!movementSegmentClear(moving.x,moving.y,x,y,moving))continue;
-  moving.x=x;moving.y=y;return true;
- }
- return false;
-}
-
- // Pedestrian encounters are held for several frames: never alternate left/right
+// Pedestrian encounters are held for several frames: never alternate left/right
  // or push somebody backwards immediately after following the route.
  function preparePassing(p,other,type){
   const h=residentWalkDirection(p);if(!h)return null;
@@ -2317,6 +2303,8 @@ function sidestepPastResident(moving,other,amount){
   const neighbors=chars.filter(q=>q!==p&&isOutdoorResident(q)&&['moving','staying'].includes(q.phaseState)&&Math.hypot(q.x-p.x,q.y-p.y)<78)
    .sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y));
   for(const q of neighbors){
+   // Do not steal a pedestrian who has already committed to another encounter.
+   if(q.passing&&q.passing.otherId!==p.id)continue;
    if(q.passing?.type==='yield'&&q.passing.otherId===p.id)continue;
    const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy);
    const forward=dx*heading.x+dy*heading.y,across=Math.abs(dx*heading.y-dy*heading.x);
@@ -2398,7 +2386,7 @@ function loop(t){
 }else if(route&&(p.routeIndex||1)<route.length-1){const reached=route[Math.min(p.routeIndex||1,route.length-1)];const safeReach=reached&&!isBlockedByStructure(reached.x,reached.y,p)&&movementSegmentClear(p.x,p.y,reached.x,reached.y,p);if(safeReach){p.x=reached.x;p.y=reached.y;p.routeIndex=(p.routeIndex||1)+1;p.stuckTime=0;p.routeRetries=0}else{const detour=reached?findMovementDetour(p,reached):null;if(detour){route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route}else{p.stuckTime=(p.stuckTime||0)+dt;if(p.stuckTime>1.5){p.stuckTime=0;p.routeRetries=(p.routeRetries||0)+1;if(p.routeRetries>=2)recoverResidentFromFailedRoute(p,i);else{p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);p.routeIndex=1}}}}}else arrive(p,i)}else if(p.phaseState==='staying'){p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}else if(p.phaseState==='idle'){
  p.nextActionRetrySeconds=Math.max(0,(Number.isFinite(p.nextActionRetrySeconds)?p.nextActionRetrySeconds:0)-dt);
  if(p.nextActionRetrySeconds<=0)chooseRoutine(p,i)
-}})}drawWorld();;
+}})}drawWorld();
  }catch(error){
   lastFrameError=error instanceof Error?error.message:String(error);
   lastFrameErrorCount++;
