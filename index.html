@@ -73,7 +73,7 @@ const PAINTED_OCCLUDERS=[
  {id:'wisteria',depth:504,polygon:[[789,427],[808,397],[842,376],[895,375],[935,400],[951,438],[947,503],[929,517],[918,474],[827,474],[828,517],[806,508]]},
  {id:'flower-arch',depth:1248,polygon:[[395,1215],[405,1173],[437,1141],[483,1127],[526,1138],[559,1167],[575,1210],[569,1253],[548,1253],[548,1204],[533,1175],[511,1158],[479,1152],[449,1166],[427,1192],[423,1255],[402,1256]]}
 ];
-const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,residentDiagnosticTimer=null,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
+const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,pageSuspended=false,residentDiagnosticTimer=null,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
 const places=[
  {id:'home',name:'西の住宅',icon:'🏡',...artPoint(475,204),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'home2',name:'東の住宅',icon:'🏠',...artPoint(682,224),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
@@ -692,8 +692,17 @@ function findSafeResidentSpawn(requested=null){
 }
 function addResident(definition){const id=definition.id||'resident-'+Date.now();if(chars.some(p=>p.id===id))return null;const spawn=findSafeResidentSpawn(definition);const resident={id,name:definition.name||'新しい住人',money:Number.isFinite(definition.money)?Math.max(0,definition.money):5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{role:definition.role||'住人',detail:definition.detail||''},needs:{energy:80,hunger:75,mood:80},sociability:Number.isFinite(definition.sociability)?Math.max(0,Math.min(100,definition.sociability)):50,curiosity:Number.isFinite(definition.curiosity)?Math.max(0,Math.min(100,definition.curiosity)):50,activityLevel:Number.isFinite(definition.activityLevel)?Math.max(0,Math.min(100,definition.activityLevel)):50,walkPreference:Number.isFinite(definition.walkPreference)?Math.max(0,Math.min(100,definition.walkPreference)):50,naturePreference:Number.isFinite(definition.naturePreference)?Math.max(0,Math.min(100,definition.naturePreference)):50,cafePreference:Number.isFinite(definition.cafePreference)?Math.max(0,Math.min(100,definition.cafePreference)):50,lastInitiatedSocialStamp:-1,lastSocialStamp:-1,x:spawn.x,y:spawn.y,tx:spawn.x,ty:spawn.y,phase:0,activity:'街を散歩中',action:'walk',phaseState:'idle',pose:'stand',stay:0,color:'#ded8ce',hair:'#655b4c',kind:'generic',scale:1,...definition};resident.x=spawn.x;resident.y=spawn.y;resident.tx=spawn.x;resident.ty=spawn.y;resident.profile={role:definition.role||resident.profile.role,detail:definition.detail||resident.profile.detail};resident.needs={energy:80,hunger:75,mood:80,...(definition.needs||{})};chars.push(resident);chooseRoutine(resident,chars.length-1);renderResidentStatus();saveGame(true);return resident;}
 window.addResident=addResident;
-window.addEventListener('pagehide',()=>saveGame());
-document.addEventListener('visibilitychange',()=>{lastClockSample=performance.now();if(document.visibilityState==='hidden')saveGame()});
+function suspendGame(){
+ pageSuspended=true;lastClockSample=performance.now();clearPointerGesture();saveGame();
+}
+function resumeGame(){
+ const now=performance.now();last=now;lastClockSample=now;lastAnimationWallTime=Date.now();lastWatchdogAttempt=0;
+ pageSuspended=!!document.hidden;clearPointerGesture();
+ if(!pageSuspended){resize();drawWorld();requestAnimationFrame(loop)}
+}
+window.addEventListener('pagehide',suspendGame);
+window.addEventListener('pageshow',resumeGame);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)suspendGame();else resumeGame()});
 
 function resize(){dpr=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=c.clientHeight;c.width=W*dpr;c.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}new ResizeObserver(resize).observe(c);resize();
 function poly(points,fill,stroke='#9e8b6c',lw=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke()}}
@@ -2442,7 +2451,7 @@ let lastClockSample=performance.now(),lastAnimationWallTime=Date.now(),lastWatch
 function advanceGameClock(){
  const now=performance.now(),seconds=Math.max(0,Math.min((now-lastClockSample)/1000,3));
  lastClockSample=now;
- if(paused||document.hidden)return;
+ if(paused||document.hidden||pageSuspended)return;
  elapsed+=seconds;
  let advances=0;
  while(elapsed>=1&&advances<3){
@@ -2629,7 +2638,15 @@ function loop(t){
  // Ignore duplicate same-timestamp callbacks after Safari resumes drawing.
  if(t<=last)return;
  lastAnimationWallTime=Date.now();
- try{let dt=Math.max(0,Math.min((t-last)/1000,.08));last=t;saveElapsed+=dt;if(saveElapsed>=5){saveElapsed=0;saveGame()}if(!paused){chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){
+ if(document.hidden||pageSuspended){last=t;return}
+ try{const elapsedSeconds=Math.max(0,Math.min((t-last)/1000,3));last=t;
+ if(!paused){
+ saveElapsed+=elapsedSeconds;if(saveElapsed>=5){saveElapsed=0;saveGame()}
+ // Catch up slow visible frames in collision-safe steps, instead of discarding
+ // most of their elapsed time while the separate clock keeps advancing.
+ let remaining=elapsedSeconds;
+ while(remaining>1e-7){const dt=Math.min(remaining,.08);remaining-=dt;
+ chars.forEach((p,i)=>{p.phase+=dt;if(p.phaseState==='moving'){
  if(moveWithPassing(p,dt))return;
  if(restoreBenchExitClearance(p)){
   p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);
@@ -2696,7 +2713,7 @@ function loop(t){
 }else if(route&&(p.routeIndex||1)<route.length-1){const reached=route[Math.min(p.routeIndex||1,route.length-1)];const safeReach=reached&&!isBlockedByStructure(reached.x,reached.y,p)&&movementSegmentClear(p.x,p.y,reached.x,reached.y,p);if(safeReach){p.x=reached.x;p.y=reached.y;p.routeIndex=(p.routeIndex||1)+1;p.stuckTime=0;p.routeRetries=0}else{const detour=reached?findMovementDetour(p,reached):null;if(detour){route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route}else{p.stuckTime=(p.stuckTime||0)+dt;if(p.stuckTime>1.5){p.stuckTime=0;p.routeRetries=(p.routeRetries||0)+1;if(p.routeRetries>=2)recoverResidentFromFailedRoute(p,i);else{p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);p.routeIndex=1}}}}}else arrive(p,i)}else if(p.phaseState==='staying'){if(p.action==='social'&&waitForSocialPartner(p,dt))return;p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}else if(p.phaseState==='idle'){
  p.nextActionRetrySeconds=Math.max(0,(Number.isFinite(p.nextActionRetrySeconds)?p.nextActionRetrySeconds:0)-dt);
  if(p.nextActionRetrySeconds<=0)chooseRoutine(p,i)
-}})}drawWorld();
+}})}}drawWorld();
  }catch(error){
   lastFrameError=error instanceof Error?error.message:String(error);
   lastFrameErrorCount++;
@@ -2726,10 +2743,40 @@ const activePointers=new Map();let gesture=null;
 function screenToWorld(x,y){const fit=Math.min(W/1000,H/1400),scale=fit*zoom;return{x:(x-W/2)/scale+450-panX,y:(y-H/2)/scale+720-panY}}
 function pointerMid(){const pts=[...activePointers.values()];return{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}}
 function pointerDistance(){const pts=[...activePointers.values()];return Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)}
-c.addEventListener('pointerdown',e=>{e.preventDefault();c.setPointerCapture(e.pointerId);const r=c.getBoundingClientRect(),pt={x:e.clientX-r.left,y:e.clientY-r.top,startX:e.clientX-r.left,startY:e.clientY-r.top};activePointers.set(e.pointerId,pt);if(activePointers.size===1){gesture={type:'tap',start:pt, moved:false}}else if(activePointers.size===2){const mid=pointerMid();gesture={type:interiorHomeId?'interior':'map',distance:pointerDistance(),zoom:interiorHomeId?interiorZoom:zoom,panX:interiorHomeId?interiorPanX:panX,panY:interiorHomeId?interiorPanY:panY,world:screenToWorld(mid.x,mid.y),mid}}});
-c.addEventListener('pointermove',e=>{if(!activePointers.has(e.pointerId))return;e.preventDefault();const r=c.getBoundingClientRect(),pt=activePointers.get(e.pointerId);pt.x=e.clientX-r.left;pt.y=e.clientY-r.top;if(gesture?.type==='tap'&&activePointers.size===1){if(Math.hypot(pt.x-pt.startX,pt.y-pt.startY)>12)gesture.moved=true}if(activePointers.size>=2&&(gesture?.type==='map'||gesture?.type==='interior')){const mid=pointerMid(),dist=Math.max(20,pointerDistance()),fit=gesture.type==='interior'?Math.min(W/900,H/1400)*1.05:Math.min(W/1000,H/1400),nextZoom=Math.max(.65,Math.min(2.4,gesture.zoom*dist/Math.max(20,gesture.distance))),scale=fit*nextZoom;if(gesture.type==='interior'){interiorZoom=nextZoom;interiorPanX=mid.x-W/2-(gesture.mid.x-W/2)*nextZoom/gesture.zoom+gesture.panX*nextZoom/gesture.zoom;interiorPanY=mid.y-H/2-(gesture.mid.y-H/2)*nextZoom/gesture.zoom+gesture.panY*nextZoom/gesture.zoom}else{zoom=nextZoom;panX=(mid.x-W/2)/scale-gesture.world.x+450;panY=(mid.y-H/2)/scale-gesture.world.y+720}drawWorld()}});
-function finishPointer(e){if(!activePointers.has(e.pointerId))return;const pt=activePointers.get(e.pointerId);activePointers.delete(e.pointerId);if(activePointers.size===0){if(gesture?.type==='tap'&&!gesture.moved){const w=screenToWorld(pt.x,pt.y);const i=chars.findIndex(p=>isOutdoorResident(p)&&Math.hypot(p.x-w.x,p.y-w.y)<48);if(i>=0)select(i)}gesture=null}else if(activePointers.size===1){const remain=[...activePointers.values()][0];gesture={type:'tap',start:remain,moved:true}}}
-c.addEventListener('pointerup',finishPointer);c.addEventListener('pointercancel',finishPointer);
+function clearPointerGesture(){
+ const ids=[...activePointers.keys()];activePointers.clear();gesture=null;
+ ids.forEach(id=>{try{if(c.hasPointerCapture?.(id))c.releasePointerCapture(id)}catch{}});
+}
+function rebasePointerGesture(){
+ if(activePointers.size>=2){
+  const mid=pointerMid();gesture={type:interiorHomeId?'interior':'map',distance:pointerDistance(),zoom:interiorHomeId?interiorZoom:zoom,panX:interiorHomeId?interiorPanX:panX,panY:interiorHomeId?interiorPanY:panY,world:screenToWorld(mid.x,mid.y),mid};
+ }else if(activePointers.size===1){const remain=[...activePointers.values()][0];remain.startX=remain.x;remain.startY=remain.y;gesture={type:'tap',start:remain,moved:true}}
+ else gesture=null;
+}
+c.addEventListener('pointerdown',e=>{
+ e.preventDefault();c.setPointerCapture(e.pointerId);const r=c.getBoundingClientRect(),pt={x:e.clientX-r.left,y:e.clientY-r.top,startX:e.clientX-r.left,startY:e.clientY-r.top};
+ activePointers.set(e.pointerId,pt);
+ if(activePointers.size===1)gesture={type:'tap',start:pt,moved:false};else rebasePointerGesture();
+});
+c.addEventListener('pointermove',e=>{
+ if(!activePointers.has(e.pointerId))return;e.preventDefault();const r=c.getBoundingClientRect(),pt=activePointers.get(e.pointerId);pt.x=e.clientX-r.left;pt.y=e.clientY-r.top;
+ if(gesture?.type==='tap'&&activePointers.size===1&&Math.hypot(pt.x-pt.startX,pt.y-pt.startY)>12)gesture.moved=true;
+ if(activePointers.size>=2&&(gesture?.type==='map'||gesture?.type==='interior')){
+  const mid=pointerMid(),dist=Math.max(20,pointerDistance()),fit=gesture.type==='interior'?Math.min(W/900,H/1400)*1.05:Math.min(W/1000,H/1400),nextZoom=Math.max(.65,Math.min(2.4,gesture.zoom*dist/Math.max(20,gesture.distance))),scale=fit*nextZoom;
+  if(gesture.type==='interior'){interiorZoom=nextZoom;interiorPanX=mid.x-W/2-(gesture.mid.x-W/2)*nextZoom/gesture.zoom+gesture.panX*nextZoom/gesture.zoom;interiorPanY=mid.y-H/2-(gesture.mid.y-H/2)*nextZoom/gesture.zoom+gesture.panY*nextZoom/gesture.zoom}
+  else{zoom=nextZoom;panX=(mid.x-W/2)/scale-gesture.world.x+450;panY=(mid.y-H/2)/scale-gesture.world.y+720}
+  drawWorld();
+ }
+});
+function finishPointer(e){
+ if(!activePointers.has(e.pointerId))return;
+ const pt=activePointers.get(e.pointerId),tap=e.type==='pointerup'&&activePointers.size===1&&gesture?.type==='tap'&&!gesture.moved&&!interiorHomeId;
+ activePointers.delete(e.pointerId);rebasePointerGesture();
+ if(tap){const w=screenToWorld(pt.x,pt.y);const i=chars.findIndex(p=>isOutdoorResident(p)&&Math.hypot(p.x-w.x,p.y-w.y)<48);if(i>=0)select(i)}
+}
+c.addEventListener('pointerup',finishPointer);
+c.addEventListener('pointercancel',finishPointer);
+c.addEventListener('lostpointercapture',finishPointer);
 document.getElementById('zin').onclick=()=>{if(interiorHomeId)interiorZoom=Math.min(2.4,interiorZoom+.1);else zoom=Math.min(2.4,zoom+.1);drawWorld()};document.getElementById('zout').onclick=()=>{if(interiorHomeId)interiorZoom=Math.max(.65,interiorZoom-.1);else zoom=Math.max(.65,zoom-.1);drawWorld()};document.getElementById('reset').onclick=()=>{if(interiorHomeId){interiorZoom=1;interiorPanX=0;interiorPanY=0}else{zoom=1;panX=0;panY=0}drawWorld()};const uiToggle=document.getElementById('uiToggle');uiToggle.onclick=()=>{const hidden=document.getElementById('app').classList.toggle('lower-ui-hidden');uiToggle.classList.toggle('active',hidden);uiToggle.textContent=hidden?'⌃':'⌄';uiToggle.setAttribute('aria-label',hidden?'下部メニューを表示':'下部メニューを隠す');uiToggle.title=hidden?'住人表示とメニューを表示':'住人表示とメニューを隠す'};const pauseButton=document.getElementById('pause');if(pauseButton)pauseButton.onclick=e=>{paused=!paused;e.currentTarget.textContent=paused?'▶':'Ⅱ';e.currentTarget.title=paused?'再開':'一時停止'};
 const panel=document.getElementById('panel'),title=document.getElementById('panelTitle'),body=document.getElementById('panelBody');function meter(label,value){return '<div class="meter"><span>'+label+'</span><div class="track"><div class="fill" style="width:'+Math.round(value)+'%"></div></div><b>'+Math.round(value)+'</b></div>'}
 function residentPairFaces(r){const people=(r.residentIds||[]).map(residentById).filter(Boolean);return '<span class="relationFaces">'+people.map(p=>residentAvatar(p)).join('')+'</span>';}
