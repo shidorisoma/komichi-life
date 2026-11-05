@@ -960,37 +960,49 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  ctx.save();ctx.globalAlpha=.1;
  poly([[65,370],[470,210],[733,340],[737,1116],[438,1330],[56,1140]],'#e8d8ae',null);
  ctx.restore();
- // 道路ネットワークは描画・橋の歩行判定で共有する定義を使用。
+ // Draw every road edge first, every road surface second, then the paving.
+ // Main street paint is applied last in each pass, so no branch remains visible inside it.
  const roadStyle=WORLD_ROAD_NETWORK.rendering;
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
- WORLD_ROAD_NETWORK.routes.forEach(route=>{
-  ctx.beginPath();ctx.moveTo(route.start[0],route.start[1]);
-  route.curves.forEach(curve=>ctx.bezierCurveTo(curve[0][0],curve[0][1],curve[1][0],curve[1][1],curve[2][0],curve[2][1]));
-  ctx.strokeStyle=roadStyle.edge;ctx.lineWidth=route.main?roadStyle.mainEdgeWidth:roadStyle.branchEdgeWidth;ctx.stroke();
-  ctx.strokeStyle=roadStyle.surface;ctx.lineWidth=route.main?roadStyle.mainSurfaceWidth:roadStyle.branchSurfaceWidth;ctx.stroke();
-   ctx.strokeStyle=townTexture('brick');ctx.lineWidth=(route.main?roadStyle.mainSurfaceWidth:roadStyle.branchSurfaceWidth)-5;ctx.stroke();
- });
- // 公園内への枝道・周回路は撤去。公園へは幹線道路から直接入る。
+ function strokeRoadGroup(main,width,color){
+  ctx.beginPath();
+  WORLD_ROAD_NETWORK.routes.filter(r=>!!r.main===main).forEach(route=>{
+   ctx.moveTo(route.start[0],route.start[1]);
+   route.curves.forEach(c=>ctx.bezierCurveTo(c[0][0],c[0][1],c[1][0],c[1][1],c[2][0],c[2][1]));
+  });
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
+ }
+ function strokeHomeAccess(width,color){
+  ctx.beginPath();
+  Object.values(homes||{}).forEach(home=>{
+   const door=homeEntrance(home);if(!door)return;
+   ctx.moveTo(door.x,door.y);ctx.lineTo(door.x,homeSouthRoadNode(home).y);
+  });
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
+ }
+ function strokeBridgeAccess(which,inset,color){
+  ctx.beginPath();
+  WORLD_ROAD_NETWORK.bridge.approaches.forEach(path=>{
+   ctx.moveTo(path.start[0],path.start[1]);
+   ctx.quadraticCurveTo(path.control[0],path.control[1],path.end[0],path.end[1]);
+  });
+  ctx.strokeStyle=color;ctx.lineWidth=(WORLD_ROAD_NETWORK.bridge.approaches[0]?.[which]||23)-inset;ctx.stroke();
+ }
+ // These passes unite the road silhouettes; no outlines or separate paving
+ // are painted over the interior of a larger road or across a junction.
+ strokeBridgeAccess('edgeWidth',0,roadStyle.edge);
+ strokeHomeAccess(38,roadStyle.edge);
+ strokeRoadGroup(false,roadStyle.branchEdgeWidth,roadStyle.edge);
+ strokeRoadGroup(true,roadStyle.mainEdgeWidth,roadStyle.edge);
+ strokeBridgeAccess('surfaceWidth',0,roadStyle.surface);
+ strokeHomeAccess(26,roadStyle.surface);
+ strokeRoadGroup(false,roadStyle.branchSurfaceWidth,roadStyle.surface);
+ strokeRoadGroup(true,roadStyle.mainSurfaceWidth,roadStyle.surface);
+ strokeBridgeAccess('surfaceWidth',5,townTexture('brick'));
+ strokeHomeAccess(21,townTexture('stone'));
+ strokeRoadGroup(false,roadStyle.branchSurfaceWidth-5,townTexture('brick'));
+ strokeRoadGroup(true,roadStyle.mainSurfaceWidth-5,townTexture('brick'));
  ctx.restore();
- // 住宅以外の施設にも入口と歩行者用アクセス路を設定。
- const facilityPaths=[];
- ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
- facilityPaths.forEach(points=>{
-  ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);
-  points.slice(1).forEach(point=>ctx.lineTo(point[0],point[1]));
-  ctx.strokeStyle='#b49c76';ctx.lineWidth=38;ctx.stroke();
-  ctx.strokeStyle='#ead9b8';ctx.lineWidth=28;ctx.stroke();
- });
- ctx.restore();
- // 住宅の南玄関から、同じ段の横道へ短く接続。
- homes&&Object.values(homes).forEach(home=>{
-  const entrance=homeEntrance(home);if(!entrance)return;
-  const approachY=homeSouthRoadNode(home).y;
-  // 通路は横道とのT字接続点で止め、住宅の敷地へ突き出さない。
-  ctx.beginPath();ctx.moveTo(entrance.x,entrance.y);ctx.lineTo(entrance.x,approachY);
-  ctx.strokeStyle='#a98d68';ctx.lineWidth=38;ctx.stroke();
-  ctx.strokeStyle='#ead5ad';ctx.lineWidth=26;ctx.stroke();ctx.strokeStyle=townTexture('stone');ctx.lineWidth=21;ctx.stroke();
- });
  // 南側は枝道を設けず、幹線の先をレンガ敷きの広場にする。
  ellipse(430,1118,245,180,'#aa8964');ellipse(430,1107,235,176,'#f2ddbd');
  ctx.save();ctx.beginPath();ctx.ellipse(430,1107,230,170,0,0,Math.PI*2);ctx.clip();
@@ -1005,10 +1017,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  for(const [x,y,z,t] of [[100,395,.85,0],[182,345,.9,1],[365,361,.75,2],[558,450,.7,0],[582,570,.76,1],[655,635,.7,2],
   [552,840,.85,0],[642,903,.9,1],[602,1020,.75,2],[688,1100,.82,0],[250,1235,.8,1],[525,1263,.74,2],
   [132,1070,.8,0],[129,620,.6,1],[248,970,.7,2],[480,1208,.75,0]])townFlowerPatch(x,y,z,t);
- // A garden stepping path follows the riverside without changing walkable road geometry.
- ctx.save();ctx.lineCap='round';ctx.beginPath();ctx.moveTo(596,760);
- ctx.bezierCurveTo(650,728,626,698,688,663);ctx.strokeStyle='#d9bc8f';ctx.lineWidth=24;ctx.stroke();
- ctx.strokeStyle=townTexture('stone');ctx.lineWidth=18;ctx.stroke();ctx.restore();
+ // Remove the decorative path with no navigable road underneath it.
  // カフェと商店は住人と同じ奥行き順で描画する。
  // 登録されている住居を、それぞれの所在地に描画
  function drawHouseExterior(home,index){
@@ -1090,21 +1099,12 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  townFlowerPatch(403,1145,.65,1);townFlowerPatch(454,1150,.65,0);
  // Small riverside flower baskets, beside rather than across walking paths.
  townFlowerPatch(739,850,.6,2);townFlowerPatch(719,961,.56,1);
- // 河岸の小さな橋。橋デッキ・欄干・接続路を共有データから描画。
+ // Shore access was painted above as part of the road union.
+ // The bridge deck now covers its endpoint instead of allowing a path painted over it.
  const bridgeData=WORLD_ROAD_NETWORK.bridge;
  poly(bridgeData.base,'#8b704f');poly(bridgeData.deck,'#c49a68');
- // The far-side rail belongs behind pedestrians; the near rail is drawn in depth order.
  ctx.strokeStyle=bridgeData.railColor;ctx.lineWidth=bridgeData.railWidth;ctx.beginPath();
- const farRail=bridgeData.rails[0];
- ctx.moveTo(farRail[0][0],farRail[0][1]);ctx.lineTo(farRail[1][0],farRail[1][1]);ctx.stroke();
- // 広場から橋の陸側入口へまっすぐ接続。ベンチへは短い枝道で分岐。
- ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
- bridgeData.approaches.forEach(path=>{
-  ctx.beginPath();ctx.moveTo(path.start[0],path.start[1]);ctx.quadraticCurveTo(path.control[0],path.control[1],path.end[0],path.end[1]);
-  ctx.strokeStyle=roadStyle.edge;ctx.lineWidth=path.edgeWidth;ctx.stroke();
-  ctx.strokeStyle=roadStyle.surface;ctx.lineWidth=path.surfaceWidth;ctx.stroke();
- });
- ctx.restore();
+ const farRail=bridgeData.rails[0];ctx.moveTo(farRail[0][0],farRail[0][1]);ctx.lineTo(farRail[1][0],farRail[1][1]);ctx.stroke();
  // 案内板も住人やベンチと同じ奥行き順で描く。
  // キャラクターと建物を共通の奥行き順で描画する。
  // 建物の正面の接地位置が、前後の切り替え基準になる。
