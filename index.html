@@ -995,6 +995,45 @@ function townGardenFence(cx,y,left,right){
   poly([[cx+px-3.5,y-11],[cx+px,y-16],[cx+px+3.5,y-11]],'#e5b77a','#966a48',.8);
  }
 }
+
+// Terraced stonework and offset planting beds visually connect angled cottage art.
+function townStoneParapet(points,height=14){
+ poly([...points,...points.slice().reverse().map(([x,y])=>[x,y+height])],'#b8a083','#99816a',1.1);
+ ctx.strokeStyle='#f9e4be';ctx.lineWidth=5;ctx.beginPath();
+ points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();
+ ctx.strokeStyle='rgba(121,95,68,.38)';ctx.lineWidth=1.2;
+ points.slice(1).forEach(([bx,by],i)=>{
+  const [ax,ay]=points[i],n=Math.floor(Math.hypot(bx-ax,by-ay)/22);
+  for(let j=1;j<=n;j++){const t=j/(n+1),x=ax+(bx-ax)*t,y=ay+(by-ay)*t;ctx.beginPath();ctx.moveTo(x,y+4);ctx.lineTo(x+2,y+height-1);ctx.stroke()}
+ });
+}
+function townTerraceTerrain(){
+ // Cafe rests on a raised limestone platform, with a masonry face below it.
+ poly([[64,331],[171,255],[326,272],[387,347],[361,401],[90,401]],'#d6c09d','#f4e3c2',2.5);
+ poly([[78,326],[174,268],[317,282],[373,350],[344,388],[97,390]],townTexture('stone'),null);
+ townStoneParapet([[91,394],[153,405],[246,405],[320,396],[360,385]],18);
+ Object.values(homes||{}).forEach((home,i)=>{
+  const x=home.x,y=home.y,h=homeExteriorGeometry(home).w*.54;
+  poly([[x-h-9,y-13],[x-5,y-65],[x+h+10,y-16],[x+h+9,y+50],[x+5,y+91],[x-h-11,y+49]],'#9fbe75','#eddbb7',2.5);
+  poly([[x-h,y+45],[x+4,y+83],[x+h,y+45],[x+h,y+55],[x+4,y+93],[x-h,y+55]],'#bca488','#efdab6',1);
+  townFlowerPatch(x-h+5,y+51,.43,i%3);
+  townFlowerPatch(x+h-4,y+52,.43,(i+1)%3);
+ });
+ for(const wall of [[[33,470],[55,477],[79,483]],[[28,650],[54,664],[81,672]],[[35,823],[61,838],[83,845]]])townStoneParapet(wall,12);
+}
+function townGardenTerrainFinish(){
+ // Flower borders wind beside the garden lane, rather than forming a rigid grid.
+ for(const [x,y,size,color] of [[693,838,.66,2],[693,868,.67,1],[687,992,.7,0],[548,895,.68,1],[573,1021,.76,2],[684,619,.75,1],[548,594,.62,0],[722,1040,.67,2],[121,1012,.77,1],[113,1093,.66,2],[298,1295,.72,0],[573,1277,.73,1],[443,1341,.71,0]]){
+  townFlowerPatch(x,y,size,color);
+ }
+ // Four rising limestone steps give the plaza a real raised entrance.
+ for(let i=0;i<4;i++){
+  const y=1276+i*15,width=62+i*9;
+  poly([[430-width/2,y],[430+width/2,y-4],[433+width/2,y+8],[426-width/2,y+12]],'#bda385','#9f8264',1.2);
+  poly([[430-width/2,y-4],[430+width/2,y-8],[430+width/2,y+1],[430-width/2,y+5]],townTexture('stone'),'#ffebc8',1.1);
+ }
+}
+
 function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(interiorHomeId);return}ctx.save();const fit=Math.min(W/900,H/1400)*1.04;ctx.translate(W/2,H/2);ctx.scale(fit*zoom,fit*zoom);ctx.translate(-450+panX,-720+panY);
  // Warm garden floor and stone-edged miniature neighborhood.
  ctx.fillStyle='#e8d5ab';ctx.fillRect(-200,-200,1300,1800);
@@ -1002,6 +1041,7 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  ctx.save();ctx.shadowColor='rgba(75,96,45,.24)';ctx.shadowBlur=20;ctx.shadowOffsetY=16;
  poly(island,'#a0bd6d','#927e51',12);ctx.restore();
  poly(island,townTexture('grass'),'#e8d6af',10);
+ townTerraceTerrain();
  // Bright water, gentle waves and three-dimensional stone embankment.
  townRiverOutline();const water=ctx.createLinearGradient(740,200,1030,1000);
  water.addColorStop(0,'#8cdbdb');water.addColorStop(.5,'#45b9d7');water.addColorStop(1,'#268ac3');
@@ -1088,7 +1128,8 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  for(const [x,y,z,t] of [[100,395,.85,0],[182,345,.9,1],[365,361,.75,2],[558,450,.7,0],[582,570,.76,1],[655,635,.7,2],
   [552,840,.85,0],[642,903,.9,1],[602,1020,.75,2],[688,1100,.82,0],[250,1235,.8,1],[525,1263,.74,2],
   [132,1070,.8,0],[129,620,.6,1],[248,970,.7,2],[480,1208,.75,0]])townFlowerPatch(x,y,z,t);
- // Remove the decorative path with no navigable road underneath it.
+ townGardenTerrainFinish();
+ // Walkable winding garden path replaces the former unconnected graphic.
  // カフェと商店は住人と同じ奥行き順で描画する。
  // 登録されている住居を、それぞれの所在地に描画
  function drawHouseExterior(home,index){
