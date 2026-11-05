@@ -57,7 +57,15 @@ const homeLayoutCatalog={
  '3LDK':[{name:'広々3LDK',rooms:[{type:'bedroom',name:'寝室',x:125,y:410,w:300,h:190},{type:'bedroom',name:'洋室1',x:125,y:600,w:300,h:190},{type:'bedroom',name:'洋室2',x:125,y:790,w:300,h:190},{type:'living',name:'LDK',x:425,y:410,w:350,h:570},{type:'kitchen',name:'キッチン',x:625,y:410,w:150,h:230}]}]
 };
 let selectedHomeLayout='2LDK',homeSubPage='menu';
-const residentialPlots=[{id:'north-west',label:'西側上段の住宅地',x:145,y:430},{id:'north-center',label:'中央上段の住宅地',x:330,y:430},{id:'south-west',label:'西側中段の住宅地',x:145,y:600},{id:'south-center',label:'中央中段の住宅地',x:330,y:600},{id:'south-east',label:'西側下段の住宅地',x:145,y:770},{id:'center-west-home',label:'中央下段の住宅地',x:330,y:770}];
+// Staggered house plots for a storybook hillside rather than a geometric grid.
+const residentialPlots=[
+{id:'north-west',label:'西側上段の住宅地',x:148,y:419},
+{id:'north-center',label:'中央上段の住宅地',x:339,y:425},
+{id:'south-west',label:'西側中段の住宅地',x:128,y:600},
+{id:'south-center',label:'中央中段の住宅地',x:322,y:612},
+{id:'south-east',label:'西側下段の住宅地',x:150,y:777},
+{id:'center-west-home',label:'中央下段の住宅地',x:339,y:764}
+];
 function availableResidentialPlot(){const used=new Set(Object.values(homes).map(h=>h.mapPlotId).filter(Boolean));return residentialPlots.find(plot=>!used.has(plot.id))||null}
 // House placement and household changes must refresh any ongoing home/sleep route.
 function syncResidentHomeDestination(p){
@@ -172,7 +180,7 @@ function ensureFurnitureWorld(saved){
  });
  // 住宅配置v6：住人が現在所属していない保存済み住宅も含め、全住宅を新しい街区へ配置。
  // homes全件を対象にしないと、空き家や旧世帯の家だけ旧位置に残ってしまう。
- const homeLayoutVersion=6;
+ const homeLayoutVersion=7;
  const allHomes=Object.values(homes);
  const plotById=new Map(residentialPlots.map(plot=>[plot.id,plot]));
  const occupiedPlots=new Set();
@@ -357,17 +365,19 @@ function pointInPolygon(x,y,polygon){
 }
  // 道路ネットワーク。中央幹線から北・西の住宅地へ接続。
  const roadRoutes=[
- {main:true,start:[470,170],curves:[[[505,280],[525,430],[490,555]],[[455,700],[445,870],[445,1010]]]},
- {start:[505,350],curves:[[[430,340],[330,330],[250,330]]]},
- {start:[545,444],curves:[[[584,451],[632,488],[700,490]]]},
- {start:[465,790],curves:[[[510,780],[560,765],[610,760]]]},
- {start:[60,535],curves:[[[60,592],[60,647],[60,705]],[[60,770],[60,834],[60,898]]]},
- {start:[60,535],curves:[[[145,535],[195,535],[250,535]],[[310,535],[370,535],[430,535]]]},
- {start:[60,705],curves:[[[145,705],[195,705],[250,705]],[[310,705],[370,705],[430,705]]]},
- {start:[60,898],curves:[[[145,898],[195,898],[250,898]],[[310,898],[370,898],[430,898]]]},
- {start:[430,535],curves:[[[452,539],[473,548],[490,555]]]}
+  {main:true,start:[470,170],curves:[[[514,255],[534,431],[490,555]],[[430,660],[475,847],[445,1010]]]},
+  {start:[505,350],curves:[[[472,301],[346,362],[250,330]]]},
+  {start:[545,444],curves:[[[581,446],[638,494],[700,490]]]},
+  {start:[465,790],curves:[[[513,800],[566,744],[610,760]]]},
+  {start:[60,535],curves:[[[38,591],[78,657],[60,705]],[[43,775],[83,833],[60,898]]]},
+  {start:[60,535],curves:[[[121,503],[194,556],[250,535]],[[303,512],[374,549],[430,535]]]},
+  {start:[60,705],curves:[[[120,677],[197,730],[250,705]],[[312,678],[365,730],[430,705]]]},
+  {start:[60,898],curves:[[[121,870],[207,925],[250,898]],[[303,877],[370,916],[430,898]]]},
+  {start:[430,535],curves:[[[451,531],[468,563],[490,555]]]},
+  // A serpentine limestone footpath links the riverside park to the plaza.
+  {garden:true,start:[610,760],curves:[[[650,795],[649,836],[624,872]],[[600,913],[604,985],[617,1015]]]}
  ];
- const roadRendering={edge:'#a98d68',surface:'#ead5ad',mainEdgeWidth:112,mainSurfaceWidth:94,branchEdgeWidth:46,branchSurfaceWidth:34};
+  const roadRendering={edge:'#aa896c',surface:'#efcfaa',mainEdgeWidth:112,mainSurfaceWidth:94,branchEdgeWidth:48,branchSurfaceWidth:36,gardenEdgeWidth:29,gardenSurfaceWidth:20};
  // 道路の描画と橋の歩行可能範囲は、このネットワーク定義を参照する。
  const bridge={
   base:[[690,760],[810,705],[842,725],[720,785]],
@@ -1022,9 +1032,9 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
  // Main street paint is applied last in each pass, so no branch remains visible inside it.
  const roadStyle=WORLD_ROAD_NETWORK.rendering;
  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
- function strokeRoadGroup(main,width,color){
+ function strokeRoadGroup(group,width,color){
   ctx.beginPath();
-  WORLD_ROAD_NETWORK.routes.filter(r=>!!r.main===main).forEach(route=>{
+  WORLD_ROAD_NETWORK.routes.filter(r=>group==='main'?!!r.main:group==='garden'?!!r.garden:!r.main&&!r.garden).forEach(route=>{
    ctx.moveTo(route.start[0],route.start[1]);
    route.curves.forEach(c=>ctx.bezierCurveTo(c[0][0],c[0][1],c[1][0],c[1][1],c[2][0],c[2][1]));
   });
@@ -1046,20 +1056,23 @@ function drawWorld(){ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(
   });
   ctx.strokeStyle=color;ctx.lineWidth=(WORLD_ROAD_NETWORK.bridge.approaches[0]?.[which]||23)-inset;ctx.stroke();
  }
- // These passes unite the road silhouettes; no outlines or separate paving
- // are painted over the interior of a larger road or across a junction.
+ // Each edge, surface and stone pattern is composed across the entire network.
+ // The main street hides cross-street seams at junctions.
  strokeBridgeAccess('edgeWidth',0,roadStyle.edge);
+ strokeRoadGroup('garden',roadStyle.gardenEdgeWidth,'#b9a47e');
  strokeHomeAccess(38,roadStyle.edge);
- strokeRoadGroup(false,roadStyle.branchEdgeWidth,roadStyle.edge);
- strokeRoadGroup(true,roadStyle.mainEdgeWidth,roadStyle.edge);
+ strokeRoadGroup('branch',roadStyle.branchEdgeWidth,roadStyle.edge);
+ strokeRoadGroup('main',roadStyle.mainEdgeWidth,roadStyle.edge);
  strokeBridgeAccess('surfaceWidth',0,roadStyle.surface);
+ strokeRoadGroup('garden',roadStyle.gardenSurfaceWidth,'#fff2d3');
  strokeHomeAccess(26,roadStyle.surface);
- strokeRoadGroup(false,roadStyle.branchSurfaceWidth,roadStyle.surface);
- strokeRoadGroup(true,roadStyle.mainSurfaceWidth,roadStyle.surface);
+ strokeRoadGroup('branch',roadStyle.branchSurfaceWidth,roadStyle.surface);
+ strokeRoadGroup('main',roadStyle.mainSurfaceWidth,roadStyle.surface);
  strokeBridgeAccess('surfaceWidth',5,townTexture('brick'));
+ strokeRoadGroup('garden',roadStyle.gardenSurfaceWidth-4,townTexture('stone'));
  strokeHomeAccess(21,townTexture('stone'));
- strokeRoadGroup(false,roadStyle.branchSurfaceWidth-5,townTexture('brick'));
- strokeRoadGroup(true,roadStyle.mainSurfaceWidth-5,townTexture('brick'));
+ strokeRoadGroup('branch',roadStyle.branchSurfaceWidth-5,townTexture('brick'));
+ strokeRoadGroup('main',roadStyle.mainSurfaceWidth-5,townTexture('brick'));
  ctx.restore();
  // 南側は枝道を設けず、幹線の先をレンガ敷きの広場にする。
  ellipse(430,1118,245,180,'#aa8964');ellipse(430,1107,235,176,'#f2ddbd');
@@ -1326,7 +1339,7 @@ const roadNodes=[
  {id:'main-lower',x:465,y:790,links:['main-row2','main-row3','park-entry']},
  {id:'main-row3',x:447,y:898,links:['main-lower','main-lower-curve-2','res-row3-east']},
  {id:'main-lower-curve-2',x:448,y:930,links:['main-row3','main-plaza']},
- {id:'main-plaza',x:445,y:1010,links:['main-lower-curve-2','plaza-center']},
+ {id:'main-plaza',x:445,y:1010,links:['main-lower-curve-2','plaza-center','park-garden-end']},
  {id:'plaza-center',x:430,y:1100,links:['main-plaza']},
  // 住宅街は西側の縦道と、各段の横道でつなぐ。
  {id:'west-north',x:60,y:535,links:['west-mid','res-row1-center']},
@@ -1341,9 +1354,12 @@ const roadNodes=[
  {id:'cafe-entry',x:250,y:330,links:['cafe-approach-2'],facility:true},
  {id:'bench-path-entry',x:60,y:755,links:['west-mid'],facility:true},
  // 公園への接続は中央メインストリートの一点のみ。
- {id:'park-entry',x:610,y:760,links:['main-lower','bridge-entry']},
+ {id:'park-entry',x:610,y:760,links:['main-lower','bridge-entry','park-garden-mid']},
  {id:'bridge-entry',x:690,y:760,links:['park-entry','river-bench'],facility:true},
- {id:'river-bench',x:735,y:745,links:['bridge-entry'],facility:true}
+ {id:'river-bench',x:735,y:745,links:['bridge-entry'],facility:true},
+ {id:'park-garden-mid',x:624,y:872,links:['park-entry','park-garden-south']},
+ {id:'park-garden-south',x:607,y:951,links:['park-garden-mid','park-garden-end']},
+ {id:'park-garden-end',x:617,y:1015,links:['park-garden-south','main-plaza']}
 ];
 // Match navigation segments to the Bézier centerlines used by street painting.
 const WALK_CURVES=[
@@ -1352,7 +1368,17 @@ const WALK_CURVES=[
  [1,0,'main-upper cafe-approach-1 cafe-approach-2 cafe-entry'],
  [2,0,'main-curve-upper shop-approach-1 shop-approach-3 shop-entry'],
  [3,0,'main-lower park-entry'],
- [8,0,'res-row1-east main-mid']
+ [8,0,'res-row1-east main-mid'],
+ [4,0,'west-north west-mid'],
+ [4,1,'west-mid west-south'],
+ [5,0,'west-north res-row1-center'],
+ [5,1,'res-row1-center res-row1-east'],
+ [6,0,'west-mid res-row2-center'],
+ [6,1,'res-row2-center res-row2-east'],
+ [7,0,'west-south res-row3-center'],
+ [7,1,'res-row3-center res-row3-east'],
+ [9,0,'park-entry park-garden-mid'],
+ [9,1,'park-garden-mid park-garden-south park-garden-end']
 ].map(([r,c,ids])=>({r,c,ids:ids.split(' ')}));
 function roadCurvePosition(curve,t){
  const u=1-t;
