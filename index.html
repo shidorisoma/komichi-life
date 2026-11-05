@@ -22,13 +22,14 @@ const places=[
  {id:'home2',name:'東の住宅',icon:'🏠',x:250,y:850,type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'cafe',name:'喫茶こもれび',icon:'☕',x:240,y:290,type:'cafe',description:'飲み物を楽しめる喫茶店',actions:['食事','休憩','デート']},
  {id:'shop',name:'こみち商店',icon:'🛒',x:620,y:390,type:'shop',description:'日用品や食材を買える小さな商店',actions:['買い物','食材を買う']},
- {id:'plaza',name:'川辺の広場',icon:'🌳',x:600,y:760,type:'outdoor',description:'川辺の散歩や休憩を楽しめる広場',actions:['散歩','休憩']},
- {id:'bench-river',name:'川辺のベンチ',icon:'🪑',x:795,y:800,type:'bench',description:'水の流れを眺めながら休めるベンチ',actions:['休憩']},
- {id:'bench-path',name:'こみちのベンチ',icon:'🪑',x:90,y:760,type:'bench',description:'木陰のそばでひと休みできるベンチ',actions:['休憩']},
- {id:'bridge',name:'小さな橋',icon:'🌉',x:765,y:738,type:'bridge',description:'川辺をつなぐ小さな橋。水辺の景色を眺められる場所',actions:['散歩','景色を見る']},
- {id:'flower-west',name:'西の花壇',icon:'🌼',x:90,y:510,type:'garden',description:'色とりどりの花が咲く、住宅近くの花壇',actions:['花を見る']},
- {id:'flower-east',name:'東の花壇',icon:'🌷',x:700,y:690,type:'garden',description:'広場のそばにある、日当たりのよい花壇',actions:['花を見る']},
- {id:'flower-south',name:'南の花壇',icon:'🌻',x:115,y:920,type:'garden',description:'こみちの南側にある小さな花壇',actions:['花を見る']}
+ {id:'plaza',name:'川辺の広場',icon:'🌳',x:430,y:1100,type:'outdoor',description:'川辺の散歩や休憩を楽しめる広場',actions:['散歩','休憩']},
+ {id:'bench-river',name:'川辺のベンチ',icon:'🪑',x:715,y:800,type:'bench',description:'水の流れを眺めながら休めるベンチ',actions:['休憩']},
+ {id:'bench-path',name:'広場のベンチ',icon:'🪑',x:360,y:1180,type:'bench',description:'木陰のそばでひと休みできるベンチ',actions:['休憩']},
+ {id:'bridge',name:'川辺の桟橋',icon:'🌉',x:765,y:738,type:'bridge',description:'川辺をつなぐ小さな橋。水辺の景色を眺められる場所',actions:['散歩','景色を見る']},
+ {id:'flower-west',name:'住宅街の花壇',icon:'🌼',x:130,y:610,type:'garden',description:'色とりどりの花が咲く、住宅近くの花壇',actions:['花を見る']},
+ {id:'flower-east',name:'東の花壇',icon:'🌷',x:698,y:696,type:'garden',description:'広場のそばにある、日当たりのよい花壇',actions:['花を見る']},
+ {id:'flower-south',name:'南の花壇',icon:'🌻',x:670,y:1080,type:'garden',description:'こみちの南側にある小さな花壇',actions:['花を見る']},
+ {id:'wisteria-walk',name:'藤棚の小径',icon:'🌿',x:624,y:872,type:'outdoor',description:'桜と藤棚のある川辺の庭園',actions:['散歩','花を見る']}
 ];
 function getPlace(id){return places.find(place=>place.id===id)||null}
 const SAVE_KEY='komichi-life-save-v1';
@@ -1667,6 +1668,11 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
 }
 // 道路データと住人・住宅の初期化が完了してから保存済み経路を再構築する。
 chars.forEach(p=>{
+ // Migrate homebound saved residents onto the new staggered household plots.
+ if((p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'){
+  const entrance=homeEntrance(homes[householdForResident(p).homeId]);
+  if(entrance){p.x=entrance.x;p.y=entrance.y;p.tx=entrance.x;p.ty=entrance.y}
+ }
  if(p.phaseState==='moving'&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.tx)&&Number.isFinite(p.ty)){
   const destinationHome=(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null;
   p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,destinationHome,p);
@@ -2068,7 +2074,7 @@ function chooseRoutine(p,i){
   }})});
  });
  if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=[{id:'flower-east',x:620,y:740},{id:'flower-southeast',x:600,y:1110}];const q=chooseFreshSpot(p,spots);const scene=flowerSceneFor(p);p.flowerScene=scene;setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている',scene.stay,'look',12+Math.random()*18)}});
- if(previous!=='walk')options.push({action:'walk',weight:2.5+(p.activityLevel??50)/20+(p.curiosity??50)/60,run:()=>{const spots=[{id:'riverside-north',x:740,y:520,label:'川沿い'},{id:'plaza',x:600,y:760,label:'川辺の広場'},{id:'tree-south',x:350,y:1040,label:'木陰'},{id:'path-center',x:420,y:650,label:'こみちの途中'},{id:'riverside-south',x:760,y:1050,label:'川辺'}];const q=chooseFreshSpot(p,spots);const scene=walkSceneFor(p,q);p.walkScene=scene;setAction(p,i,'walk',q.x,ySafe(q.y),q.label+'まで散歩中',scene.stay,'stand',8+Math.random()*12+(p.activityLevel??50)*.12)}});
+ if(previous!=='walk')options.push({action:'walk',weight:2.5+(p.activityLevel??50)/20+(p.curiosity??50)/60,run:()=>{const spots=[{id:'riverside-north',x:740,y:520,label:'川沿い'},{id:'plaza',x:430,y:1095,label:'川辺の広場'},{id:'tree-south',x:350,y:1040,label:'木陰'},{id:'path-center',x:420,y:650,label:'こみちの途中'},{id:'riverside-south',x:710,y:1030,label:'川辺'},{id:'garden-wisteria',x:624,y:872,label:'藤棚の小径'},{id:'garden-cherry',x:607,y:950,label:'桜並木'},{id:'garden-plaza',x:615,y:1015,label:'庭園の出口'}];const q=chooseFreshSpot(p,spots);const scene=walkSceneFor(p,q);p.walkScene=scene;setAction(p,i,'walk',q.x,ySafe(q.y),q.label+'まで散歩中',scene.stay,'stand',8+Math.random()*12+(p.activityLevel??50)*.12)}});
  if(previous!=='cafe'&&p.needs.hunger>=42&&(p.money??5000)>=450)options.push({action:'cafe',weight:1.5+(p.curiosity??50)/100,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている','喫茶店でひと休み','sit',12+Math.random()*12)}});
  if(previous!=='bench'&&p.needs.energy>=38)options.push({action:'bench',weight:2,run:()=>{const scene=benchSceneFor(p);if(!startBenchVisit(p,i,scene.stay,10+Math.random()*14,scene))setAction(p,i,'walk',430,1100,'広場へ向かっている','広場でひと休みしている','stand',10+Math.random()*14)} });
  applyScheduleWeights(options,p);
