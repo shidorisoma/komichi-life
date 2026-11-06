@@ -9,7 +9,7 @@ const storage={};const b={console,Math,Date,Set,Map,WeakMap,JSON,Number,String,O
 // separately in the browser. This test catches disconnected paths and save loss.
 function loadModel(){
  vm.createContext(b);
- const exported='globalThis.qa={loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
+ const exported='globalThis.qa={pointInPolygon,WORLD_NATURE_OBJECTS,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);return b.qa;
 }
 const assert=require('assert').strict,q=loadModel(),p=q.chars[0];
@@ -56,3 +56,17 @@ assert.equal(JSON.stringify(Object.keys(restored.homes)),JSON.stringify(expected
 assert.equal(JSON.parse(storage['komichi-life-save-v1']).furnitureWorld.furniture.length,furnitureCount);
 assert.equal(restored.zoom,1);assert.equal(restored.panX,0);assert.equal(restored.panY,0);
 console.log('PASS: clear roads, 10 destinations, 6 two-way home approaches, plaza separation, foreground rendering and legacy save migration');
+
+// Image-derived roots and the open ground beside the trunk must agree with
+// the foreground tile. A broad patch of copied grass used to erase walkers.
+const small=q.PAINTED_OCCLUDERS.find(o=>o.id==='garden-tree-small');
+assert.equal(small.depth,784);
+assert(!q.pointInPolygon(690,780,small.polygon.map(([x,y])=>({x,y}))),'Tree tile paints over the open path beside the trunk');
+assert(q.pointInPolygon(720,780,small.polygon.map(([x,y])=>({x,y}))),'Tree trunk lost its foreground silhouette');
+const root=q.WORLD_NATURE_OBJECTS.trees.find(t=>t.id==='painted-tree-2');
+assert(Math.abs(q.nativePoint(root.x,root.y).y-small.depth)<1,'Collision and visual root disagree');
+for(const [id,index] of [['garden-tree',0],['west-tree-small',3],['cherry-tree',1]]){
+ const occluder=q.PAINTED_OCCLUDERS.find(o=>o.id===id),tree=q.WORLD_NATURE_OBJECTS.trees[index];
+ assert(Math.abs(occluder.depth-q.nativePoint(tree.x,tree.y).y)<1,'Tree depth differs from its root '+id);
+}
+console.log('PASS tree silhouettes preserve open ground and depth matches painted roots');
