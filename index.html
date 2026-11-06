@@ -70,7 +70,9 @@ const PAINTED_OCCLUDERS=[
  {id:'west-tree-small',depth:764,polygon:[[357,707],[377,680],[419,662],[460,680],[479,714],[457,745],[432,755],[429,779],[408,780],[401,757],[375,744]]},
  {id:'cherry-tree',depth:710,polygon:[[826,596],[847,554],[887,529],[932,517],[979,526],[1020,557],[1062,603],[1048,653],[1009,679],[976,690],[970,725],[947,726],[939,692],[886,678],[848,645]]},
  {id:'plaza-tree',depth:1104,polygon:[[377,1003],[397,963],[432,933],[475,919],[527,925],[574,949],[610,990],[611,1027],[579,1061],[532,1079],[522,1104],[490,1108],[477,1081],[431,1065],[394,1039]]},
- {id:'wisteria',depth:504,polygon:[[789,427],[808,397],[842,376],[895,375],[935,400],[951,438],[947,503],[929,517],[918,474],[827,474],[828,517],[806,508]]},
+ {id:'wisteria',depth:430,polygon:[[789,427],[808,397],[842,376],[895,375],[935,400],[951,438],[936,468],[920,460],[902,442],[847,442],[830,464],[810,460]]},
+ {id:'wisteria-post-left',depth:515,polygon:[[808,435],[823,436],[826,514],[811,514]]},
+ {id:'wisteria-post-right',depth:515,polygon:[[932,436],[944,437],[943,510],[931,514]]},
  {id:'flower-arch',depth:1248,polygon:[[395,1215],[405,1173],[437,1141],[483,1127],[526,1138],[559,1167],[575,1210],[569,1253],[548,1253],[548,1204],[533,1175],[511,1158],[479,1152],[449,1166],[427,1192],[423,1255],[402,1256]]}
 ];
 const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,pageSuspended=false,residentDiagnosticTimer=null,residentDiagnosticsOpen=false,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
@@ -95,7 +97,7 @@ const ROAD_CLEARANCE_PROBE={id:'road-clearance-probe',x:-10000,y:-10000,action:'
 const SAVE_BACKUP_KEY=SAVE_KEY+'.backup';
 const SAVE_BEFORE_IMPORT_KEY=SAVE_KEY+'.before-import';
 let saveWritesBlocked=false,saveReady=false,loadedSaveData=null,saveWarningMessage='';
-const TOWN_LAYOUT_REVISION=10;let previousTownRevision=0;
+const TOWN_LAYOUT_REVISION=11;let previousTownRevision=0;
 // 家具・住居データ。購入者、所有者、利用者、設置場所を独立して管理する。
 const furnitureCatalog={
  bed:{id:'bed',name:'ベッド',price:1800,rooms:['bedroom'],actions:['sleep','rest'],capacity:2,ownership:'household',unique:'household',size:{w:2,h:2}},
@@ -428,12 +430,12 @@ function pointInPolygon(x,y,polygon){
  {main:true,start:[510,270],curves:[[[585,335],[630,415],[591,535]],[[569,618],[506,700],[514,803]],[[507,856],[515,894],[516,948]]]},
  {start:[510,270],curves:[[[527,262],[548,259],[552,251]]]},
  {start:[566,318],curves:[[[616,300],[654,290],[710,282]],[[753,288],[762,332],[821,349]],[[860,364],[895,352],[906,338]]]},
- {start:[560,350],curves:[[[513,356],[478,363],[441,382]],[[409,385],[354,400],[311,382]],[[322,367],[347,359],[367,357]]]},
+ {start:[565,382],curves:[[[534,388],[516,395],[489,389]],[[475,380],[454,368],[439,359]],[[410,369],[354,400],[311,382]],[[322,367],[347,359],[367,357]]]},
  {start:[551,641],curves:[[[528,604],[475,599],[438,560]]]},
  {start:[543,661],curves:[[[457,680],[367,697],[309,696]],[[294,697],[279,696],[265,696]]]},
  {start:[515,851],curves:[[[474,854],[459,893],[418,870]]]},
- {garden:true,start:[591,535],curves:[[[639,533],[694,514],[736,517]],[[734,539],[816,551],[801,592]],[[837,633],[771,688],[704,684]],[[654,688],[612,740],[637,783]],[[646,858],[752,868],[793,827]],[[775,864],[740,899],[714,946]],[[703,961],[691,973],[687,990]]]},
- {garden:true,start:[736,517],curves:[[[783,529],[824,550],[863,540]]]},
+ {garden:true,start:[821,349],curves:[[[774,375],[713,416],[727,469]],[[735,496],[807,512],[816,546]],[[864,605],[792,691],[688,674]],[[633,690],[594,714],[620,752]],[[646,858],[752,868],[793,827]],[[775,864],[740,899],[714,946]],[[703,961],[691,973],[687,990]]]},
+ {garden:true,start:[816,546],curves:[[[824,547],[847,542],[863,536]]]},
  {garden:true,start:[793,827],curves:[[[821,819],[824,839],[846,845]],[[912,825],[974,795],[1010,800]]]},
  {garden:true,start:[482,958],curves:[[[607,958],[708,1011],[708,1077]],[[708,1143],[607,1196],[482,1196]],[[357,1196],[256,1143],[256,1077]],[[256,1011],[357,958],[482,958]]]},
  {garden:true,start:[482,1196],curves:[[[482,1231],[506,1301],[493,1332]]]},
@@ -1598,6 +1600,15 @@ function paintedOccluderTile(item){
  const result={tile,left,top,width,height};paintedOccluderTiles.set(item.id,result);return result;
 }
 function drawPaintedOccluder(item){const q=paintedOccluderTile(item),p=artPoint(q.left,q.top);ctx.drawImage(q.tile,p.x,p.y,q.width*PAINTED_TOWN.scale,q.height*PAINTED_TOWN.scale)}
+function drawCafeAccessSteps(){
+ ctx.save();ctx.translate(PAINTED_TOWN.left,PAINTED_TOWN.top);ctx.scale(PAINTED_TOWN.scale,PAINTED_TOWN.scale);
+ const top={x:439,y:359},bottom={x:489,y:389},side={x:-12,y:13};
+ for(let i=7;i>=0;i--){const t=i/8,u=(i+1)/8,a={x:top.x+(bottom.x-top.x)*t,y:top.y+(bottom.y-top.y)*t},b={x:top.x+(bottom.x-top.x)*u,y:top.y+(bottom.y-top.y)*u};
+  poly([[a.x+side.x,a.y+side.y],[a.x-side.x,a.y-side.y],[b.x-side.x,b.y-side.y],[b.x+side.x,b.y+side.y]],i%2?'#e7d1b0':'#f6e5c8','#ad9677',.8);
+  ctx.strokeStyle='#fff1d5';ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(a.x+side.x,a.y+side.y);ctx.lineTo(a.x-side.x,a.y-side.y);ctx.stroke();
+ }
+ ctx.restore();
+}
 function drawWorld(){
  ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(interiorHomeId);return}
  if(!paintedTownArt.complete||!paintedTownArt.naturalWidth){ctx.fillStyle='#fadca9';ctx.fillRect(0,0,W,H);ctx.fillStyle='#8c7350';ctx.font='16px serif';ctx.textAlign='center';ctx.fillText('川辺のこみち',W/2,H/2);return}
@@ -1605,16 +1616,18 @@ function drawWorld(){
  ctx.translate(W/2,H/2);ctx.scale(fit*zoom,fit*zoom);ctx.translate(-450+panX,-720+panY);
  ctx.fillStyle='#fadca9';ctx.fillRect(-600,-400,2200,2300);
  ctx.drawImage(paintedTownArt,PAINTED_TOWN.left,PAINTED_TOWN.top,1122*PAINTED_TOWN.scale,1402*PAINTED_TOWN.scale);
+ drawCafeAccessSteps();
  const outdoors=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
  const layers=PAINTED_OCCLUDERS.map(item=>({y:artPoint(0,item.depth).y,draw:()=>drawPaintedOccluder(item)}));
  // Optional sixth home uses its retained painted cottage asset; the five main
  // plots are already part of the town art, occupied or vacant.
  Object.values(homes).filter(h=>residentialPlots.find(q=>q.id===h.mapPlotId)?.extra).forEach((h,i)=>layers.push({y:homeEntrance(h).y,draw:()=>drawHouseExterior(h,i)}));
  WORLD_STREET_FURNITURE.benches.forEach((bench,i)=>{
+  if(!outdoors.some(({p})=>p.action==='bench'&&p.phaseState==='staying'&&p.benchSeat?.bench===i))return;
   const n=nativePoint(bench.x,bench.y),item={id:'bench-front-'+i,polygon:[[n.x-43,n.y+2],[n.x+43,n.y+2],[n.x+43,n.y+23],[n.x-43,n.y+23]]};
   layers.push({y:bench.y+16,draw:()=>drawPaintedOccluder(item)});
  });
- outdoors.forEach(({p,i})=>layers.push({y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:15*(p.scale||1)),draw:()=>drawChar(p,i,false)}));
+ outdoors.forEach(({p,i})=>layers.push({y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:0),draw:()=>drawChar(p,i,false)}));
  layers.sort((a,b)=>a.y-b.y);layers.forEach(item=>item.draw());
  outdoors.forEach(({p})=>drawCharLabel(p));
  const night=hour>=22||hour<5?1:hour>=20?(hour-20)/2:hour>=5&&hour<7?(7-hour)/2:hour>=18?(hour-18)/2:0;
@@ -1649,9 +1662,9 @@ function drawHomeFurniture(homeId){
 }
 function drawHomeInterior(homeId){ctx.save();ctx.fillStyle='#e9dfc9';ctx.fillRect(0,0,W,H);const scale=Math.min(W/900,H/1400)*1.05*interiorZoom;ctx.translate(W/2+interiorPanX,H/2+interiorPanY);ctx.scale(scale,scale);ctx.translate(-450,-700);const customHome=homes[homeId]?.rooms?.length>0;ctx.fillStyle='#b99b76';if(customHome){const rs=homes[homeId].rooms;rs.forEach(r=>{ctx.fillRect(r.x-10,r.y-10,r.w+20,r.h+20);ctx.fillStyle='#eadfc9';ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeStyle='#a58a68';ctx.lineWidth=7;ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.fillStyle='#eadfc9';ctx.font='bold 19px sans-serif';ctx.fillText(r.name,r.x+14,r.y+27);ctx.fillStyle='#b99b76'})}else{ctx.fillRect(105,390,690,620);ctx.fillStyle='#eadfc9';ctx.fillRect(125,410,650,580);ctx.strokeStyle='#a58a68';ctx.lineWidth=9;ctx.strokeRect(125,410,650,580);ctx.fillStyle='#d9c7a8';ctx.fillRect(430,410,10,580);ctx.fillRect(125,690,650,9)}ctx.fillStyle='#8d7054';ctx.font='bold 23px sans-serif';ctx.fillText(homes[homeId]?.name||(homeId==='home'?'西の住宅':'東の住宅'),145,365);drawHomeFurniture(homeId);const residents=chars.filter(p=>householdForResident(p).homeId===homeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'),spots={living:[{x:235,y:590},{x:295,y:590}],hobby:[{x:570,y:590},{x:630,y:590}],bedroom:[{x:235,y:900},{x:295,y:900}],kitchen:[{x:580,y:900},{x:640,y:900}]},roomCounts={};residents.forEach(p=>{const roomType=p.action==='sleep'?'bedroom':(p.homeHobby?.room||'living'),customRoom=homes[homeId]?.rooms?.find(r=>r.type===roomType)||homes[homeId]?.rooms?.[0],slots=customHome&&customRoom?[{x:customRoom.x+customRoom.w*.55,y:customRoom.y+customRoom.h*.58},{x:customRoom.x+customRoom.w*.68,y:customRoom.y+customRoom.h*.62}]:(spots[roomType]||spots.living),index=roomCounts[roomType]||0;if(index>=2)return;roomCounts[roomType]=index+1;const q=slots[index];drawChar({...p,x:q.x,y:q.y,pose:'sit'},chars.indexOf(p))});ctx.textAlign='left';ctx.restore();}
 function drawChar(p,i,showLabel=true){
- let x=p.x,y=p.y; const tall=p.scale||1; // 住人ごとの表示スケール
- ellipse(x,y+15,19*tall,7,'#776b51aa');
- if(selected===i){ctx.strokeStyle='#8da17a';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,y+16,23*tall,8,0,0,Math.PI*2);ctx.stroke()}
+ let x=p.x;const tall=p.scale||1,seated=p.action==='bench'&&p.phaseState==='staying',groundAnchored=!interiorHomeId&&!seated;let y=p.y-(groundAnchored?16*tall:0); // 住人ごとの表示スケール
+ ellipse(x,groundAnchored?p.y:y+15,19*tall,7,'#776b51aa');
+ if(selected===i){ctx.strokeStyle='#8da17a';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,groundAnchored?p.y:y+16,23*tall,8,0,0,Math.PI*2);ctx.stroke()}
  ctx.save();ctx.translate(x,y);ctx.scale(1,tall);
  // 影と足
  ctx.strokeStyle='#383b40';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();if(p.pose==='sit'){ctx.moveTo(-5,3);ctx.lineTo(-10,9);ctx.lineTo(-3,12);ctx.moveTo(5,3);ctx.lineTo(10,9);ctx.lineTo(3,12)}else{ctx.moveTo(-5,4);ctx.lineTo(-6,15);ctx.moveTo(5,4);ctx.lineTo(7,15)}ctx.stroke();
@@ -1725,6 +1738,7 @@ roadRoutes.forEach(route=>{
   });
  }
 });
+const paintedRoadSegments=roadNodes.flatMap(n=>n.links.filter(id=>id>n.id).map(id=>[n,roadNodes.find(q=>q.id===id)])).filter(pair=>pair[1]);
 function roadCurvePosition(curve,t){
  const u=1-t;
  return {x:u*u*u*curve[0][0]+3*u*u*t*curve[1][0]+3*u*t*t*curve[2][0]+t*t*t*curve[3][0],
@@ -1844,6 +1858,13 @@ function compactRoutePoints(points,resident){
  }
  return compact;
 }
+function roadJoinFollowsPaint(x1,y1,x2,y2){
+ const distance=Math.hypot(x2-x1,y2-y1);
+ if(distance<=48||!nearPaintedRoad(x1,y1,26))return true;
+ const count=Math.ceil(distance/16);
+ for(let i=1;i<count;i++){const t=i/count;if(!nearPaintedRoad(x1+(x2-x1)*t,y1+(y2-y1)*t,26))return false}
+ return true;
+}
 function roadCandidates(x,y,p){
  const ordered=roadNodes.map(n=>({node:n,distance:Math.hypot(n.x-x,n.y-y)})).sort((a,b)=>a.distance-b.distance);
  const visible=[];let reach=null;
@@ -1851,7 +1872,7 @@ function roadCandidates(x,y,p){
  // roads first made every route scan almost the entire town twice.
  for(const {node,distance} of ordered){
   if(reach!==null&&distance>reach)break;
-  if(isBlockedByStructure(node.x,node.y,p)||!movementSegmentClear(x,y,node.x,node.y,p))continue;
+  if(isBlockedByStructure(node.x,node.y,p)||!roadJoinFollowsPaint(x,y,node.x,node.y)||!movementSegmentClear(x,y,node.x,node.y,p))continue;
   if(reach===null)reach=Math.max(145,Math.min(185,distance+65));
   if(distance<=reach)visible.push(node);
   if(visible.length===3)break;
@@ -2429,20 +2450,21 @@ function socialDestinationReachable(p,point){
  }
  return Math.hypot(route[route.length-1].x-point.x,route[route.length-1].y-point.y)<2;
 }
+function nearPaintedRoad(x,y,radius=20){
+ return paintedRoadSegments.some(([a,b])=>pointSegmentDistance(x,y,a,b)<=radius);
+}
 function findSocialMeetingPoints(a,b){
  const centerX=(a.x+b.x)/2,centerY=(a.y+b.y)/2;
  let checkedRoutes=0;
- // Prefer the actual midpoint; search nearby land if it overlaps a wall, river or furniture.
- for(const radius of [0,24,48,72,104,144,192]){
-  for(let step=0;step<(radius===0?1:12);step++){
-   const turn=radius===0?0:step*Math.PI/6;
-   const cx=Math.max(55,Math.min(845,centerX+Math.cos(turn)*radius));
-   const cy=Math.max(55,Math.min(1345,centerY+Math.sin(turn)*radius));
+ const centers=roadNodes.slice().sort((u,v)=>Math.hypot(u.x-centerX,u.y-centerY)-Math.hypot(v.x-centerX,v.y-centerY)).slice(0,12);
+ for(const center of centers){
+  for(let step=0;step<1;step++){
+   const cx=center.x,cy=center.y;
    for(let direction=0;direction<8;direction++){
     const angle=direction*Math.PI/4;
     const dx=Math.cos(angle)*24,dy=Math.sin(angle)*24;
     const first={x:cx+dx,y:cy+dy},second={x:cx-dx,y:cy-dy};
-    if(isBlockedByStructure(first.x,first.y,a)||isBlockedByStructure(second.x,second.y,b))continue;
+    if(!nearPaintedRoad(first.x,first.y,16)||!nearPaintedRoad(second.x,second.y,16)||isBlockedByStructure(first.x,first.y,a)||isBlockedByStructure(second.x,second.y,b))continue;
     if(!movementSegmentClear(first.x,first.y,second.x,second.y,a))continue;
     // Bound route searches so periodic social scheduling cannot stall animation.
     if(++checkedRoutes>8)return null;
@@ -2945,17 +2967,25 @@ function clearPointerGesture(){
 function rebasePointerGesture(){
  if(activePointers.size>=2){
   const mid=pointerMid();gesture={type:interiorHomeId?'interior':'map',distance:pointerDistance(),zoom:interiorHomeId?interiorZoom:zoom,panX:interiorHomeId?interiorPanX:panX,panY:interiorHomeId?interiorPanY:panY,world:screenToWorld(mid.x,mid.y),mid};
- }else if(activePointers.size===1){const remain=[...activePointers.values()][0];remain.startX=remain.x;remain.startY=remain.y;gesture={type:'tap',start:remain,moved:true}}
+ }else if(activePointers.size===1){const remain=[...activePointers.values()][0];remain.startX=remain.x;remain.startY=remain.y;gesture={type:'tap',start:remain,moved:true,panX:interiorHomeId?interiorPanX:panX,panY:interiorHomeId?interiorPanY:panY,interior:!!interiorHomeId}}
  else gesture=null;
 }
 c.addEventListener('pointerdown',e=>{
  e.preventDefault();c.setPointerCapture(e.pointerId);const r=c.getBoundingClientRect(),pt={x:e.clientX-r.left,y:e.clientY-r.top,startX:e.clientX-r.left,startY:e.clientY-r.top};
  activePointers.set(e.pointerId,pt);
- if(activePointers.size===1)gesture={type:'tap',start:pt,moved:false};else rebasePointerGesture();
+ if(activePointers.size===1)gesture={type:'tap',start:pt,moved:false,panX:interiorHomeId?interiorPanX:panX,panY:interiorHomeId?interiorPanY:panY,interior:!!interiorHomeId};else rebasePointerGesture();
 });
 c.addEventListener('pointermove',e=>{
  if(!activePointers.has(e.pointerId))return;e.preventDefault();const r=c.getBoundingClientRect(),pt=activePointers.get(e.pointerId);pt.x=e.clientX-r.left;pt.y=e.clientY-r.top;
- if(gesture?.type==='tap'&&activePointers.size===1&&Math.hypot(pt.x-pt.startX,pt.y-pt.startY)>12)gesture.moved=true;
+ if(gesture?.type==='tap'&&activePointers.size===1){
+  const dx=pt.x-pt.startX,dy=pt.y-pt.startY;
+  if(Math.hypot(dx,dy)>8)gesture.moved=true;
+  if(gesture.moved){
+   if(gesture.interior){interiorPanX=gesture.panX+dx;interiorPanY=gesture.panY+dy}
+   else{const scale=Math.min(W/1000,H/1400)*zoom;panX=gesture.panX+dx/scale;panY=gesture.panY+dy/scale}
+   drawWorld();
+  }
+ }
  if(activePointers.size>=2&&(gesture?.type==='map'||gesture?.type==='interior')){
   const mid=pointerMid(),dist=Math.max(20,pointerDistance()),fit=gesture.type==='interior'?Math.min(W/900,H/1400)*1.05:Math.min(W/1000,H/1400),nextZoom=Math.max(.65,Math.min(2.4,gesture.zoom*dist/Math.max(20,gesture.distance))),scale=fit*nextZoom;
   if(gesture.type==='interior'){interiorZoom=nextZoom;interiorPanX=mid.x-W/2-(gesture.mid.x-W/2)*nextZoom/gesture.zoom+gesture.panX*nextZoom/gesture.zoom;interiorPanY=mid.y-H/2-(gesture.mid.y-H/2)*nextZoom/gesture.zoom+gesture.panY*nextZoom/gesture.zoom}
