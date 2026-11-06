@@ -10,7 +10,7 @@ let testNow=0;const storage={};const b={console,Math,Date,Set,Map,WeakMap,JSON,N
 function loadModel(preserve=false){
  if(!preserve)for(const key of Object.keys(storage))delete storage[key];
  vm.createContext(b);
- const exported='globalThis.qa={loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,setAction,availableBenchSeats,deleteHome,updateHomeDetails,households,places,rooms,getFurniture:()=>furniture,getErrors:()=>lastFrameErrorCount,advanceGameClock,getClock:()=>({hour,minute,calendarDay}),recoverResidentFromFailedRoute,waitForSocialPartner,householdForResident,startSocialVisit,relationshipFor,finishSocialPair,validateSocialPairs,relocateHome,movementSegmentClear,isOutdoorResident,setGoal:v=>{sharedGoal=v},getGoal:()=>sharedGoal,getDiary:()=>diary,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
+ const exported='globalThis.qa={natureBlocksMovement,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,setAction,availableBenchSeats,deleteHome,updateHomeDetails,households,places,rooms,getFurniture:()=>furniture,getErrors:()=>lastFrameErrorCount,advanceGameClock,getClock:()=>({hour,minute,calendarDay}),recoverResidentFromFailedRoute,waitForSocialPartner,householdForResident,startSocialVisit,relationshipFor,finishSocialPair,validateSocialPairs,relocateHome,movementSegmentClear,isOutdoorResident,setGoal:v=>{sharedGoal=v},getGoal:()=>sharedGoal,getDiary:()=>diary,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);b.qa.paintedTownArt.complete=true;b.qa.paintedTownArt.naturalWidth=1122;b.qa.paintedTownArt.naturalHeight=1402;return b.qa;
 }
 const assert=require('assert').strict;let failures=0,checks=0;
@@ -37,4 +37,30 @@ test('waiting meeting cancels cleanly if partner disappears',()=>{const q=setup(
 test('unreachable rendezvous times out without rewarding an unfinished conversation',()=>{const q=setup(),[a,b]=q.chars;place(q,a,593,514);place(q,b,482,1196);const r=q.relationshipFor(a,b);assert(q.startSocialVisit(a,b,r,a));Object.assign(a,{x:a.tx,y:a.ty,phaseState:'staying'});const affection=r.affection;q.waitForSocialPartner(a,121);assert.equal(a.socialPartnerId,null);assert.equal(b.socialPartnerId,null);assert.equal(a.phaseState,'idle');assert.equal(b.phaseState,'idle');assert.equal(b.routePoints.length,0);assert.equal(r.affection,affection);});
 test('bench departure resumes after reload',()=>{const q=setup(),p=q.chars[0],bench=q.WORLD_STREET_FURNITURE.benches[0],target=q.WORLD_STREET_FURNITURE.benches[3];Object.assign(p,{x:bench.x-17,y:bench.y-10,action:'bench',phaseState:'staying',benchSeat:{bench:0,slot:0}});assert(q.setAction(p,0,'bench',target.x-17,target.y-10,'go','sit','sit',10000));p.benchSeat={bench:3,slot:0};q.saveGame();const restored=loadModel(true),person=restored.chars[0];advance(restored,180,()=>person.phaseState==='staying');assert(reached(person,target.x-17,target.y-10));});
 test('failed route recovery never teleports a resident to the road',()=>{const q=setup(),p=q.chars[0];place(q,p,450,1000);Object.assign(p,{action:'walk',phaseState:'moving',routePoints:[],tx:2000,ty:2000});const before={x:p.x,y:p.y};q.recoverResidentFromFailedRoute(p,0);assert(Math.hypot(p.x-before.x,p.y-before.y)<.001,'Recovery jumped '+Math.hypot(p.x-before.x,p.y-before.y)+' world units');assert(p.routePoints.length>=2||p.phaseState==='idle');});
+
+// Image coordinates deliberately come from the painted scenery, rather than the
+// road graph: a reachable route can still walk across a bed or visit the pier.
+for(const slot of [0,1])test('garden walk follows the winding path to upper seat '+slot,()=>{
+ const q=setup(),p=q.chars[0],bench=q.WORLD_STREET_FURNITURE.benches[1];place(q,p,516,948);
+ assert(q.setAction(p,0,'bench',bench.x+(slot?17:-17),bench.y-10,'go','sit','sit',10000));
+ let sawLowerBend=false,sawTreeWest=false,travel=0,previous={x:p.x,y:p.y};
+ advance(q,180,()=>{
+  const n=q.nativePoint(p.x,p.y);travel+=Math.hypot(p.x-previous.x,p.y-previous.y);previous={x:p.x,y:p.y};
+  assert(!q.natureBlocksMovement(p.x,p.y,p),'Walk entered a planted bed or tree');
+  if(n.y>720&&n.y<900)assert(n.x<805,'Upper-bench trip detoured toward the pier');
+  if(n.y>835&&n.y<855){assert(n.x>730||n.x<580,'Walk cut across the lower flowerbed '+JSON.stringify(n));sawLowerBend=true}
+  if(n.y>710&&n.y<760&&n.x<650)sawTreeWest=true;
+  if(p.phaseState==='moving')assert.equal(p.pose,'stand','Sat before reaching the selected bench');
+  return p.phaseState==='staying';
+ });
+ assert(reached(p,bench.x+(slot?17:-17),bench.y-10));assert(sawLowerBend&&sawTreeWest,'Skipped the painted winding path');assert(travel<1100,'Unnecessary garden detour');
+});
+test('lower bench departure stays standing until the upper bench',()=>{
+ const q=setup(),p=q.chars[0],lower=q.WORLD_STREET_FURNITURE.benches[2],upper=q.WORLD_STREET_FURNITURE.benches[1];
+ Object.assign(p,{x:lower.x-17,y:lower.y-10,action:'bench',phaseState:'staying',pose:'sit',benchSeat:{bench:2,slot:0}});
+ assert(q.setAction(p,0,'bench',upper.x-17,upper.y-10,'go','sit','sit',10000));
+ advance(q,180,()=>{if(p.phaseState==='moving'){assert.equal(p.pose,'stand');const n=q.nativePoint(p.x,p.y);if(n.y>700)assert(n.x<825,'Departure headed onto the pier')}return p.phaseState==='staying'});
+ assert(reached(p,upper.x-17,upper.y-10));
+});
+
 console.log({checks,failures});process.exitCode=failures?1:0;

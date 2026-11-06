@@ -97,7 +97,7 @@ const ROAD_CLEARANCE_PROBE={id:'road-clearance-probe',x:-10000,y:-10000,action:'
 const SAVE_BACKUP_KEY=SAVE_KEY+'.backup';
 const SAVE_BEFORE_IMPORT_KEY=SAVE_KEY+'.before-import';
 let saveWritesBlocked=false,saveReady=false,loadedSaveData=null,saveWarningMessage='';
-const TOWN_LAYOUT_REVISION=12;let previousTownRevision=0;
+const TOWN_LAYOUT_REVISION=13;let previousTownRevision=0;
 // 家具・住居データ。購入者、所有者、利用者、設置場所を独立して管理する。
 const furnitureCatalog={
  bed:{id:'bed',name:'ベッド',price:1800,rooms:['bedroom'],actions:['sleep','rest'],capacity:2,ownership:'household',unique:'household',size:{w:2,h:2}},
@@ -434,9 +434,9 @@ function pointInPolygon(x,y,polygon){
  {start:[551,641],curves:[[[548,619],[505,605],[456,610]]]},
  {start:[543,661],curves:[[[457,680],[367,697],[309,696]],[[294,697],[279,696],[265,696]]]},
  {start:[515,851],curves:[[[474,854],[459,893],[418,870]]]},
- {garden:true,start:[821,349],curves:[[[774,375],[713,416],[727,469]],[[735,496],[807,512],[816,546]],[[864,605],[792,691],[688,674]],[[633,690],[594,714],[620,752]],[[646,858],[752,868],[793,827]],[[775,864],[740,899],[714,946]],[[703,961],[691,973],[687,990]]]},
- {garden:true,start:[816,546],curves:[[[824,547],[847,542],[863,536]]]},
- {garden:true,start:[793,827],curves:[[[821,819],[824,839],[846,845]],[[912,825],[974,795],[1010,800]]]},
+ {garden:true,followPaintedBend:true,start:[821,349],curves:[[[832,382],[830,422],[797,449]],[[744,461],[708,503],[749,529]],[[778,547],[822,542],[832,579]],[[838,607],[822,633],[795,649]],[[785,655],[774,660],[762,660]],[[704,668],[596,684],[620,744]],[[635,790],[750,842],[746,843]],[[770,876],[708,887],[665,898]],[[619,902],[565,887],[516,903]]]},
+ {garden:true,start:[749,529],curves:[[[788,543],[833,532],[863,536]]]},
+ {garden:true,start:[746,843],curves:[[[788,827],[821,829],[846,845]],[[912,825],[974,795],[1010,800]]]},
  {garden:true,start:[482,958],curves:[[[607,958],[708,1011],[708,1077]],[[708,1143],[607,1196],[482,1196]],[[357,1196],[256,1143],[256,1077]],[[256,1011],[357,958],[482,958]]]},
  {garden:true,start:[482,1196],curves:[[[482,1231],[506,1301],[493,1332]]]},
  {garden:true,start:[510,270],curves:[[[451,266],[400,250],[374,231]]]}
@@ -534,7 +534,7 @@ function findMovementDetour(p,point){
 // Static nature layout is the single source for tree placement and trunk collision.
 const WORLD_NATURE_OBJECTS={
  trees:[[750,427],[956,706],[721,803],[421,760],[502,1097]].map(([x,y],i)=>({id:'painted-tree-'+i,...artPoint(x,y),scale:1,collision:{trunkWidth:10,top:-5,bottom:5,padding:2}})),
- flowerbeds:[{id:'plaza-tree-bed',soil:nativeEllipse(502,1108,80,27).map(q=>Object.values(artPoint(...q))),top:nativeEllipse(502,1108,80,27).map(q=>Object.values(artPoint(...q)))}]
+ flowerbeds:[...[["garden-upper-bed",685,454,31,12],["garden-middle-bed",660,632,39,13],["garden-lower-bed",674,847,44,16]].map(([id,x,y,rx,ry])=>({id,soil:nativeEllipse(x,y,rx,ry).map(q=>Object.values(artPoint(...q))),top:nativeEllipse(x,y,rx,ry).map(q=>Object.values(artPoint(...q)))})),{id:'plaza-tree-bed',soil:nativeEllipse(502,1108,80,27).map(q=>Object.values(artPoint(...q))),top:nativeEllipse(502,1108,80,27).map(q=>Object.values(artPoint(...q)))}]
 };
 function natureBlocksMovement(x,y,p){
  for(const t of WORLD_NATURE_OBJECTS.trees)if(Math.abs(x-t.x)<7&&Math.abs(y-t.y)<7)return true;
@@ -1730,13 +1730,14 @@ roadRoutes.forEach((route,r)=>{
  let start=route.start,previous=null;
  route.curves.forEach((segment,c)=>{
   const length=Math.hypot(segment[0][0]-start[0],segment[0][1]-start[1])+Math.hypot(segment[1][0]-segment[0][0],segment[1][1]-segment[0][1])+Math.hypot(segment[2][0]-segment[1][0],segment[2][1]-segment[1][1]);
-  const count=Math.max(2,Math.ceil(length/48)),ids=[];
+  const count=Math.max(2,Math.ceil(length/(route.followPaintedBend?22:48))),ids=[];
   for(let j=0;j<=count;j++){
    const q=roadCurvePosition([start,...segment],j/count);
    let node=roadNodes.find(n=>Math.hypot(n.x-q.x,n.y-q.y)<5);
    if(!node){node={id:'road-'+r+'-'+c+'-'+j,x:q.x,y:q.y,links:[]};roadNodes.push(node)}
    if(previous&&previous!==node){if(!previous.links.includes(node.id))previous.links.push(node.id);if(!node.links.includes(previous.id))node.links.push(previous.id)}
    node.paintRadius=Math.max(node.paintRadius||0,route.main?36:route.garden?14:20);
+   if(route.followPaintedBend)node.followPaintedBend=true;
    ids.push(node.id);previous=node;
   }
   WALK_CURVES.push({r,c,ids});start=segment[2];
@@ -1921,16 +1922,20 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
  // 直線で安全に接続できる道路ノードを複数候補にし、道路上の移動距離も含めて最短の組み合わせを選ぶ。
  const starts=fixedStart?[fixedStart]:roadCandidates(fromX,fromY,resident);
- const goals=fixedGoal?[fixedGoal]:roadCandidates(toX,toY,resident);
+ // Garden seats are reached from the front path, without clipping across the seat or bed.
+ const targetBench=resident?.action==='bench'?WORLD_STREET_FURNITURE.benches.find(b=>Math.abs(toX-b.x)<=22&&Math.abs(toY-(b.y-10))<5):null;
+ const benchFront=targetBench&&nativePoint(targetBench.x,targetBench.y).y<900?{x:toX,y:targetBench.y+36}:null;
+ const goalX=benchFront?.x??toX,goalY=benchFront?.y??toY;
+ const goals=fixedGoal?[fixedGoal]:roadCandidates(goalX,goalY,resident);
  const clearanceCache=new Map();
  let start=starts[0],goal=goals[0],nodes=null,bestScore=Infinity;
  starts.forEach(a=>goals.forEach(b=>{
   const path=roadNodePath(a,b,resident,clearanceCache);
   if(!path.length||path[path.length-1].id!==b.id)return;
-  if((!startHome&&!movementSegmentClear(fromX,fromY,a.x,a.y,resident))||(!destinationHome&&!movementSegmentClear(b.x,b.y,toX,toY,resident)))return;
+  if((!startHome&&!movementSegmentClear(fromX,fromY,a.x,a.y,resident))||(!destinationHome&&!movementSegmentClear(b.x,b.y,goalX,goalY,resident)))return;
   let roadDistance=0;
   for(let i=1;i<path.length;i++)roadDistance+=Math.hypot(path[i].x-path[i-1].x,path[i].y-path[i-1].y);
-  const score=Math.hypot(fromX-a.x,fromY-a.y)+roadDistance+Math.hypot(toX-b.x,toY-b.y);
+  const score=Math.hypot(fromX-a.x,fromY-a.y)+roadDistance+Math.hypot(goalX-b.x,goalY-b.y);
   if(score<bestScore){bestScore=score;start=a;goal=b;nodes=path}
  }));
  if(!nodes){
@@ -1945,12 +1950,13 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
   // 玄関から正面の横道へ、描画と一致する短い縦道を進む。
   points.push(...remainingHomeExitPoints(startHome,fromX,fromY));
  }
- nodes.forEach((node,i)=>{if(i===0)points.push({x:node.x,y:node.y});else points.push(...curvedRoadEdge(nodes[i-1],node,resident));});
+ nodes.forEach((node,i)=>{if(i===0)points.push({x:node.x,y:node.y,curve:!!node.followPaintedBend});else points.push(...curvedRoadEdge(nodes[i-1],node,resident).map(q=>({...q,curve:q.curve||!!node.followPaintedBend})));});
  if(destinationHome){
   const e=homeEntrance(destinationHome);
   // 帰宅時も家の正面に伸びた通路からまっすぐ玄関へ向かう。
   points.push(...homeApproachPoints(destinationHome).slice().reverse());
  }
+ if(benchFront)points.push({...benchFront,curve:true});
  points.push({x:toX,y:toY});
  const result=compactRoutePoints(points,resident);
  if(resident&&result.some((q,i)=>i>0&&!movementSegmentClear(result[i-1].x,result[i-1].y,q.x,q.y,resident)))return [];
