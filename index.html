@@ -1600,14 +1600,26 @@ function paintedOccluderTile(item){
  const result={tile,left,top,width,height};paintedOccluderTiles.set(item.id,result);return result;
 }
 function drawPaintedOccluder(item){const q=paintedOccluderTile(item),p=artPoint(q.left,q.top);ctx.drawImage(q.tile,p.x,p.y,q.width*PAINTED_TOWN.scale,q.height*PAINTED_TOWN.scale)}
+let cafeStairPatch=null;
+const cafeStairArt=new Image();cafeStairArt.src='assets/cafe-stairs-painted-v1.webp';
+cafeStairArt.onload=()=>{cafeStairPatch=null;drawWorld()};
 function drawCafeAccessSteps(){
- ctx.save();ctx.translate(PAINTED_TOWN.left,PAINTED_TOWN.top);ctx.scale(PAINTED_TOWN.scale,PAINTED_TOWN.scale);
- const top={x:439,y:359},bottom={x:489,y:389},side={x:-12,y:13};
- for(let i=7;i>=0;i--){const t=i/8,u=(i+1)/8,a={x:top.x+(bottom.x-top.x)*t,y:top.y+(bottom.y-top.y)*t},b={x:top.x+(bottom.x-top.x)*u,y:top.y+(bottom.y-top.y)*u};
-  poly([[a.x+side.x,a.y+side.y],[a.x-side.x,a.y-side.y],[b.x-side.x,b.y-side.y],[b.x+side.x,b.y+side.y]],i%2?'#e7d1b0':'#f6e5c8','#ad9677',.8);
-  ctx.strokeStyle='#fff1d5';ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(a.x+side.x,a.y+side.y);ctx.lineTo(a.x-side.x,a.y-side.y);ctx.stroke();
+ if(!cafeStairArt.complete||!cafeStairArt.naturalWidth)return;
+ if(!cafeStairPatch){
+  // Use only the staircase and its ground contact from the matching painted
+  // asset. Every other pixel still comes from the original town background.
+  const left=408,top=326,width=154,height=120;
+  const outline=[[425,344],[446,338],[470,337],[498,350],[522,372],[545,397],[553,425],[525,439],[491,420],[465,396],[437,374],[420,367]];
+  const tile=document.createElement('canvas');tile.width=width;tile.height=height;const t=tile.getContext('2d');
+  t.drawImage(cafeStairArt,0,0,cafeStairArt.naturalWidth,cafeStairArt.naturalHeight,-left,-top,1122,1402);
+  const mask=document.createElement('canvas');mask.width=width;mask.height=height;const m=mask.getContext('2d');
+  m.fillStyle='white';m.shadowColor='white';m.shadowBlur=2;m.beginPath();outline.forEach(([x,y],i)=>i?m.lineTo(x-left,y-top):m.moveTo(x-left,y-top));m.closePath();m.fill();
+  t.globalCompositeOperation='destination-in';t.drawImage(mask,0,0);
+  // Keep the existing lantern and its foot unchanged at the upper landing.
+  t.globalCompositeOperation='destination-out';t.fillRect(454-left,280-top,20,74);
+  cafeStairPatch={tile,left,top,width,height};
  }
- ctx.restore();
+ const q=cafeStairPatch,p=artPoint(q.left,q.top);ctx.drawImage(q.tile,p.x,p.y,q.width*PAINTED_TOWN.scale,q.height*PAINTED_TOWN.scale);
 }
 function drawWorld(){
  ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(interiorHomeId);return}
