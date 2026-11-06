@@ -30,7 +30,7 @@ const PAINTED_PLOTS=[
  {id:'north-west',label:'北西の花庭の家',anchor:[475,204],approach:[[531,225],[541,241],[552,251]],footprint:[[397,169],[465,145],[556,176],[555,220],[474,239],[397,214]]},
  {id:'north-center',label:'北東の花庭の家',anchor:[682,224],approach:[[704,245],[711,260],[710,282]],footprint:[[610,194],[673,173],[752,206],[751,244],[681,268],[610,239]]},
  {id:'south-west',label:'川を望む東の家',anchor:[868,278],approach:[[908,309],[914,323],[906,338]],footprint:[[799,245],[863,223],[941,254],[941,294],[864,317],[799,288]]},
- {id:'south-center',label:'石段の上の家',anchor:[405,487],approach:[[424,511],[430,542],[438,560]],footprint:[[311,459],[403,430],[506,473],[504,516],[412,545],[311,511]]},
+ {id:'south-center',label:'石段の上の家',anchor:[405,487],approach:[[424,511],[430,542],[438,560],[447,585],[456,610]],footprint:[[311,459],[403,430],[506,473],[504,516],[412,545],[311,511]]},
  {id:'south-east',label:'広場から離れた花庭の家',anchor:[285,805],approach:[[328,838],[339,855],[385,872],[418,870]],footprint:[[191,769],[282,737],[389,777],[389,823],[291,858],[191,824]]},
  {id:'center-west-home',label:'北の木陰の家',anchor:[270,125],approach:[[300,174],[322,196],[374,231]],footprint:[[208,121],[270,99],[328,124],[329,161],[273,181],[208,161]],extra:true}
 ];
@@ -97,7 +97,7 @@ const ROAD_CLEARANCE_PROBE={id:'road-clearance-probe',x:-10000,y:-10000,action:'
 const SAVE_BACKUP_KEY=SAVE_KEY+'.backup';
 const SAVE_BEFORE_IMPORT_KEY=SAVE_KEY+'.before-import';
 let saveWritesBlocked=false,saveReady=false,loadedSaveData=null,saveWarningMessage='';
-const TOWN_LAYOUT_REVISION=11;let previousTownRevision=0;
+const TOWN_LAYOUT_REVISION=12;let previousTownRevision=0;
 // 家具・住居データ。購入者、所有者、利用者、設置場所を独立して管理する。
 const furnitureCatalog={
  bed:{id:'bed',name:'ベッド',price:1800,rooms:['bedroom'],actions:['sleep','rest'],capacity:2,ownership:'household',unique:'household',size:{w:2,h:2}},
@@ -430,8 +430,8 @@ function pointInPolygon(x,y,polygon){
  {main:true,start:[510,270],curves:[[[585,335],[630,415],[591,535]],[[569,618],[506,700],[514,803]],[[507,856],[515,894],[516,948]]]},
  {start:[510,270],curves:[[[527,262],[548,259],[552,251]]]},
  {start:[566,318],curves:[[[616,300],[654,290],[710,282]],[[753,288],[762,332],[821,349]],[[860,364],[895,352],[906,338]]]},
- {start:[565,382],curves:[[[534,388],[516,395],[489,389]],[[475,380],[454,368],[439,359]],[[410,369],[354,400],[311,382]],[[322,367],[347,359],[367,357]]]},
- {start:[551,641],curves:[[[528,604],[475,599],[438,560]]]},
+ {start:[600,430],curves:[[[575,436],[550,434],[535,425]],[[507,406],[470,376],[439,359]],[[410,369],[354,400],[311,382]],[[322,367],[347,359],[367,357]]]},
+ {start:[551,641],curves:[[[548,619],[505,605],[456,610]]]},
  {start:[543,661],curves:[[[457,680],[367,697],[309,696]],[[294,697],[279,696],[265,696]]]},
  {start:[515,851],curves:[[[474,854],[459,893],[418,870]]]},
  {garden:true,start:[821,349],curves:[[[774,375],[713,416],[727,469]],[[735,496],[807,512],[816,546]],[[864,605],[792,691],[688,674]],[[633,690],[594,714],[620,752]],[[646,858],[752,868],[793,827]],[[775,864],[740,899],[714,946]],[[703,961],[691,973],[687,990]]]},
@@ -519,7 +519,7 @@ function findMovementDetour(p,point){
    const angle=Math.PI*2*i/32;
    const candidate={x:point.x+Math.cos(angle)*radius,y:point.y+Math.sin(angle)*radius};
    if(candidate.x<24||candidate.x>876||candidate.y<24||candidate.y>1376)continue;
-   if(isBlockedByStructure(candidate.x,candidate.y,p))continue;
+   if(isBlockedByStructure(candidate.x,candidate.y,p)||!nearPaintedRoad(candidate.x,candidate.y,30)||!roadJoinFollowsPaint(p.x,p.y,candidate.x,candidate.y)||!roadJoinFollowsPaint(candidate.x,candidate.y,point.x,point.y))continue;
    const remaining=Math.hypot(point.x-candidate.x,point.y-candidate.y);
    const travel=Math.hypot(candidate.x-p.x,candidate.y-p.y);
    if(remaining>=currentDistance+8||travel<8)continue;
@@ -1736,6 +1736,7 @@ roadRoutes.forEach((route,r)=>{
    let node=roadNodes.find(n=>Math.hypot(n.x-q.x,n.y-q.y)<5);
    if(!node){node={id:'road-'+r+'-'+c+'-'+j,x:q.x,y:q.y,links:[]};roadNodes.push(node)}
    if(previous&&previous!==node){if(!previous.links.includes(node.id))previous.links.push(node.id);if(!node.links.includes(previous.id))node.links.push(previous.id)}
+   node.paintRadius=Math.max(node.paintRadius||0,route.main?36:route.garden?14:20);
    ids.push(node.id);previous=node;
   }
   WALK_CURVES.push({r,c,ids});start=segment[2];
@@ -1863,19 +1864,37 @@ function compactRoutePoints(points,resident){
    if(length<1)continue;
    const deviation=Math.abs(abx*acy-aby*acx)/length;
    const forward=abx*acx+aby*acy;
-   if(!b.curve&&!c.curve&&deviation<=5&&forward>0&&movementSegmentClear(a.x,a.y,c.x,c.y,resident)){
+   if(!b.curve&&!c.curve&&deviation<=5&&forward>0&&roadJoinFollowsPaint(a.x,a.y,c.x,c.y)&&movementSegmentClear(a.x,a.y,c.x,c.y,resident)){
     compact.splice(i,1);changed=true;break;
    }
   }
  }
  return compact;
 }
+// Limit road joins and pedestrian avoidance to each painted lane's width.
+// Off-road activity spots may return gradually; the circular plaza stays open.
 function roadJoinFollowsPaint(x1,y1,x2,y2){
- const distance=Math.hypot(x2-x1,y2-y1);
- if(distance<=48||!nearPaintedRoad(x1,y1,26))return true;
- const count=Math.ceil(distance/16);
- for(let i=1;i<count;i++){const t=i/count;if(!nearPaintedRoad(x1+(x2-x1)*t,y1+(y2-y1)*t,26))return false}
+ const distance=Math.hypot(x2-x1,y2-y1);if(distance<=24)return true;
+ const startDistance=Math.min(...paintedRoadSegments.map(([a,b])=>pointSegmentDistance(x1,y1,a,b)));
+ const count=Math.ceil(distance/10);
+ for(let i=1;i<count;i++){
+  const t=i/count,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t,slack=6+startDistance*(1-t);
+  const native=nativePoint(x,y);if(((native.x-482)/270)**2+((native.y-1077)/155)**2<1)continue;
+  if(!paintedRoadSegments.some(([a,b])=>pointSegmentDistance(x,y,a,b)<=Math.min(a.paintRadius||20,b.paintRadius||20)+slack))return false;
+ }
  return true;
+}
+function remainingHomeExitPoints(home,x,y){
+ const points=homeApproachPoints(home);let best=Infinity,index=0;
+ for(let i=1;i<points.length;i++){const distance=pointSegmentDistance(x,y,points[i-1],points[i]);if(distance<best){best=distance;index=i}}
+ return points.slice(index).map(q=>({...q,curve:true}));
+}
+// Main-road walkers enter the cafe staircase at its foot, never through its side.
+function stairConnectionAllowed(x,y,node){
+ const a=artPoint(439,359),b=artPoint(505,405),bottom=artPoint(535,425);
+ const onFlight=(px,py)=>Math.min(pointSegmentDistance(px,py,a,b),pointSegmentDistance(px,py,b,bottom));
+ if(onFlight(node.x,node.y)>16||Math.hypot(node.x-bottom.x,node.y-bottom.y)<20)return true;
+ return onFlight(x,y)<=18||Math.hypot(x-a.x,y-a.y)<=24;
 }
 function roadCandidates(x,y,p){
  const ordered=roadNodes.map(n=>({node:n,distance:Math.hypot(n.x-x,n.y-y)})).sort((a,b)=>a.distance-b.distance);
@@ -1884,7 +1903,7 @@ function roadCandidates(x,y,p){
  // roads first made every route scan almost the entire town twice.
  for(const {node,distance} of ordered){
   if(reach!==null&&distance>reach)break;
-  if(isBlockedByStructure(node.x,node.y,p)||!roadJoinFollowsPaint(x,y,node.x,node.y)||!movementSegmentClear(x,y,node.x,node.y,p))continue;
+  if(isBlockedByStructure(node.x,node.y,p)||!stairConnectionAllowed(x,y,node)||!roadJoinFollowsPaint(x,y,node.x,node.y)||!movementSegmentClear(x,y,node.x,node.y,p))continue;
   if(reach===null)reach=Math.max(145,Math.min(185,distance+65));
   if(distance<=reach)visible.push(node);
   if(visible.length===3)break;
@@ -1917,13 +1936,14 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  if(!nodes){
   // No complete road connection was found: never append unrelated fragments as a pretend route.
   // If roads are disconnected, allow only a short collision-free local step.
-  return Math.hypot(toX-fromX,toY-fromY)<=85&&movementSegmentClear(fromX,fromY,toX,toY,resident)
+  return Math.hypot(toX-fromX,toY-fromY)<=85&&roadJoinFollowsPaint(fromX,fromY,toX,toY)&&movementSegmentClear(fromX,fromY,toX,toY,resident)
    ?compactRoutePoints([{x:fromX,y:fromY},{x:toX,y:toY}],resident):[];
  }
+ if(startHome&&resident&&!['home','sleep'].includes(resident.action))rememberHomeDeparture(resident,startHome);
  const points=[{x:fromX,y:fromY}];
  if(startHome){
   // 玄関から正面の横道へ、描画と一致する短い縦道を進む。
-  points.push(...homeApproachPoints(startHome).slice(1));
+  points.push(...remainingHomeExitPoints(startHome,fromX,fromY));
  }
  nodes.forEach((node,i)=>{if(i===0)points.push({x:node.x,y:node.y});else points.push(...curvedRoadEdge(nodes[i-1],node,resident));});
  if(destinationHome){
@@ -2757,11 +2777,11 @@ function residentWalkDirection(p){
   if(cross&&Math.abs((p.x-other.x)*oh.y-(p.y-other.y)*oh.x)>30)return {...plan,stage:'wait',ready:true};
   for(const sign of [1,-1])for(const width of [28,31,35]){
    const sx=-h.y*sign*width,sy=h.x*sign*width,x=p.x+sx,y=p.y+sy;
-   if(!movementSegmentClear(p.x,p.y,x,y,p)||!residentBodyClear(p,x,y))continue;
+   if(!roadJoinFollowsPaint(p.x,p.y,x,y)||!movementSegmentClear(p.x,p.y,x,y,p)||!residentBodyClear(p,x,y))continue;
    if(cross&&Math.abs((x-other.x)*oh.y-(y-other.y)*oh.x)<28)continue;
    const fx=other.x+h.x*42+sx,fy=other.y+h.y*42+sy;
    if(type==='bypass'){
-    if(!movementSegmentClear(x,y,fx,fy,p)||!residentBodyClear(p,fx,fy))continue;
+    if(!roadJoinFollowsPaint(x,y,fx,fy)||!movementSegmentClear(x,y,fx,fy,p)||!residentBodyClear(p,fx,fy))continue;
     const dx=fx-x,dy=fy-y,t=Math.max(0,Math.min(1,((other.x-x)*dx+(other.y-y)*dy)/Math.max(1,dx*dx+dy*dy)));
     if(Math.hypot(other.x-x-dx*t,other.y-y-dy*t)<27)continue;
    }
