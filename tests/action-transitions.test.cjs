@@ -10,7 +10,7 @@ let testNow=0;const storage={};const b={console,Math,Date,Set,Map,WeakMap,JSON,N
 function loadModel(preserve=false){
  if(!preserve)for(const key of Object.keys(storage))delete storage[key];
  vm.createContext(b);
- const exported='globalThis.qa={natureBlocksMovement,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,setAction,availableBenchSeats,deleteHome,updateHomeDetails,households,places,rooms,getFurniture:()=>furniture,getErrors:()=>lastFrameErrorCount,advanceGameClock,getClock:()=>({hour,minute,calendarDay}),recoverResidentFromFailedRoute,waitForSocialPartner,householdForResident,startSocialVisit,relationshipFor,finishSocialPair,validateSocialPairs,relocateHome,movementSegmentClear,isOutdoorResident,setGoal:v=>{sharedGoal=v},getGoal:()=>sharedGoal,getDiary:()=>diary,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
+ const exported='globalThis.qa={mainRoadMeetingBlocked,findSocialMeetingPoints,natureBlocksMovement,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,setAction,availableBenchSeats,deleteHome,updateHomeDetails,households,places,rooms,getFurniture:()=>furniture,getErrors:()=>lastFrameErrorCount,advanceGameClock,getClock:()=>({hour,minute,calendarDay}),recoverResidentFromFailedRoute,waitForSocialPartner,householdForResident,startSocialVisit,relationshipFor,finishSocialPair,validateSocialPairs,relocateHome,movementSegmentClear,isOutdoorResident,setGoal:v=>{sharedGoal=v},getGoal:()=>sharedGoal,getDiary:()=>diary,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);b.qa.paintedTownArt.complete=true;b.qa.paintedTownArt.naturalWidth=1122;b.qa.paintedTownArt.naturalHeight=1402;return b.qa;
 }
 const assert=require('assert').strict;let failures=0,checks=0;
@@ -61,6 +61,22 @@ test('lower bench departure stays standing until the upper bench',()=>{
  assert(q.setAction(p,0,'bench',upper.x-17,upper.y-10,'go','sit','sit',10000));
  advance(q,180,()=>{if(p.phaseState==='moving'){assert.equal(p.pose,'stand');const n=q.nativePoint(p.x,p.y);if(n.y>700)assert(n.x<825,'Departure headed onto the pier')}return p.phaseState==='staying'});
  assert(reached(p,upper.x-17,upper.y-10));
+});
+
+
+test('main street rendezvous move to a meeting away from through traffic',()=>{
+ const q=setup(),[a,b]=q.chars;
+ for(const y of [430,514,700,850]){
+  place(q,a,593,y);place(q,b,570,y+30);
+  const meeting=q.findSocialMeetingPoints(a,b);assert(meeting,'No alternate meeting for '+y);
+  for(const point of [meeting.first,meeting.second])assert(!q.mainRoadMeetingBlocked(point.x,point.y),'Meeting occupies the main street');
+ }
+});
+test('saved main street meeting releases both residents without teleporting',()=>{
+ const q=setup(),[a,b]=q.chars;place(q,a,593,514);place(q,b,593,550);
+ for(const [p,other] of [[a,b],[b,a]])Object.assign(p,{action:'social',phaseState:'staying',socialPartnerId:other.id,tx:p.x,ty:p.y,stay:10000});
+ const before=q.chars.map(p=>({id:p.id,x:p.x,y:p.y}));q.saveGame();const restored=loadModel(true);
+ restored.chars.forEach((p,i)=>{assert.notEqual(p.action,'social');assert.equal(p.socialPartnerId,null);assert.equal(p.routePoints.length,0);assert.equal(p.x,before[i].x);assert.equal(p.y,before[i].y)});
 });
 
 console.log({checks,failures});process.exitCode=failures?1:0;

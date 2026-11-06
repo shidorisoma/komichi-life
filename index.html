@@ -1993,6 +1993,8 @@ chars.forEach(p=>{
   p.routeIndex=1;p.stuckTime=0;p.routeRetries=0;
  }
 });
+// Retire saved rendezvous on the through street without moving residents.
+chars.filter(p=>p.action==='social'&&mainRoadMeetingBlocked(p.tx,p.ty)).forEach(cancelSocialVisit);
 saveReady=true;saveGame();
 function paintedActivityDestination(x,y,p){
  const sorted=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p)).sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y));
@@ -2491,10 +2493,14 @@ function socialDestinationReachable(p,point){
 function nearPaintedRoad(x,y,radius=20){
  return paintedRoadSegments.some(([a,b])=>pointSegmentDistance(x,y,a,b)<=radius);
 }
+function mainRoadMeetingBlocked(x,y){
+ // Include pedestrian clearance so neither member of a pair stands at the edge of the main lane.
+ return paintedRoadSegments.some(([a,b])=>a.paintRadius>=36&&b.paintRadius>=36&&pointSegmentDistance(x,y,a,b)<60);
+}
 function findSocialMeetingPoints(a,b){
  const centerX=(a.x+b.x)/2,centerY=(a.y+b.y)/2;
  let checkedRoutes=0;
- const centers=roadNodes.slice().sort((u,v)=>Math.hypot(u.x-centerX,u.y-centerY)-Math.hypot(v.x-centerX,v.y-centerY)).slice(0,12);
+ const centers=roadNodes.filter(n=>!mainRoadMeetingBlocked(n.x,n.y)).sort((u,v)=>Math.hypot(u.x-centerX,u.y-centerY)-Math.hypot(v.x-centerX,v.y-centerY)).slice(0,12);
  for(const center of centers){
   for(let step=0;step<1;step++){
    const cx=center.x,cy=center.y;
@@ -2502,6 +2508,7 @@ function findSocialMeetingPoints(a,b){
     const angle=direction*Math.PI/4;
     const dx=Math.cos(angle)*24,dy=Math.sin(angle)*24;
     const first={x:cx+dx,y:cy+dy},second={x:cx-dx,y:cy-dy};
+    if(mainRoadMeetingBlocked(first.x,first.y)||mainRoadMeetingBlocked(second.x,second.y))continue;
     if(!nearPaintedRoad(first.x,first.y,16)||!nearPaintedRoad(second.x,second.y,16)||isBlockedByStructure(first.x,first.y,a)||isBlockedByStructure(second.x,second.y,b))continue;
     if(!movementSegmentClear(first.x,first.y,second.x,second.y,a))continue;
     // Bound route searches so periodic social scheduling cannot stall animation.
