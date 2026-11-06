@@ -73,7 +73,7 @@ const PAINTED_OCCLUDERS=[
  {id:'wisteria',depth:504,polygon:[[789,427],[808,397],[842,376],[895,375],[935,400],[951,438],[947,503],[929,517],[918,474],[827,474],[828,517],[806,508]]},
  {id:'flower-arch',depth:1248,polygon:[[395,1215],[405,1173],[437,1141],[483,1127],[526,1138],[559,1167],[575,1210],[569,1253],[548,1253],[548,1204],[533,1175],[511,1158],[479,1152],[449,1166],[427,1192],[423,1255],[402,1256]]}
 ];
-const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,pageSuspended=false,residentDiagnosticTimer=null,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
+const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,pageSuspended=false,residentDiagnosticTimer=null,residentDiagnosticsOpen=false,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が川辺のこみちを散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
 const places=[
  {id:'home',name:'西の住宅',icon:'🏡',...artPoint(475,204),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'home2',name:'東の住宅',icon:'🏠',...artPoint(682,224),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
@@ -90,6 +90,8 @@ const places=[
 ];
 function getPlace(id){return places.find(place=>place.id===id)||null}
 const SAVE_KEY='komichi-life-save-v1';
+const commonRoadClearance=new Map();
+const ROAD_CLEARANCE_PROBE={id:'road-clearance-probe',x:-10000,y:-10000,action:'idle',phaseState:'idle'};
 const SAVE_BACKUP_KEY=SAVE_KEY+'.backup';
 const SAVE_BEFORE_IMPORT_KEY=SAVE_KEY+'.before-import';
 let saveWritesBlocked=false,saveReady=false,loadedSaveData=null,saveWarningMessage='';
@@ -191,7 +193,7 @@ function createHomeFromTemplate(layoutKey,residentIds){
  syncHomePlaces();memberIds.forEach(id=>syncResidentHomeDestination(residentById(id)));saveGame(true);return home;
 }
 function syncHomePlaces(){
- townExteriorCache=null;
+ townExteriorCache=null;commonRoadClearance.clear();
  // Persist each resident's actual home instead of reassigning it from their
  // changing array index when somebody joins or leaves the town.
  chars.forEach(p=>{const id=householdForResident(p).homeId;p.homeId=homes[id]?id:Object.keys(homes)[0]});
@@ -778,7 +780,16 @@ function resetResidentPosition(p,i){
  chooseRoutine(p,i);
  selected=i;renderResidentStatus();drawWorld();saveGame(true);
 }
+function stopResidentDiagnostics(close=true){
+ if(residentDiagnosticTimer!=null)clearInterval(residentDiagnosticTimer);
+ residentDiagnosticTimer=null;if(close)residentDiagnosticsOpen=false;
+}
+function startResidentDiagnostics(){
+ if(!residentDiagnosticsOpen||document.hidden||pageSuspended||residentDiagnosticTimer!=null)return;
+ updateResidentDiagnostics();residentDiagnosticTimer=setInterval(updateResidentDiagnostics,500);
+}
 function updateResidentDiagnostics(){
+ if(!residentDiagnosticsOpen||document.hidden||pageSuspended)return;
  const body=document.getElementById('panelBody');if(!body||!body.querySelector('.residentDiagnosticRow'))return;
  chars.forEach((p,i)=>{
   const node=body.querySelector('[data-diagnostic-index="'+i+'"]');if(!node)return;
@@ -798,11 +809,9 @@ function openPlaceResidents(){
  const panel=document.getElementById('panel'),title=document.getElementById('panelTitle'),body=document.getElementById('panelBody');
  panel.classList.remove('mapPanel','homePanel');panel.classList.add('show');title.textContent='住人の移動診断';
  body.innerHTML=chars.map((p,i)=>'<div class="residentRow residentDiagnosticRow">'+residentAvatar(p)+'<div class="residentInfo"><b>'+escapeHtml(p.name)+(p.action==='home'||p.action==='sleep'?'（自宅）':'（街）')+'</b><div class="activity">'+escapeHtml(p.activity||'過ごしている')+'</div><div class="subtle" data-diagnostic-index="'+i+'" style="font-size:10px;line-height:1.55;margin-top:3px"></div></div><button type="button" class="residentResetBtn" data-resident-index="'+i+'">リセット</button></div>').join('')+'<div class="subtle" id="runtimeDiagnostic" style="margin:8px 0"></div><button class="actionBtn" id="closePlaceResidents">閉じる</button>';
- updateResidentDiagnostics();
- if(residentDiagnosticTimer)clearInterval(residentDiagnosticTimer);
- residentDiagnosticTimer=setInterval(updateResidentDiagnostics,500);
+ stopResidentDiagnostics();residentDiagnosticsOpen=true;startResidentDiagnostics();
  body.querySelectorAll('.residentResetBtn').forEach(button=>button.onclick=()=>resetResidentPosition(chars[Number(button.dataset.residentIndex)],Number(button.dataset.residentIndex)));
- document.getElementById('closePlaceResidents').onclick=()=>{if(residentDiagnosticTimer)clearInterval(residentDiagnosticTimer);residentDiagnosticTimer=null;panel.classList.remove('show');showTab(interiorHomeId?'home':'walk',true)};
+ document.getElementById('closePlaceResidents').onclick=()=>{stopResidentDiagnostics();panel.classList.remove('show');showTab(interiorHomeId?'home':'walk',true)};
 }
 renderResidentStatus();
 // Spread newly added residents over safe walkable positions instead of
@@ -856,12 +865,12 @@ function removeResident(id){
 }
 window.addResident=addResident;
 function suspendGame(){
- pageSuspended=true;lastClockSample=performance.now();clearPointerGesture();saveGame();
+ pageSuspended=true;stopResidentDiagnostics(false);lastClockSample=performance.now();clearPointerGesture();saveGame();
 }
 function resumeGame(){
  const now=performance.now();last=now;lastClockSample=now;lastAnimationWallTime=Date.now();lastWatchdogAttempt=0;
  pageSuspended=!!document.hidden;clearPointerGesture();
- if(!pageSuspended){resize();drawWorld();requestAnimationFrame(loop)}
+ if(!pageSuspended){resize();drawWorld();startResidentDiagnostics();requestAnimationFrame(loop)}
 }
 window.addEventListener('storage',event=>{
  if(event.key!==SAVE_KEY&&event.key!==null)return;
@@ -1777,7 +1786,16 @@ function roadNodePath(start,goal,resident=null,clearanceCache=new Map()){
  const byId=new Map(graphNodes.map(n=>[n.id,n]));
  const adjacency=new Map(graphNodes.map(n=>[n.id,new Set(n.links||[])]));
  graphNodes.forEach(n=>(n.links||[]).forEach(id=>adjacency.get(id)?.add(n.id)));
- const edgeClear=(a,b)=>{if(!resident)return true;const key=[a.id,b.id].sort().join('|');if(!clearanceCache.has(key))clearanceCache.set(key,movementSegmentClear(a.x,a.y,b.x,b.y,resident));return clearanceCache.get(key)};
+ const edgeClear=(a,b)=>{
+  if(!resident)return true;const key=[a.id,b.id].sort().join('|');
+  // Streets clear for an ordinary pedestrian remain clear for residents with
+  // extra door/seat permissions. Reuse only that conservative result; private
+  // approaches still receive the full resident-specific collision check.
+  if(!commonRoadClearance.has(key))commonRoadClearance.set(key,!isBlockedByStructure(a.x,a.y,ROAD_CLEARANCE_PROBE)&&!isBlockedByStructure(b.x,b.y,ROAD_CLEARANCE_PROBE)&&movementSegmentClear(a.x,a.y,b.x,b.y,ROAD_CLEARANCE_PROBE));
+  if(commonRoadClearance.get(key))return true;
+  if(!clearanceCache.has(key))clearanceCache.set(key,movementSegmentClear(a.x,a.y,b.x,b.y,resident));
+  return clearanceCache.get(key);
+ };
  const distance=new Map(graphNodes.map(n=>[n.id,Infinity]));
  const previous=new Map(),unvisited=new Set(graphNodes.map(n=>n.id));
  distance.set(start.id,0);
@@ -1826,6 +1844,21 @@ function compactRoutePoints(points,resident){
  }
  return compact;
 }
+function roadCandidates(x,y,p){
+ const ordered=roadNodes.map(n=>({node:n,distance:Math.hypot(n.x-x,n.y-y)})).sort((a,b)=>a.distance-b.distance);
+ const visible=[];let reach=null;
+ // Only the nearest three reachable connections are used. Checking distant
+ // roads first made every route scan almost the entire town twice.
+ for(const {node,distance} of ordered){
+  if(reach!==null&&distance>reach)break;
+  if(isBlockedByStructure(node.x,node.y,p)||!movementSegmentClear(x,y,node.x,node.y,p))continue;
+  if(reach===null)reach=Math.max(145,Math.min(185,distance+65));
+  if(distance<=reach)visible.push(node);
+  if(visible.length===3)break;
+ }
+ if(reach!==null)return visible;
+ return ordered.filter(({node})=>!isBlockedByStructure(node.x,node.y,p)).slice(0,3).map(({node})=>node);
+}
 function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  if(resident&&Math.hypot(resident.x-fromX,resident.y-fromY)<2)restoreBenchExitClearance(resident);
  const ownHome=resident?homes[householdForResident(resident).homeId]:null;
@@ -1835,21 +1868,8 @@ function roadRoute(fromX,fromY,toX,toY,destinationHome=null,resident=null){
  const fixedGoal=destinationHome?homeSouthRoadNode(destinationHome):null;
  const nearest=(x,y)=>roadNodes.reduce((best,n)=>Math.hypot(n.x-x,n.y-y)<Math.hypot(best.x-x,best.y-y)?n:best,roadNodes[0]);
  // 直線で安全に接続できる道路ノードを複数候補にし、道路上の移動距離も含めて最短の組み合わせを選ぶ。
- const candidates=(x,y,p)=>{
-  const visible=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p)&&movementSegmentClear(x,y,n.x,n.y,p))
-   .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y));
-  // 直線で届く道路がない場合も、塞がれていない近隣ノードを複数残して迂回経路を比較する。
-  if(visible.length){
-   // Prevent distant line-of-sight shortcuts that abandon the painted roads.
-   const closest=Math.hypot(visible[0].x-x,visible[0].y-y);
-   const reach=Math.max(145,Math.min(185,closest+65));
-   return visible.filter(n=>Math.hypot(n.x-x,n.y-y)<=reach).slice(0,3);
-  }
-  return roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p))
-   .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y)).slice(0,3);
- };
- const starts=fixedStart?[fixedStart]:candidates(fromX,fromY,resident);
- const goals=fixedGoal?[fixedGoal]:candidates(toX,toY,resident);
+ const starts=fixedStart?[fixedStart]:roadCandidates(fromX,fromY,resident);
+ const goals=fixedGoal?[fixedGoal]:roadCandidates(toX,toY,resident);
  const clearanceCache=new Map();
  let start=starts[0],goal=goals[0],nodes=null,bestScore=Infinity;
  starts.forEach(a=>goals.forEach(b=>{
@@ -2991,7 +3011,7 @@ function renderResidentManager(){
  body.querySelectorAll('[data-edit-resident]').forEach(b=>b.onclick=()=>{editingResidentId=b.dataset.editResident;renderResidentManager()});
  body.querySelectorAll('[data-remove-resident]').forEach(b=>b.onclick=()=>{const id=b.dataset.removeResident,p=residentById(id);if(!p||chars.length<=1){alert('最後の1人は退去できません。');return}if(!confirm(p.name+'を街から退去させますか？'))return;if(removeResident(id))renderResidentManager()});
 }
-function showTab(t,force=false){if(!force&&t===tab&&t!=='walk')t='walk';if(t!=='relations')expandedRelationId='';tab=t;document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));panel.classList.toggle('show',t!=='walk');panel.classList.toggle('mapPanel',t==='map');panel.classList.toggle('homePanel',t==='home');document.getElementById('mapToggle').classList.toggle('active',t==='map');document.getElementById('mapToggle').textContent=interiorHomeId?'↩︎':'🗺️';document.getElementById('mapToggle').classList.toggle('returnCity',!!interiorHomeId);document.getElementById('mapToggle').setAttribute('aria-label',interiorHomeId?'街に戻る':'地図');if(t==='walk'){document.getElementById('hint').style.display=interiorHomeId?'none':'block';if(!interiorHomeId){document.getElementById('placeTitle').textContent='川辺のこみち';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';document.getElementById('placeActions').classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map')}else{const home=getPlace(interiorHomeId);document.getElementById('placeTitle').textContent=home?home.name:'家の中';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').classList.add('show')}renderResidentStatus();return}document.getElementById('hint').style.display='none';if(t==='map'){document.getElementById('placeTitle').textContent='川辺のこみち';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';document.getElementById('placeActions').classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map');renderResidentStatus();title.textContent='街の地図';body.innerHTML='<div class="metricTitle">住人の家の中を覗く</div><div class="mapGrid">'+Object.values(homes).map(h=>'<button class="actionBtn enterHome" data-home="'+escapeHtml(h.id)+'">🏡 '+escapeHtml(h.name)+'の中へ</button>').join('')+'</div><div class="metricTitle">街のスポット</div><div class="mapGrid">'+places.filter(place=>place.type==='home'||place.type==='cafe'||place.type==='shop'||place.id==='plaza').map(place=>'<button class="actionBtn mapPlace" data-place="'+place.id+'">'+place.icon+' '+escapeHtml(place.name)+'</button>').join('')+'</div><p class="subtle">場所を選ぶと、その場所を地図に映します。</p>';body.querySelectorAll('.mapPlace').forEach(b=>b.onclick=()=>{const place=getPlace(b.dataset.place);if(!place)return;interiorHomeId='';homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;panX=450-place.x;panY=720-place.y;drawWorld();showTab('walk')});body.querySelectorAll('.enterHome').forEach(b=>b.onclick=()=>{interiorHomeId=b.dataset.home;homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;drawWorld();showTab('home')})}if(t==='home'){const home=getPlace(interiorHomeId);const household=Object.values(households).find(h=>h.homeId===interiorHomeId)||{homeId:interiorHomeId};const inventoryResident=chars.find(p=>householdForResident(p).homeId===interiorHomeId);const stock=inventoryResident?householdFoodStore(inventoryResident):householdFoodStore({homeId:interiorHomeId});title.textContent='';panel.classList.remove('show');document.getElementById('placeTitle').textContent=home?home.name:'家の中';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();const actions=document.getElementById('placeActions');document.getElementById('placeTitle').textContent=(home?home.name:'家の中')+'　🥕食材 '+stock.foodIngredients+'個 ／ 🐟魚 '+stock.fishIngredients+'匹';actions.innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';actions.classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map',true);renderResidentStatus();return}
+function showTab(t,force=false){stopResidentDiagnostics();if(!force&&t===tab&&t!=='walk')t='walk';if(t!=='relations')expandedRelationId='';tab=t;document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));panel.classList.toggle('show',t!=='walk');panel.classList.toggle('mapPanel',t==='map');panel.classList.toggle('homePanel',t==='home');document.getElementById('mapToggle').classList.toggle('active',t==='map');document.getElementById('mapToggle').textContent=interiorHomeId?'↩︎':'🗺️';document.getElementById('mapToggle').classList.toggle('returnCity',!!interiorHomeId);document.getElementById('mapToggle').setAttribute('aria-label',interiorHomeId?'街に戻る':'地図');if(t==='walk'){document.getElementById('hint').style.display=interiorHomeId?'none':'block';if(!interiorHomeId){document.getElementById('placeTitle').textContent='川辺のこみち';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';document.getElementById('placeActions').classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map')}else{const home=getPlace(interiorHomeId);document.getElementById('placeTitle').textContent=home?home.name:'家の中';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').classList.add('show')}renderResidentStatus();return}document.getElementById('hint').style.display='none';if(t==='map'){document.getElementById('placeTitle').textContent='川辺のこみち';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';document.getElementById('placeActions').classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map');renderResidentStatus();title.textContent='街の地図';body.innerHTML='<div class="metricTitle">住人の家の中を覗く</div><div class="mapGrid">'+Object.values(homes).map(h=>'<button class="actionBtn enterHome" data-home="'+escapeHtml(h.id)+'">🏡 '+escapeHtml(h.name)+'の中へ</button>').join('')+'</div><div class="metricTitle">街のスポット</div><div class="mapGrid">'+places.filter(place=>place.type==='home'||place.type==='cafe'||place.type==='shop'||place.id==='plaza').map(place=>'<button class="actionBtn mapPlace" data-place="'+place.id+'">'+place.icon+' '+escapeHtml(place.name)+'</button>').join('')+'</div><p class="subtle">場所を選ぶと、その場所を地図に映します。</p>';body.querySelectorAll('.mapPlace').forEach(b=>b.onclick=()=>{const place=getPlace(b.dataset.place);if(!place)return;interiorHomeId='';homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;panX=450-place.x;panY=720-place.y;drawWorld();showTab('walk')});body.querySelectorAll('.enterHome').forEach(b=>b.onclick=()=>{interiorHomeId=b.dataset.home;homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;drawWorld();showTab('home')})}if(t==='home'){const home=getPlace(interiorHomeId);const household=Object.values(households).find(h=>h.homeId===interiorHomeId)||{homeId:interiorHomeId};const inventoryResident=chars.find(p=>householdForResident(p).homeId===interiorHomeId);const stock=inventoryResident?householdFoodStore(inventoryResident):householdFoodStore({homeId:interiorHomeId});title.textContent='';panel.classList.remove('show');document.getElementById('placeTitle').textContent=home?home.name:'家の中';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();const actions=document.getElementById('placeActions');document.getElementById('placeTitle').textContent=(home?home.name:'家の中')+'　🥕食材 '+stock.foodIngredients+'個 ／ 🐟魚 '+stock.fishIngredients+'匹';actions.innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';actions.classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map',true);renderResidentStatus();return}
 if(t==='residents'){
  title.textContent='街の住人';
  renderResidentManager();
