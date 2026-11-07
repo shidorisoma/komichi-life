@@ -6,7 +6,7 @@ const storage={};const b={console:{...console,warn:noop},Math,Date,Set,Map,WeakM
 function loadModel(){
  for(const key of Object.keys(storage))delete storage[key];
  vm.createContext(b);
- const exported='globalThis.qa={chars,addResident,buyFurniture,moveFurniture,canResidentUseFurniture,getFurniture:()=>furniture,furnitureCatalog,relationshipFor,evaluateRelationshipPromotions,relationshipThresholds,addDiary,writePersonalDiary,startSocialVisit,tryReplanSocialVisit,cancelSocialVisit,PAINTED_WALK_SPOTS,paintedTownArt,householdForResident,parsePairInstruction,relationTypeStances,stanceToward,relationGainFactors,typeSceneFor,RELATION_TYPE_OPTIONS,tickLife,getSharedGoal:()=>({goal:sharedGoal,pairId:sharedGoalPairId}),getMemories:()=>memories,getRelationships:()=>relationships,setClock:(h,m)=>{hour=h;minute=m},getDiary:()=>diary};})();';
+ const exported='globalThis.qa={chars,addResident,buyFurniture,moveFurniture,canResidentUseFurniture,getFurniture:()=>furniture,furnitureCatalog,relationshipFor,evaluateRelationshipPromotions,relationshipThresholds,addDiary,writePersonalDiary,startSocialVisit,tryReplanSocialVisit,cancelSocialVisit,PAINTED_WALK_SPOTS,paintedTownArt,householdForResident,parsePairInstruction,relationTypeStances,stanceToward,relationGainFactors,typeSceneFor,RELATION_TYPE_OPTIONS,tickLife,getSharedGoal:()=>({goal:sharedGoal,pairId:sharedGoalPairId,kind:sharedGoalKind}),getMemories:()=>memories,getRelationships:()=>relationships,setClock:(h,m)=>{hour=h;minute=m},getDiary:()=>diary};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);b.qa.paintedTownArt.complete=true;b.qa.paintedTownArt.naturalWidth=1122;b.qa.paintedTownArt.naturalHeight=1402;return b.qa;
 }
 const assert=require('assert').strict;let failures=0;
@@ -135,12 +135,26 @@ test('relationships carry type and instruction fields by default',()=>{
 });
 test('pair instruction text parses into intents',()=>{
  const q=loadModel();
- assert.equal(q.parsePairInstruction('もっとデートさせたい'),'date');
- assert.equal(q.parsePairInstruction('喫茶店で会わせたい'),'date');
- assert.equal(q.parsePairInstruction('ふたりで一緒に過ごさせたい'),'together');
- assert.equal(q.parsePairInstruction('しばらく距離を置いてほしい'),'distance');
+ assert.equal(q.parsePairInstruction('もっとデートさせたい').stance,'date');
+ assert.equal(q.parsePairInstruction('喫茶店で会わせたい').stance,'date');
+ assert.equal(q.parsePairInstruction('ふたりで一緒に過ごさせたい').stance,'together');
+ assert.equal(q.parsePairInstruction('しばらく距離を置いてほしい').stance,'distance');
  assert.equal(q.parsePairInstruction('なんかいい感じにして'),null);
- assert.equal(q.parsePairInstruction(''),'');
+ const empty=q.parsePairInstruction('');assert.equal(empty.stance,'');assert.equal(empty.once,'');
+});
+test('one-shot instructions parse from plain text',()=>{
+ const q=loadModel();
+ assert.equal(q.parsePairInstruction('花をプレゼントする').once,'gift-flower');
+ assert.equal(q.parsePairInstruction('本をプレゼントしたい').once,'gift-book');
+ assert.equal(q.parsePairInstruction('お菓子を贈りたい').once,'gift-sweets');
+ assert.equal(q.parsePairInstruction('プレゼントをあげたい').once,'gift');
+ assert.equal(q.parsePairInstruction('一緒に散歩したい').once,'walk');
+ assert.equal(q.parsePairInstruction('一緒に花を見に行きたい').once,'flowers');
+ assert.equal(q.parsePairInstruction('一緒に買い物したい').once,'shopping');
+ assert.equal(q.parsePairInstruction('一緒に釣りをしたい').once,'fishing');
+ assert.equal(q.parsePairInstruction('一緒に食事したい').once,'meal');
+ assert.equal(q.parsePairInstruction('励ましてあげたい').once,'cheer');
+ assert.equal(q.parsePairInstruction('仲直りしてほしい').once,'makeup');
 });
 test('relationship type stances resolve per resident, including one-sided keys',()=>{
  const q=loadModel(),[a,b]=q.chars,r=q.relationshipFor(a,b);
@@ -201,6 +215,32 @@ test('rendezvous log lines do not narrate the rendezvous itself',()=>{
  const line=q.getDiary()[0].text;
  assert(!line.includes('待ち合わせ'),'no rendezvous narration: '+line);
  assert(line.startsWith(a.name+'と'+b.name+'が'),'pair line keeps the two names: '+line);
+});
+
+test('a flower gift instruction is executed once when the pair is free',()=>{
+ const q=loadModel(),[a,b]=q.chars,r=q.relationshipFor(a,b);
+ r.pendingInstruction='gift-flower';r.pendingStamp=600;
+ const before=r.affection;
+ q.setClock(10,0);
+ for(let i=0;i<10&&r.pendingInstruction;i++)q.tickLife();
+ assert.equal(r.pendingInstruction,'','the one-shot is consumed');
+ assert.equal(a.action,'social','the pair meets for the handover');
+ assert(q.getDiary().some(d=>d.text.includes('花束をプレゼントした')),'the gift is logged');
+ assert(r.affection>before,'affection rises');
+ assert(q.getMemories().some(m=>m.pairId===r.id&&m.title==='プレゼント'),'a memory is recorded');
+});
+test('a meal instruction becomes a one-time cafe meal',()=>{
+ const q=loadModel(),[a,b]=q.chars,r=q.relationshipFor(a,b);
+ r.pendingInstruction='meal';r.pendingStamp=600;
+ q.setClock(10,0);
+ for(let i=0;i<10&&!q.getSharedGoal().goal;i++)q.tickLife();
+ assert.equal(q.getSharedGoal().goal,'pair-date');
+ assert.equal(q.getSharedGoal().kind,'meal');
+ assert.equal(r.pendingInstruction,'','consumed when the meal starts');
+ a.action='date';a.phaseState='staying';a.x=250;a.y=330;
+ b.action='date';b.phaseState='staying';b.x=310;b.y=365;
+ for(let i=0;i<25;i++)q.tickLife();
+ assert(q.getMemories().some(m=>m.pairId===r.id&&m.title==='ふたりの食事時間'),'meal memory recorded');
 });
 
 process.exitCode=failures?1:0;
