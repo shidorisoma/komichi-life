@@ -75,7 +75,7 @@ const PAINTED_OCCLUDERS=[
  {id:'wisteria-post-right',depth:515,polygon:[[932,436],[944,437],[943,510],[931,514]]},
  {id:'flower-arch',depth:1248,polygon:[[395,1215],[405,1173],[437,1141],[483,1127],[526,1138],[559,1167],[575,1210],[569,1253],[548,1253],[548,1204],[533,1175],[511,1158],[479,1152],[449,1166],[427,1192],[423,1255],[402,1256]]}
 ];
-const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,pageSuspended=false,residentDiagnosticTimer=null,residentDiagnosticsOpen=false,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が街を散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let relationFolderId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
+const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,pageSuspended=false,residentDiagnosticTimer=null,residentDiagnosticsOpen=false,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:390,y:470,tx:500,ty:570,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:520,y:800,tx:430,ty:690,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が街を散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let relationFolderId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let sharedGoalPairId='';let sharedGoalStartStamp=-1;let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
 const places=[
  {id:'home',name:'西の住宅',icon:'🏡',...artPoint(475,204),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'home2',name:'東の住宅',icon:'🏠',...artPoint(682,224),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
@@ -549,6 +549,67 @@ function natureBlocksMovement(x,y,p){
  return WORLD_NATURE_OBJECTS.flowerbeds.some(b=>pointInPolygon(x,y,b.top.map(([x,y])=>({x,y}))));
 }
 
+const RELATION_TYPE_OPTIONS=[
+ {key:'',label:()=>'標準（タイプなし）'},
+ {key:'sweet-sweet',label:()=>'お互い甘い（いちゃいちゃ）'},
+ {key:'dry-dry',label:()=>'お互いドライ（さっぱり）'},
+ {key:'shy-shy',label:()=>'お互い照れ屋'},
+ {key:'sweetA-dryB',label:(a,b)=>a+'が甘く、'+b+'はドライ'},
+ {key:'dryA-sweetB',label:(a,b)=>b+'が甘く、'+a+'はドライ'},
+ {key:'sweetA-shyB',label:(a,b)=>a+'が甘く、'+b+'は照れ屋'},
+ {key:'shyA-sweetB',label:(a,b)=>b+'が甘く、'+a+'は照れ屋'},
+ {key:'dryA-shyB',label:(a,b)=>a+'はドライ、'+b+'は照れ屋'},
+ {key:'shyA-dryB',label:(a,b)=>b+'はドライ、'+a+'は照れ屋'},
+ {key:'sweetA',label:(a,b)=>a+'だけ甘い（'+b+'はふつう）'},
+ {key:'sweetB',label:(a,b)=>b+'だけ甘い（'+a+'はふつう）'},
+ {key:'dryA',label:(a,b)=>a+'だけドライ（'+b+'はふつう）'},
+ {key:'dryB',label:(a,b)=>b+'だけドライ（'+a+'はふつう）'},
+ {key:'shyA',label:(a,b)=>a+'だけ照れ屋（'+b+'はふつう）'},
+ {key:'shyB',label:(a,b)=>b+'だけ照れ屋（'+a+'はふつう）'}
+];
+function relationTypeStances(rel){
+ const key=rel&&typeof rel.relType==='string'?rel.relType:'';
+ if(!key||!RELATION_TYPE_OPTIONS.some(o=>o.key===key))return null;
+ let first='normal',second='normal';
+ key.split('-').forEach((part,i)=>{
+  const stance=part.replace(/[AB]$/,'');
+  if(!['sweet','dry','shy'].includes(stance))return;
+  if(part.endsWith('B'))second=stance;
+  else if(part.endsWith('A'))first=stance;
+  else if(i===0)first=stance;else second=stance;
+ });
+ return {first,second};
+}
+function stanceToward(rel,fromId){
+ const st=relationTypeStances(rel);if(!st)return 'normal';
+ const ids=rel&&rel.residentIds?rel.residentIds:[];
+ return fromId===ids[0]?st.first:fromId===ids[1]?st.second:'normal';
+}
+const STANCE_FACTORS={sweet:{affection:1.5,intimacy:1.4,approach:1.45,mood:1.5},normal:{affection:1,intimacy:1,approach:1,mood:1},dry:{affection:.55,intimacy:.7,approach:.6,mood:.6},shy:{affection:.85,intimacy:.55,approach:.7,mood:.8}};
+function relationGainFactors(rel){
+ const ids=rel&&rel.residentIds?rel.residentIds:[];
+ const f1=STANCE_FACTORS[stanceToward(rel,ids[0])]||STANCE_FACTORS.normal,f2=STANCE_FACTORS[stanceToward(rel,ids[1])]||STANCE_FACTORS.normal;
+ return {affection:(f1.affection+f2.affection)/2,intimacy:(f1.intimacy+f2.intimacy)/2};
+}
+function typeSceneFor(a,b,r){
+ const sa=stanceToward(r,a.id),sb=stanceToward(r,b.id);
+ if(sa==='normal'&&sb==='normal')return null;
+ if(sa==='sweet'&&sb==='sweet')return {text:'寄り添って、甘い時間を過ごしている',diary:'寄り添って甘い時間を過ごした'};
+ if(sa==='dry'&&sb==='dry')return {text:'他愛のない話をしながら、さっぱりした距離感で過ごしている',diary:'他愛のない話をして、さっぱり過ごした'};
+ if(sa==='shy'&&sb==='shy')return {text:'お互い少し照れながら、短い言葉を交わしている',diary:'少し照れながら短い言葉を交わした'};
+ const stay={sweet:'嬉しそうに寄り添っている',dry:'あっさりした様子で話している',shy:'照れたように目を逸らしながら聞いている',normal:'のんびり話している'};
+ const past={sweet:'嬉しそうに寄り添った',dry:'あっさりした様子で話した',shy:'照れながら短い言葉を交わした',normal:'のんびり話した'};
+ return {text:a.name+'は'+stay[sa]+'。'+b.name+'は'+stay[sb],diary:a.name+'は'+past[sa]+'。'+b.name+'は'+past[sb]};
+}
+function parsePairInstruction(text){
+ const t=String(text||'');
+ if(!t.trim())return '';
+ if(/距離を置|距離をお|離れ|別々|ひとりで|一人で|喧嘩|けんか/.test(t))return 'distance';
+ if(/デート|喫茶|カフェ|こもれび/.test(t))return 'date';
+ if(/一緒に|仲良|くっつ|寄り添|会わせ|遊ば|過ごさ|深め/.test(t))return 'together';
+ return null;
+}
+const PAIR_INSTRUCTION_LABELS={'':'なし',together:'よく一緒に過ごす',date:'カフェでデートする',distance:'距離を置く'};
 function relationshipLabel(ids){return ids.map(id=>residentById(id)?.name||id).join(' ＆ ')}
 function ensureRelationship(a,b,seed){
  const ids=[typeof a==='string'?a:a.id,typeof b==='string'?b:b.id].sort(),id=pairIdFor(ids[0],ids[1]);
@@ -563,6 +624,10 @@ function ensureRelationship(a,b,seed){
  if(!Number.isFinite(r.lastInteractionStamp))r.lastInteractionStamp=-1;
  if(!Number.isFinite(r.lastSocialStamp))r.lastSocialStamp=-1;
  if(!Number.isFinite(r.lastSocialVisitStamp))r.lastSocialVisitStamp=-1;
+ if(typeof r.relType!=='string'||!RELATION_TYPE_OPTIONS.some(o=>o.key===r.relType))r.relType='';
+ if(typeof r.instructionText!=='string')r.instructionText='';
+ if(!['together','date','distance'].includes(r.instructionKind))r.instructionKind='';
+ if(!Number.isFinite(r.lastPairDateStamp))r.lastPairDateStamp=-1;
  return r;
 }
 function ensureAllRelationships(){
@@ -582,6 +647,13 @@ function restoreRelationships(saved,legacyBond){
  ensureAllRelationships();
 }
 function relationMeter(label,value,key){return '<div class="meter" data-relation-stat="'+key+'"><span>'+label+'</span><div class="track"><div class="fill" style="width:'+Math.round(value)+'%"></div></div><b>'+Math.round(value)+'</b></div>'}
+function relationTypeSection(relation){
+ const ids=relation.residentIds||[];const nameA=residentById(ids[0])?.name||'',nameB=residentById(ids[1])?.name||'';
+ return '<div class="metricTitle">関係タイプ</div><select id="relationTypeSelect" class="homeSelect">'+RELATION_TYPE_OPTIONS.map(o=>'<option value="'+o.key+'"'+(o.key===(relation.relType||'')?' selected':'')+'>'+escapeHtml(o.label(nameA,nameB))+'</option>').join('')+'</select><div class="subtle">タイプによって、ふたりの距離感や反応の出方、一緒に過ごした時の気持ちの育ち方が変わります。</div>';
+}
+function relationInstructionSection(relation){
+ return '<div class="metricTitle">ふたりへの指示</div><div class="subtle">してほしいことを文章で書いて「反映」を押すと、解釈して行動に反映します。うまく解釈できない文章の時は、下の選択肢からも選べます。</div><div class="iconEditRow"><input id="pairInstructionInput" class="homeNameInput" maxlength="100" placeholder="例：もっとデートさせたい" value="'+escapeHtml(relation.instructionText||'')+'"><button type="button" class="residentJumpBtn" id="applyPairInstruction">反映</button></div><div class="subtle" id="pairInstructionNote"></div><select id="pairInstructionSelect" class="homeSelect">'+['','together','date','distance'].map(k=>'<option value="'+k+'"'+(k===(relation.instructionKind||'')?' selected':'')+'>'+PAIR_INSTRUCTION_LABELS[k]+'</option>').join('')+'</select><div class="subtle">現在の解釈：'+(PAIR_INSTRUCTION_LABELS[relation.instructionKind||'']||'なし')+'</div>';
+}
 let saveToastTimer=null;
 function showSaveToast(message='保存しました'){let toast=document.getElementById('saveToast');if(!toast){toast=document.createElement('div');toast.id='saveToast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');document.body.appendChild(toast)}toast.textContent='✓ '+message;toast.classList.add('show');clearTimeout(saveToastTimer);saveToastTimer=setTimeout(()=>toast.classList.remove('show'),2000)}
 function showSaveWarning(message){
@@ -612,7 +684,7 @@ function parseSaveData(raw){
  return data;
 }
 function serializeCurrentSave(){
- const data={version:5,stampEpoch:'calendar',furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},townLayoutRevision:TOWN_LAYOUT_REVISION,residents:chars.map(p=>{const {passing,passingCooldown,trafficWait,...saved}=p;return {...saved,profile:{...p.profile},needs:{...p.needs}}})};
+ const data={version:5,stampEpoch:'calendar',furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,sharedGoalPairId,sharedGoalStartStamp,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},townLayoutRevision:TOWN_LAYOUT_REVISION,residents:chars.map(p=>{const {passing,passingCooldown,trafficWait,...saved}=p;return {...saved,profile:{...p.profile},needs:{...p.needs}}})};
  return JSON.stringify(data);
 }
 function saveGame(notify=false){
@@ -700,7 +772,7 @@ function loadGame(){
   
   if(data.bond)Object.keys(bond).forEach(k=>{if(Number.isFinite(data.bond[k]))bond[k]=Math.max(0,Math.min(100,data.bond[k]))});
   if(Array.isArray(data.diary))diary=data.diary.filter(d=>d&&typeof d.time==='string'&&typeof d.text==='string').slice(0,300);if(Array.isArray(data.memories))memories=data.memories.filter(m=>m&&typeof m.time==='string'&&typeof m.title==='string'&&typeof m.text==='string'&&(m.pairId||m.title==='ふたりの喫茶店時間')).map(m=>m.title==='ふたりの喫茶店時間'?{...m,pairId:m.pairId||'nagisumi-yaku'}:m).slice(0,100);if(data.unlockedEvents&&typeof data.unlockedEvents==='object')unlockedEvents=data.unlockedEvents;
-  sharedGoal=typeof data.sharedGoal==='string'?data.sharedGoal:'';goalTicks=Number.isFinite(data.goalTicks)?data.goalTicks:0;lastRoutine=Number.isFinite(data.lastRoutine)?data.lastRoutine:0;lastRecoveryStamp=Number.isFinite(data.lastRecoveryStamp)?data.lastRecoveryStamp:-1;lastBondStamp=Number.isFinite(data.lastBondStamp)?data.lastBondStamp:-1;
+  sharedGoal=typeof data.sharedGoal==='string'?data.sharedGoal:'';goalTicks=Number.isFinite(data.goalTicks)?data.goalTicks:0;sharedGoalPairId=typeof data.sharedGoalPairId==='string'?data.sharedGoalPairId:'';sharedGoalStartStamp=Number.isFinite(data.sharedGoalStartStamp)?data.sharedGoalStartStamp:-1;lastRoutine=Number.isFinite(data.lastRoutine)?data.lastRoutine:0;lastRecoveryStamp=Number.isFinite(data.lastRecoveryStamp)?data.lastRecoveryStamp:-1;lastBondStamp=Number.isFinite(data.lastBondStamp)?data.lastBondStamp:-1;
   if(Number.isInteger(data.selected))selected=Math.max(0,data.selected);
   if(data.townLayoutRevision===TOWN_LAYOUT_REVISION&&data.view){if(Number.isFinite(data.view.zoom))zoom=Math.max(.65,Math.min(2.4,data.view.zoom));if(Number.isFinite(data.view.panX))panX=data.view.panX;if(Number.isFinite(data.view.panY))panY=data.view.panY}
   const savedResidents=Array.isArray(data.residents)?data.residents:(Array.isArray(data.chars)?data.chars.map((p,i)=>({...p,needs:data.needs?.[i]})):null);
@@ -872,8 +944,8 @@ function removeResident(id){
  chars.splice(index,1);
  relationships=Object.fromEntries(Object.entries(relationships).filter(([,r])=>!r.residentIds?.includes(id)));
  memories=memories.filter(m=>!m.pairId||!removedPairIds.has(m.pairId));
- if(sharedGoal&&['nagisumi','yaku'].includes(id)){
-  sharedGoal='';goalTicks=0;
+ if(sharedGoal&&(['nagisumi','yaku'].includes(id)||(sharedGoalPairId&&removedPairIds.has(sharedGoalPairId)))){
+  sharedGoal='';goalTicks=0;sharedGoalPairId='';sharedGoalStartStamp=-1;
   chars.filter(q=>q.action==='date').forEach(q=>{q.action='idle';q.phaseState='idle';q.routePoints=[];q.routeIndex=0;q.tx=q.x;q.ty=q.y;q.stay=0;q.activity='街で過ごしている'});
  }
  chars.forEach(q=>{
@@ -2441,9 +2513,10 @@ function specialNoteWakeRule(p,other=null){
    members.forEach(q=>{q.needs.mood=Math.min(100,(q.needs?.mood??80)+2)});
    const relation=relationshipFor(p,partner);
    if(relation){
-    relation.affection=Math.min(100,relation.affection+.35);
+    const gainFactors=relationGainFactors(relation);
+    relation.affection=Math.min(100,relation.affection+.35*gainFactors.affection);
     relation.trust=Math.min(100,relation.trust+.45);
-    relation.intimacy=Math.min(100,relation.intimacy+.3);
+    relation.intimacy=Math.min(100,relation.intimacy+.3*gainFactors.intimacy);
    }
    addDiary(p.name+'と'+partner.name+'は、話し終えて穏やかな気分になった。');
   }
@@ -2556,7 +2629,11 @@ function chooseRoutine(p,i){
  const workPlan=workPlanFor(p);
   if(workPlan&&p.priorityStyle==='work'){startWork(p,i,workPlan);return}
   if(isResidentSleepTime(p)&&!specialNoteWakeRule(p)){const household=householdForResident(p);const home=getPlace(household.homeId);const partner=household.partner;const partnerSleeping=partner&&partner.action==='sleep'&&partner.phaseState==='staying';const offset=partner?(p.id<partner.id?-12:12):((i%2)*14-7);const sleepX=home.x+offset;const sleepY=home.y+48+(partner?0:(i%3)*5);const stayText=partnerSleeping?partner.name+'と一緒に眠っている':'家で眠っている';setAction(p,i,'sleep',sleepX,sleepY,'家へ帰っている',stayText,'sit',55+Math.random()*15);return}
- if(sharedGoal&&cafeOpen()&&['nagisumi','yaku'].includes(p.id)){setAction(p,i,'date',i===0?250:310,i===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',35+Math.random()*20);return}
+ if(sharedGoal&&cafeOpen()){
+  const goalPairIds=sharedGoalPairId?(relationships[sharedGoalPairId]?.residentIds||[]):['nagisumi','yaku'];
+  const seat=goalPairIds.indexOf(p.id);
+  if(seat>=0){setAction(p,i,'date',seat===0?250:310,seat===0?330:365,'ふたりで喫茶店へ向かっている','喫茶店で一緒に過ごしている','stand',35+Math.random()*20);return}
+ }
  if(workPlan){startWork(p,i,workPlan);return}
  const previous=p.action;
  const options=[];
@@ -2781,7 +2858,8 @@ function startSocialVisit(a,b,r,initiator){
     ?{text:'静かな時間を一緒に過ごし、ゆっくり言葉を交わしている',diary:'静かな時間を一緒に過ごした'}
     :{text:'近況を話しながら一緒に過ごしている',diary:'近況を話しながら一緒に過ごした'};
  const homeyScene=sharedHome?{text:'家で一緒にくつろぎながら、何気ない話をしている',diary:'同じ家でくつろぎながら、何気ない話をした'}:null;
- const scene=sharedScene||relationshipScene||homeyScene||personalityScene;
+ const typeScene=typeSceneFor(a,b,r);
+ const scene=sharedScene||(typeScene&&Math.random()<.65?typeScene:null)||relationshipScene||homeyScene||personalityScene;
  const band=timeBand();
  const weatherPrefix=weatherType==='rainy'?'雨音を聞きながら、':weatherType==='sunny'?(band==='night'?'月明かりの差す場所で、':band==='evening'?'夕日の残る場所で、':band==='morning'?'朝日を浴びながら、':'日差しの差し込む場所で、'):weatherType==='cloudy'?'涼しい風を感じながら、':'';
  const weatherDiary=weatherType==='rainy'?'雨音の聞こえる中で':weatherType==='sunny'?(band==='night'?'月明かりの中で':band==='evening'?'夕日の中で':band==='morning'?'朝日の中で':'日差しの中で'):weatherType==='cloudy'?'涼しい風の中で':'';
@@ -2841,7 +2919,9 @@ function scheduleSocialVisits(nowStamp){
   const sharedHobbyBoost=sharedHobbyCount?1+Math.min(sharedHobbyCount,2)*.28:1;
   const sameHomeBoost=initiator.homeId&&initiator.homeId===other.homeId?1.6:1;
   const repeatFactor=samePair?.55:1;
-  candidates.push({other,r,weight:relationshipPriority(r)*(0.8+need*.5)*invitationFactor*sharedHobbyBoost*sameHomeBoost*repeatFactor*(other.priorityStyle==='relationships'?1.45:1)});
+  const stanceFactor=(STANCE_FACTORS[stanceToward(r,initiator.id)]||STANCE_FACTORS.normal).approach;
+  const instructionFactor=r.instructionKind==='together'?3:r.instructionKind==='distance'?.12:r.instructionKind==='date'?1.25:1;
+  candidates.push({other,r,weight:relationshipPriority(r)*(0.8+need*.5)*invitationFactor*sharedHobbyBoost*sameHomeBoost*repeatFactor*(other.priorityStyle==='relationships'?1.45:1)*stanceFactor*instructionFactor});
  }
  if(!candidates.length)return;
  const total=candidates.reduce((n,x)=>n+x.weight,0);
@@ -2853,12 +2933,13 @@ function socialMoodRecoveryRate(p){
  if(!partner)return 0;
  const relation=relationshipFor(p,partner);
  if(!relation)return 0;
+ const moodFactor=(STANCE_FACTORS[stanceToward(relation,partner.id)]||STANCE_FACTORS.normal).mood;
  const status=String(relation.status||'');
  const sociability=Math.max(0,Math.min(100,p.sociability??50));
- if(status.includes('恋人'))return 1.5;
- if(status.includes('親友')||status.includes('友人'))return .65;
+ if(status.includes('恋人'))return 1.5*moodFactor;
+ if(status.includes('親友')||status.includes('友人'))return .65*moodFactor;
  if(sociability<=20)return 0;
- return .25;
+ return .25*moodFactor;
 }
 function recoverMoodFromRoutine(p,nowStamp){
  if(nowStamp%10!==0||p.lastMoodRecoveryStamp===nowStamp)return;
@@ -2890,15 +2971,30 @@ function tickLife(){
  chars.forEach(p=>{const n=p.needs;n.energy=Math.max(8,n.energy-.12);n.hunger=Math.max(8,n.hunger-.08);n.mood=Math.max(20,Math.min(100,n.mood+(n.energy<25?-.15:.025)))});
  const nowStamp=calendarDay*1440+hour*60+minute;
  chars.forEach(p=>recoverMoodFromRoutine(p,nowStamp));
+ if(!sharedGoal&&nowStamp%30===0&&cafeOpen()){
+  const dateCandidate=Object.values(relationships).find(r=>r.instructionKind==='date'&&nowStamp-(Number.isFinite(r.lastPairDateStamp)?r.lastPairDateStamp:-1000000)>600);
+  if(dateCandidate){
+   const pair=dateCandidate.residentIds.map(residentById).filter(Boolean);
+   if(pair.length===2&&pair.every(p=>!isSocialBusy(p)&&!isSleeping(p)&&p.action!=='work'&&p.action!=='date'&&p.action!=='social')){
+    sharedGoal='pair-date';sharedGoalPairId=dateCandidate.id;sharedGoalStartStamp=nowStamp;goalTicks=0;
+   }
+  }
+ }
  if(sharedGoal){
-  const datePair=['nagisumi','yaku'].map(residentById).filter(Boolean);const together=datePair.length===2&&datePair.every(p=>p.phaseState==='staying'&&p.action==='date')&&Math.hypot(datePair[0].x-datePair[1].x,datePair[0].y-datePair[1].y)<110;
+  if(sharedGoalStartStamp<0)sharedGoalStartStamp=nowStamp;
+  const goalRel=sharedGoalPairId?relationships[sharedGoalPairId]:null;
+  const datePair=(goalRel?goalRel.residentIds:['nagisumi','yaku']).map(residentById).filter(Boolean);const together=datePair.length===2&&datePair.every(p=>p.phaseState==='staying'&&p.action==='date')&&Math.hypot(datePair[0].x-datePair[1].x,datePair[0].y-datePair[1].y)<110;
   if(together)goalTicks++;else goalTicks=0;
   if(goalTicks>=20){
-   sharedGoal='';goalTicks=0;
+   const finishedPairId=sharedGoalPairId;
+   sharedGoal='';goalTicks=0;sharedGoalPairId='';sharedGoalStartStamp=-1;
    datePair.forEach(p=>{p.needs.hunger=Math.min(100,p.needs.hunger+18);p.needs.mood=Math.min(100,p.needs.mood+12)});
-   bond.affection=Math.min(100,bond.affection+3);bond.trust=Math.min(100,bond.trust+2);bond.intimacy=Math.min(100,bond.intimacy+3);
+   const dateRel=datePair.length===2?relationshipFor(datePair[0],datePair[1]):null;
+   if(dateRel){dateRel.affection=Math.min(100,dateRel.affection+3);dateRel.trust=Math.min(100,dateRel.trust+2);dateRel.intimacy=Math.min(100,dateRel.intimacy+3);dateRel.lastPairDateStamp=nowStamp}
    datePair.forEach(p=>{p.action='cafe';p.activity='喫茶店で一緒に過ごしている';p.stayText=p.activity;p.phaseState='staying';p.pose='sit';p.stay=30});renderResidentStatus();
-   addDiary(datePair.map(p=>p.name).join('と')+'で喫茶店へ。温かい飲み物を片手に、ゆっくり話をした。');recordMemory('first_shared_cafe','ふたりの喫茶店時間',datePair.map(p=>p.name).join('と')+'が一緒に喫茶店で過ごし、温かい飲み物を片手にゆっくり話をした。',pairIdFor(datePair[0],datePair[1]));
+   addDiary(datePair.map(p=>p.name).join('と')+'で喫茶店へ。温かい飲み物を片手に、ゆっくり話をした。');if(dateRel)recordMemory(finishedPairId?'pair_cafe_'+encodeURIComponent(dateRel.id):'first_shared_cafe','ふたりの喫茶店時間',datePair.map(p=>p.name).join('と')+'が一緒に喫茶店で過ごし、温かい飲み物を片手にゆっくり話をした。',dateRel.id);
+  }else if(nowStamp-sharedGoalStartStamp>240){
+   sharedGoal='';goalTicks=0;sharedGoalPairId='';sharedGoalStartStamp=-1;
   }
  }else if(hour!==lastRoutine){
   lastRoutine=hour;
@@ -2911,7 +3007,7 @@ function tickLife(){
   const a=chars[i],b=chars[j],relation=relationshipFor(a,b);
   const close=isOutdoorResident(a)&&isOutdoorResident(b)&&(a.phaseState==='staying'||a.phaseState==='moving')&&(b.phaseState==='staying'||b.phaseState==='moving')&&Math.hypot(a.x-b.x,a.y-b.y)<95;
   if(close&&nowStamp-relation.lastInteractionStamp>=15){
-   relation.lastInteractionStamp=nowStamp;relation.affection=Math.min(100,relation.affection+.15);relation.trust=Math.min(100,relation.trust+.2);relation.intimacy=Math.min(100,relation.intimacy+.15);
+   relation.lastInteractionStamp=nowStamp;const gainFactors=relationGainFactors(relation);relation.affection=Math.min(100,relation.affection+.15*gainFactors.affection);relation.trust=Math.min(100,relation.trust+.2);relation.intimacy=Math.min(100,relation.intimacy+.15*gainFactors.intimacy);
    if(relation.affection>=70&&relation.trust>=70&&relation.intimacy>=65){
     const names=a.name+'と'+b.name;
     recordMemory('relationship_deepening_'+encodeURIComponent(relation.id),'距離が近づいた日',names+'の関係が深まり、以前より自然に一緒の時間を過ごせるようになった。',relation.id);
@@ -3016,7 +3112,7 @@ function recoverResidentFromFailedRoute(p,i){
  }
  // Replan from the actual position. Snapping to a visible road node here
  // caused a noticeable jump whenever an old travel plan became invalid.
- if(p.action==='date'&&sharedGoal){sharedGoal='';goalTicks=0}
+ if(p.action==='date'&&sharedGoal){sharedGoal='';goalTicks=0;sharedGoalPairId='';sharedGoalStartStamp=-1}
  p.action='idle';p.phaseState='idle';p.stay=0;p.routePoints=[];p.routeIndex=0;
  p.tx=p.x;p.ty=p.y;p.activity='街で過ごしている';p.stayText='';p.pose='stand';
  p.socialPartnerId=null;p.benchSeat=null;p.stuckTime=0;p.routeRetries=0;
@@ -3392,7 +3488,7 @@ if(t==='relations'){
  if(relation){
   title.textContent='';
   const pairMemories=memories.filter(m=>m.pairId===relation.id);
-  body.innerHTML='<div class="relationPageHeader"><button class="relationBack" aria-label="戻る">‹</button><b>'+escapeHtml(relation.label)+'</b></div><div class="relationStatusRow" id="relationStatusRow"><span>'+escapeHtml(relation.label)+'　<span class="pill">'+escapeHtml(relation.status)+'</span></span><button type="button" class="residentJumpBtn" id="editRelationStatus">変更</button></div><div class="relationDetail"><div class="metricTitle">関係パラメーター</div>'+relationMeter('愛情',relation.affection,'affection')+relationMeter('信頼',relation.trust,'trust')+relationMeter('親密',relation.intimacy,'intimacy')+'<div class="metricTitle">ふたりの思い出</div>'+
+  body.innerHTML='<div class="relationPageHeader"><button class="relationBack" aria-label="戻る">‹</button><b>'+escapeHtml(relation.label)+'</b></div><div class="relationStatusRow" id="relationStatusRow"><span>'+escapeHtml(relation.label)+'　<span class="pill">'+escapeHtml(relation.status)+'</span></span><button type="button" class="residentJumpBtn" id="editRelationStatus">変更</button></div><div class="relationDetail">'+relationTypeSection(relation)+'<div class="metricTitle">関係パラメーター</div>'+relationMeter('愛情',relation.affection,'affection')+relationMeter('信頼',relation.trust,'trust')+relationMeter('親密',relation.intimacy,'intimacy')+relationInstructionSection(relation)+'<div class="metricTitle">ふたりの思い出</div>'+
   (pairMemories.length?pairMemories.map((m,i,arr)=>{const dayKey=Number.isFinite(m.day)?m.day:'old';const prev=i>0?(Number.isFinite(arr[i-1].day)?arr[i-1].day:'old'):null;const heading=dayKey!==prev?'<div class="metricTitle">'+(dayKey==='old'?'過去の記録':(dayKey+1)+'日目')+'</div>':'';return heading+'<div class="entry"><small>'+escapeHtml(m.time||'')+'</small><b>'+escapeHtml(m.title)+'</b><br>'+escapeHtml(m.text)+'</div>'}).join(''):'<div class="subtle">ふたりの思い出は、これから少しずつ増えていきます。</div>')+'</div>';
   body.querySelector('.relationBack').onclick=()=>{expandedRelationId='';showTab('relations',true)};
   const editRelationBtn=document.getElementById('editRelationStatus');
@@ -3406,6 +3502,12 @@ if(t==='relations'){
    };
    document.getElementById('cancelRelationStatus').onclick=()=>showTab('relations',true);
   };
+  const typeSelect=document.getElementById('relationTypeSelect');
+  if(typeSelect)typeSelect.onchange=()=>{relation.relType=typeSelect.value;saveGame(true);showTab('relations',true)};
+  const instrSelect=document.getElementById('pairInstructionSelect');
+  if(instrSelect)instrSelect.onchange=()=>{relation.instructionKind=instrSelect.value;saveGame(true);showTab('relations',true)};
+  const instrBtn=document.getElementById('applyPairInstruction');
+  if(instrBtn)instrBtn.onclick=()=>{const input=document.getElementById('pairInstructionInput');const text=input?input.value.trim():'';relation.instructionText=text;if(!text){relation.instructionKind='';saveGame(true);showTab('relations',true);return}const kind=parsePairInstruction(text);if(kind){relation.instructionKind=kind;saveGame(true);showTab('relations',true)}else{saveGame(true);const note=document.getElementById('pairInstructionNote');if(note)note.textContent='この文章は解釈できませんでした（現在の解釈：'+(PAIR_INSTRUCTION_LABELS[relation.instructionKind||'']||'なし')+'）。選択肢からも選べます。'}};
  }else{
   expandedRelationId='';
   const folderResident=residentById(relationFolderId);

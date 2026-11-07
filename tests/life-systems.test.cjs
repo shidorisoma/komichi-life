@@ -6,7 +6,7 @@ const storage={};const b={console:{...console,warn:noop},Math,Date,Set,Map,WeakM
 function loadModel(){
  for(const key of Object.keys(storage))delete storage[key];
  vm.createContext(b);
- const exported='globalThis.qa={chars,addResident,buyFurniture,moveFurniture,canResidentUseFurniture,getFurniture:()=>furniture,furnitureCatalog,relationshipFor,evaluateRelationshipPromotions,relationshipThresholds,addDiary,writePersonalDiary,startSocialVisit,tryReplanSocialVisit,cancelSocialVisit,PAINTED_WALK_SPOTS,paintedTownArt,householdForResident};})();';
+ const exported='globalThis.qa={chars,addResident,buyFurniture,moveFurniture,canResidentUseFurniture,getFurniture:()=>furniture,furnitureCatalog,relationshipFor,evaluateRelationshipPromotions,relationshipThresholds,addDiary,writePersonalDiary,startSocialVisit,tryReplanSocialVisit,cancelSocialVisit,PAINTED_WALK_SPOTS,paintedTownArt,householdForResident,parsePairInstruction,relationTypeStances,stanceToward,relationGainFactors,typeSceneFor,RELATION_TYPE_OPTIONS,tickLife,getSharedGoal:()=>({goal:sharedGoal,pairId:sharedGoalPairId}),getMemories:()=>memories,getRelationships:()=>relationships,setClock:(h,m)=>{hour=h;minute=m}};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);b.qa.paintedTownArt.complete=true;b.qa.paintedTownArt.naturalWidth=1122;b.qa.paintedTownArt.naturalHeight=1402;return b.qa;
 }
 const assert=require('assert').strict;let failures=0;
@@ -126,6 +126,64 @@ test('a stuck rendezvous re-plans to a different spot, at most twice',()=>{
  assert.equal(q.tryReplanSocialVisit(a),false,'the re-plan budget is exhausted at two');
  q.cancelSocialVisit(a);
  assert(a.action!=='social'||a.socialPartnerId===null,'cancellation still works after the budget ends');
+});
+
+// --- Relationship types and pair instructions (2026-11-08) ---
+test('relationships carry type and instruction fields by default',()=>{
+ const q=loadModel(),r=q.relationshipFor(q.chars[0],q.chars[1]);
+ assert.equal(r.relType,'');assert.equal(r.instructionText,'');assert.equal(r.instructionKind,'');assert.equal(r.lastPairDateStamp,-1);
+});
+test('pair instruction text parses into intents',()=>{
+ const q=loadModel();
+ assert.equal(q.parsePairInstruction('もっとデートさせたい'),'date');
+ assert.equal(q.parsePairInstruction('喫茶店で会わせたい'),'date');
+ assert.equal(q.parsePairInstruction('ふたりで一緒に過ごさせたい'),'together');
+ assert.equal(q.parsePairInstruction('しばらく距離を置いてほしい'),'distance');
+ assert.equal(q.parsePairInstruction('なんかいい感じにして'),null);
+ assert.equal(q.parsePairInstruction(''),'');
+});
+test('relationship type stances resolve per resident, including one-sided keys',()=>{
+ const q=loadModel(),[a,b]=q.chars,r=q.relationshipFor(a,b);
+ r.relType='sweetA-dryB';
+ assert.equal(q.stanceToward(r,a.id),'sweet');assert.equal(q.stanceToward(r,b.id),'dry');
+ r.relType='sweetB';
+ assert.equal(q.stanceToward(r,a.id),'normal');assert.equal(q.stanceToward(r,b.id),'sweet');
+ r.relType='shy-shy';
+ assert.equal(q.stanceToward(r,a.id),'shy');assert.equal(q.stanceToward(r,b.id),'shy');
+ r.relType='bogus';
+ assert.equal(q.stanceToward(r,a.id),'normal');
+});
+test('gain factors follow the pair type',()=>{
+ const q=loadModel(),r=q.relationshipFor(q.chars[0],q.chars[1]);
+ r.relType='sweet-sweet';assert.equal(q.relationGainFactors(r).affection,1.5);
+ r.relType='dry-dry';assert.equal(q.relationGainFactors(r).affection,.55);
+ r.relType='sweetA-dryB';assert(Math.abs(q.relationGainFactors(r).affection-1.025)<1e-9);
+ r.relType='';assert.equal(q.relationGainFactors(r).affection,1);
+});
+test('type scenes flavor social text only when a type is set',()=>{
+ const q=loadModel(),[a,b]=q.chars,r=q.relationshipFor(a,b);
+ assert.equal(q.typeSceneFor(a,b,r),null);
+ r.relType='sweet-sweet';assert(q.typeSceneFor(a,b,r).text.includes('寄り添って'));
+ r.relType='sweetA-dryB';const mixed=q.typeSceneFor(a,b,r);
+ assert(mixed.text.includes(a.name+'は嬉しそうに寄り添っている'));
+ assert(mixed.text.includes(b.name+'はあっさりした様子で話している'));
+});
+test('a date instruction sends that pair on a cafe date and rewards their relationship',()=>{
+ const q=loadModel(),[a,b]=q.chars,r=q.relationshipFor(a,b);
+ r.instructionKind='date';
+ const before=r.affection;
+ // Move to a stamp on the 30-minute scheduling grid, cafe open.
+ q.setClock(10,0);
+ for(let i=0;i<10&&!q.getSharedGoal().goal;i++)q.tickLife();
+ assert.equal(q.getSharedGoal().goal,'pair-date');
+ assert.equal(q.getSharedGoal().pairId,r.id);
+ a.action='date';a.phaseState='staying';a.x=250;a.y=330;
+ b.action='date';b.phaseState='staying';b.x=310;b.y=365;
+ for(let i=0;i<25;i++)q.tickLife();
+ assert.equal(q.getSharedGoal().goal,'');
+ assert(r.affection>before,'the pair relationship gains affection');
+ assert(r.lastPairDateStamp>=0,'the date stamp is recorded');
+ assert(q.getMemories().some(m=>m.pairId===r.id),'a memory is recorded for the pair');
 });
 
 process.exitCode=failures?1:0;
