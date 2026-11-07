@@ -1683,7 +1683,7 @@ function drawHomeFurniture(homeId){
   ctx.restore();
  });
 }
-function drawHomeInterior(homeId){ctx.save();ctx.fillStyle='#e9dfc9';ctx.fillRect(0,0,W,H);const scale=Math.min(W/900,H/1400)*1.05*interiorZoom;ctx.translate(W/2+interiorPanX,H/2+interiorPanY);ctx.scale(scale,scale);ctx.translate(-450,-700);const customHome=homes[homeId]?.rooms?.length>0;ctx.fillStyle='#b99b76';if(customHome){const rs=homes[homeId].rooms;rs.forEach(r=>{ctx.fillRect(r.x-10,r.y-10,r.w+20,r.h+20);ctx.fillStyle='#eadfc9';ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeStyle='#a58a68';ctx.lineWidth=7;ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.fillStyle='#eadfc9';ctx.font='bold 19px sans-serif';ctx.fillText(r.name,r.x+14,r.y+27);ctx.fillStyle='#b99b76'})}else{ctx.fillRect(105,390,690,620);ctx.fillStyle='#eadfc9';ctx.fillRect(125,410,650,580);ctx.strokeStyle='#a58a68';ctx.lineWidth=9;ctx.strokeRect(125,410,650,580);ctx.fillStyle='#d9c7a8';ctx.fillRect(430,410,10,580);ctx.fillRect(125,690,650,9)}ctx.fillStyle='#8d7054';ctx.font='bold 23px sans-serif';ctx.fillText(homes[homeId]?.name||(homeId==='home'?'西の住宅':'東の住宅'),145,365);drawHomeFurniture(homeId);const residents=chars.filter(p=>householdForResident(p).homeId===homeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'),spots={living:[{x:235,y:590},{x:295,y:590}],hobby:[{x:570,y:590},{x:630,y:590}],bedroom:[{x:235,y:900},{x:295,y:900}],kitchen:[{x:580,y:900},{x:640,y:900}]},roomCounts={};residents.forEach(p=>{const roomType=p.action==='sleep'?'bedroom':(p.homeHobby?.room||'living'),customRoom=homes[homeId]?.rooms?.find(r=>r.type===roomType)||homes[homeId]?.rooms?.[0],slots=customHome&&customRoom?[{x:customRoom.x+customRoom.w*.55,y:customRoom.y+customRoom.h*.58},{x:customRoom.x+customRoom.w*.68,y:customRoom.y+customRoom.h*.62}]:(spots[roomType]||spots.living),index=roomCounts[roomType]||0;if(index>=2)return;roomCounts[roomType]=index+1;const q=slots[index];drawChar({...p,x:q.x,y:q.y,pose:'sit'},chars.indexOf(p))});ctx.textAlign='left';ctx.restore();}
+function drawHomeInterior(homeId){ctx.save();ctx.fillStyle='#e9dfc9';ctx.fillRect(0,0,W,H);const scale=Math.min(W/900,H/1400)*1.05*interiorZoom;ctx.translate(W/2+interiorPanX,H/2+interiorPanY);ctx.scale(scale,scale);ctx.translate(-450,-700);const customHome=homes[homeId]?.rooms?.length>0;ctx.fillStyle='#b99b76';if(customHome){const rs=homes[homeId].rooms;rs.forEach(r=>{ctx.fillRect(r.x-10,r.y-10,r.w+20,r.h+20);ctx.fillStyle='#eadfc9';ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeStyle='#a58a68';ctx.lineWidth=7;ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.fillStyle='#eadfc9';ctx.font='bold 19px sans-serif';ctx.fillText(r.name,r.x+14,r.y+27);ctx.fillStyle='#b99b76'})}else{ctx.fillRect(105,390,690,620);ctx.fillStyle='#eadfc9';ctx.fillRect(125,410,650,580);ctx.strokeStyle='#a58a68';ctx.lineWidth=9;ctx.strokeRect(125,410,650,580);ctx.fillStyle='#d9c7a8';ctx.fillRect(430,410,10,580);ctx.fillRect(125,690,650,9)}ctx.fillStyle='#8d7054';ctx.font='bold 23px sans-serif';ctx.fillText(homes[homeId]?.name||(homeId==='home'?'西の住宅':'東の住宅'),145,365);drawHomeFurniture(homeId);const residents=chars.filter(p=>householdForResident(p).homeId===homeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'),spots={living:[{x:235,y:590},{x:295,y:590},{x:355,y:590}],hobby:[{x:570,y:590},{x:630,y:590},{x:510,y:590}],bedroom:[{x:235,y:900},{x:295,y:900},{x:355,y:900}],kitchen:[{x:580,y:900},{x:640,y:900},{x:700,y:900}]},roomCounts={};residents.forEach(p=>{const roomType=p.action==='sleep'?'bedroom':(p.homeHobby?.room||'living'),customRoom=homes[homeId]?.rooms?.find(r=>r.type===roomType)||homes[homeId]?.rooms?.[0],slots=customHome&&customRoom?[{x:customRoom.x+customRoom.w*.34,y:customRoom.y+customRoom.h*.58},{x:customRoom.x+customRoom.w*.52,y:customRoom.y+customRoom.h*.64},{x:customRoom.x+customRoom.w*.7,y:customRoom.y+customRoom.h*.56},{x:customRoom.x+customRoom.w*.84,y:customRoom.y+customRoom.h*.64}]:(spots[roomType]||spots.living),index=roomCounts[roomType]||0;if(index>=slots.length)return;roomCounts[roomType]=index+1;const q=slots[index];drawChar({...p,x:q.x,y:q.y,pose:'sit'},chars.indexOf(p))});ctx.textAlign='left';ctx.restore();}
 function drawChar(p,i,showLabel=true){
  let x=p.x;const tall=p.scale||1,seated=p.action==='bench'&&p.phaseState==='staying',groundAnchored=!interiorHomeId&&!seated;let y=p.y-(groundAnchored?16*tall:0); // 住人ごとの表示スケール
  ellipse(x,groundAnchored?p.y:y+15,19*tall,7,'#776b51aa');
@@ -2116,6 +2116,31 @@ function uncrowdedActivityDestination(p,x,y){
 }
 // Conversation time starts only after both residents have reached the meeting.
 // A cancelled or unreachable rendezvous must release both pedestrians.
+function tryReplanSocialVisit(p){
+ const partner=residentById(p.socialPartnerId);
+ if(!partner||partner.action!=='social'||partner.socialPartnerId!==p.id)return false;
+ const replans=Math.max(p.socialReplans||0,partner.socialReplans||0);
+ if(replans>=2)return false;
+ const avoid={x:(p.tx+partner.tx)/2,y:(p.ty+partner.ty)/2};
+ const meeting=findSocialMeetingPoints(p,partner,avoid);
+ if(!meeting)return false;
+ const duration=18+Math.random()*10;
+ const stayText=p.stayText||partner.stayText||'近況を話しながら一緒に過ごしている';
+ const startedA=setAction(p,chars.indexOf(p),'social',meeting.first.x,meeting.first.y,partner.name+'のところへ向かっている',stayText,'stand',duration);
+ if(!startedA)return false;
+ const startedB=setAction(partner,chars.indexOf(partner),'social',meeting.second.x,meeting.second.y,p.name+'のところへ向かっている',stayText,'stand',duration);
+ if(!startedB){
+  p.action='idle';p.phaseState='idle';p.routePoints=[];p.routeIndex=0;
+  p.tx=p.x;p.ty=p.y;p.stay=0;p.stayText='';p.pose='stand';
+  p.activity='街で過ごしている';p.socialPartnerId=null;p.nextActionRetrySeconds=3;
+  renderResidentStatus();
+  return false;
+ }
+ p.socialPartnerId=partner.id;partner.socialPartnerId=p.id;
+ p.socialReplans=partner.socialReplans=replans+1;
+ p.socialWaitSeconds=0;partner.socialWaitSeconds=0;
+ return true;
+}
 function cancelSocialVisit(p){
  interruptSocialForNewAction(p);
  if(p.action!=='social')return;
@@ -2132,7 +2157,12 @@ function waitForSocialPartner(p,dt){
  if(partner.phaseState!=='staying'||Math.hypot(partner.x-p.x,partner.y-p.y)>115){
   p.socialWaitSeconds=(p.socialWaitSeconds||0)+dt;
   p.activity=partner.name+'の到着を待っている';
-  if(p.socialWaitSeconds>=120)cancelSocialVisit(p);
+  if(p.socialWaitSeconds>=120){
+   // Re-planning is the stall watchdog's call (it has the no-progress evidence);
+   // a partner who is already close just gets more time instead of a dissolution.
+   if(Math.hypot(partner.x-p.x,partner.y-p.y)<=90)p.socialWaitSeconds=60;
+   else cancelSocialVisit(p);
+  }
   return true;
  }
  p.socialWaitSeconds=0;p.activity=p.stayText;return false;
@@ -2671,7 +2701,7 @@ function socialMeetingSpots(){
  if(plaza)spots.push({x:plaza.x,y:plaza.y});
  return spots;
 }
-function findSocialMeetingPoints(a,b){
+function findSocialMeetingPoints(a,b,avoid){
  const centerX=(a.x+b.x)/2,centerY=(a.y+b.y)/2;
  let checkedRoutes=0;
  const seenNodes=new Set();
@@ -2683,6 +2713,7 @@ function findSocialMeetingPoints(a,b){
   .map(spot=>{const node=roadNodes.filter(n=>!mainRoadMeetingBlocked(n.x,n.y)).sort((u,v)=>Math.hypot(u.x-spot.x,u.y-spot.y)-Math.hypot(v.x-spot.x,v.y-spot.y))[0];if(!node||seenNodes.has(node))return null;seenNodes.add(node);return {x:node.x,y:node.y}})
   .filter(Boolean)
   .filter(center=>!busy.some(point=>Math.hypot(point.x-center.x,point.y-center.y)<110))
+  .filter(center=>!avoid||Math.hypot(avoid.x-center.x,avoid.y-center.y)>=110)
   .sort((u,v)=>Math.hypot(u.x-centerX,u.y-centerY)-Math.hypot(v.x-centerX,v.y-centerY));
  for(const center of centers){
   {
@@ -2756,7 +2787,7 @@ function startSocialVisit(a,b,r,initiator){
   renderResidentStatus();
   return false;
  }
- a.socialPartnerId=b.id;b.socialPartnerId=a.id;
+ a.socialPartnerId=b.id;b.socialPartnerId=a.id;a.socialReplans=0;b.socialReplans=0;
  const stamp=calendarDay*1440+hour*60+minute;
  r.lastSocialVisitStamp=stamp;
  a.lastSocialStamp=stamp;b.lastSocialStamp=stamp;
@@ -3143,7 +3174,7 @@ function loop(t){
  if(p.stallTargetKey!==stallKey){p.stallTargetKey=stallKey;p.stallBestDist=stallDist;p.stallRouteIndex=p.routeIndex||0;p.stallSeconds=0}
  else if(stallDist<(p.stallBestDist??stallDist)-4||(p.routeIndex||0)!==p.stallRouteIndex){p.stallBestDist=Math.min(p.stallBestDist??stallDist,stallDist);p.stallRouteIndex=p.routeIndex||0;p.stallSeconds=0}
  else if((p.stallSeconds=(p.stallSeconds||0)+dt)>=25){p.stallSeconds=0;p.stallBestDist=stallDist;
-  if(p.action==='social')cancelSocialVisit(p);else recoverResidentFromFailedRoute(p,i);
+  if(p.action==='social'){if(!tryReplanSocialVisit(p))cancelSocialVisit(p)}else recoverResidentFromFailedRoute(p,i);
   return}
  if(p.action==='social'&&p.socialPartnerId){
   const socialPartner=residentById(p.socialPartnerId);
