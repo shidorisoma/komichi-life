@@ -2250,26 +2250,32 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
 }
 function startWork(p,i,plan){
  const homeBased=/自宅|在宅|配信|ストリーマー|streamer|streaming|リモート|オンライン/.test(String(p.workplace||''));
- addDiary(homeBased?p.name+'は自宅で仕事を始めた。':(plan.urgent?p.name+'は呼び出されて仕事に行った。':p.name+'は仕事に行った。'));
  const mode=p.incomeMode||'fixed',fixed=Math.max(0,Math.floor(Number(p.fixedIncome??1500)||0)),min=Math.max(0,Math.floor(Number(p.randomIncomeMin)||0)),max=Math.max(min,Math.floor(Number(p.randomIncomeMax)||0));
  const random=min+Math.floor(Math.random()*(max-min+1)),baseWage=mode==='random'?random:fixed+(mode==='mixed'?random:0);
  const wage=plan.urgent?Math.round(baseWage*1.25):baseWage;
- p.pendingWorkPay={amount:wage,description:plan.urgent?'急な呼び出しの報酬（1.25倍）':(p.jobTitle||'仕事')+'の収入'};
  const title=p.jobTitle||'仕事';
   const travel=plan.urgent?'急な呼び出しで仕事に向かっている':title+'の仕事に向かっている';
   const stay=plan.urgent?'急な仕事に対応している':title+'の仕事をしている';
+  const commitStart=()=>{
+   addDiary(homeBased?p.name+'は自宅で仕事を始めた。':(plan.urgent?p.name+'は呼び出されて仕事に行った。':p.name+'は仕事に行った。'));
+   p.pendingWorkPay={amount:wage,description:plan.urgent?'急な呼び出しの報酬（1.25倍）':(p.jobTitle||'仕事')+'の収入'};
+  };
   if(p.workOutside){
    interruptSocialForNewAction(p);
    p.action='workOutside';p.socialPartnerId=null;p.homeHobby=null;p.benchSeat=null;
    p.activity='街の外で仕事中';p.stayText='街の外で'+stay;
    p.phaseState='staying';p.stay=plan.duration;p.pose='stand';p.tx=p.x;p.ty=p.y;
+   commitStart();
    renderResidentStatus();return;
   }
   if(homeBased){
    const home=getPlace(householdForResident(p).homeId);
    p.workHomeShift=true;
-   setAction(p,i,'home',home.x,home.y+28,'仕事の準備をしている','自宅で'+stay,'sit',plan.duration);
+   if(!setAction(p,i,'home',home.x,home.y+28,'仕事の準備をしている','自宅で'+stay,'sit',plan.duration)){
+    p.workHomeShift=false;p.workCompletedDay=calendarDay;return;
+   }
    p.homeHobby={kind:'work',room:'hobby',name:'仕事'};
+   commitStart();
    return;
   }
   const place=workPlaceFor(p);
@@ -2282,7 +2288,16 @@ function startWork(p,i,plan){
    const entrance=homeEntrance(homes[place.id]);
    workTarget={x:entrance.x,y:entrance.y+32};
   }
-  setAction(p,i,'work',workTarget.x,workTarget.y,travel,stay,'stand',plan.duration);
+  else if(place.id==='plaza'){
+   // The plaza centre is ringed by the tree bed and cannot be routed to; work from its walk spot.
+   const spot=PAINTED_WALK_SPOTS.find(s2=>s2.id==='plaza');
+   if(spot)workTarget={x:spot.x,y:spot.y};
+  }
+  if(!setAction(p,i,'work',workTarget.x,workTarget.y,travel,stay,'stand',plan.duration)){
+   // An unroutable workplace would otherwise retry (and log) every few minutes all shift.
+   p.workCompletedDay=calendarDay;return;
+  }
+  commitStart();
  }
  function weatherLabel(){return weatherType==='rainy'?'雨':weatherType==='cloudy'?'くもり':'晴れ'}
  function updateWeather(){if(weatherDay!==calendarDay){weatherDay=calendarDay;const previous=weatherType;if(Math.random()<.42){const roll=Math.random();weatherType=roll<.48?'sunny':roll<.76?'cloudy':'rainy'}if(weatherType!==previous)addDiary('天気が'+weatherLabel()+'に変わった。');}}
