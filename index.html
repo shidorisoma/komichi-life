@@ -2924,6 +2924,37 @@ function advanceGameClock(){
 }
 setInterval(advanceGameClock,250);
 // Shared recovery for both kinds of blocked waypoint, keeping social partners in sync.
+function nearMeetingSpot(x,y,radius){
+ return socialMeetingSpots().some(spot=>Math.hypot(spot.x-x,spot.y-y)<=radius);
+}
+// Only for the meeting-spot area: swing wide around a people jam via a far road
+// node instead of queueing behind it. Returns a replacement route or null.
+function meetingAreaWideDetour(p){
+ const target={x:p.tx,y:p.ty},direct=Math.max(1,Math.hypot(target.x-p.x,target.y-p.y));
+ const candidates=[];
+ for(const n of roadNodes){
+  const fromP=Math.hypot(n.x-p.x,n.y-p.y);
+  if(fromP<55||fromP>230||Math.hypot(target.x-n.x,target.y-n.y)>210)continue;
+  const perp=Math.abs((n.x-p.x)*(target.y-p.y)-(n.y-p.y)*(target.x-p.x))/direct;
+  if(perp<42)continue;
+  candidates.push({n,score:perp-Math.hypot(target.x-n.x,target.y-n.y)*.08});
+ }
+ candidates.sort((u,v)=>v.score-u.score);
+ // Rotate through swing nodes across retries: if one way around is still
+ // blocked by people, the next attempt goes around a different side.
+ const tried=Array.isArray(p.wideDetourTried)?p.wideDetourTried:[];
+ let pool=candidates.filter(c=>!tried.includes(c.n.id));
+ if(!pool.length){p.wideDetourTried=[];pool=candidates}
+ for(const c of pool.slice(0,4)){
+  const leg1=roadRoute(p.x,p.y,c.n.x,c.n.y,null,p);
+  if(leg1.length<2)continue;
+  const leg2=roadRoute(c.n.x,c.n.y,target.x,target.y,null,p);
+  if(leg2.length<2)continue;
+  p.wideDetourTried=[...(Array.isArray(p.wideDetourTried)?p.wideDetourTried:[]),c.n.id].slice(-3);
+  return [...leg1,...leg2.slice(1)];
+ }
+ return null;
+}
 function recoverResidentFromFailedRoute(p,i){
  p.passing=null;p.trafficWait=0;
  if(restoreBenchExitClearance(p)){
@@ -2998,6 +3029,7 @@ function residentWalkDirection(p){
  }
  function moveWithPassing(p,dt){
   if(!isOutdoorResident(p)||p.phaseState!=='moving'){p.passing=null;return false}
+ if(p.passing)p.passHoldSeconds=0;
   const t=p.passing;
   if(t){
    const other=residentById(t.otherId);
@@ -3060,7 +3092,14 @@ function residentWalkDirection(p){
      const plan=preparePassing(p,q,'bypass');
      if(plan){p.passing=plan;return moveWithPassing(p,dt)}
     }
-    if(forward>0&&d<31){p.stuckTime=0;return true}
+    if(forward>0&&d<31){p.stuckTime=0;
+     // Held by a stationary neighbour: near a meeting spot, stop queueing and swing wide.
+     p.passHoldSeconds=(p.passHoldSeconds||0)+dt;
+     if(p.passHoldSeconds>2.5&&(p.phase||0)-(p.lastWideDetourPhase||-99)>7&&(nearMeetingSpot(p.x,p.y,170)||(p.action==='social'&&nearMeetingSpot(p.tx,p.ty,80)))){
+      const wide=meetingAreaWideDetour(p);
+      if(wide){p.routePoints=wide;p.routeIndex=1;p.lastWideDetourPhase=p.phase||0;p.passHoldSeconds=0;return false}
+     }
+     return true}
     continue;
    }
    const hq=residentWalkDirection(q);if(!hq)continue;
@@ -3106,6 +3145,16 @@ function loop(t){
  else if((p.stallSeconds=(p.stallSeconds||0)+dt)>=25){p.stallSeconds=0;p.stallBestDist=stallDist;
   if(p.action==='social')cancelSocialVisit(p);else recoverResidentFromFailedRoute(p,i);
   return}
+ if(p.action==='social'&&p.socialPartnerId){
+  const socialPartner=residentById(p.socialPartnerId);
+  const targetDist=Math.hypot(p.tx-p.x,p.ty-p.y);
+  if(socialPartner&&socialPartner.action==='social'&&socialPartner.phaseState==='staying'&&Math.hypot(socialPartner.x-p.x,socialPartner.y-p.y)<=44&&targetDist<=90){
+   // Only a traveller who has stopped getting closer counts as arrived beside
+   // the partner; someone still walking the last metres in must not stop short.
+   if(p.socialCloseBest==null||targetDist<p.socialCloseBest-4){p.socialCloseBest=targetDist;p.socialCloseSeconds=0}
+   else if((p.socialCloseSeconds=(p.socialCloseSeconds||0)+dt)>=3){p.socialCloseSeconds=0;p.socialCloseBest=null;p.tx=p.x;p.ty=p.y;arrive(p,i);return}
+  }else{p.socialCloseSeconds=0;p.socialCloseBest=null}
+ }
  if(moveWithPassing(p,dt))return;
  if(restoreBenchExitClearance(p)){
   p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);
@@ -3118,7 +3167,7 @@ function loop(t){
  let step=Math.min(d,dt*42),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
  // 目標地点だけでなく、現在地からの移動線全体を検査して壁抜けを防ぐ。
  const staticClear=movementSegmentClear(p.x,p.y,nx,ny,p);
- if(staticClear&&residentBodyClear(p,nx,ny)){p.x=nx;p.y=ny;p.trafficWait=0}
+ if(staticClear&&residentBodyClear(p,nx,ny)){p.x=nx;p.y=ny;p.trafficWait=0;p.passHoldSeconds=0}
  else if(staticClear){
   // A nearby person isn't a broken route. Wait without the old stuck/teleport cycle.
   p.trafficWait=(p.trafficWait||0)+dt;p.stuckTime=0;p.routeRetries=0;
@@ -3134,6 +3183,10 @@ function loop(t){
     }
     const detour=preparePassing(p,nearest,'bypass');
     if(detour){p.passing=detour;p.passingCooldown=0}
+    else if((p.phase||0)-(p.lastWideDetourPhase||-99)>7&&(nearMeetingSpot(p.x,p.y,170)||(p.action==='social'&&nearMeetingSpot(p.tx,p.ty,80)))){
+     const wide=meetingAreaWideDetour(p);
+     if(wide){p.routePoints=wide;p.routeIndex=1;p.lastWideDetourPhase=p.phase||0;p.stuckTime=0;p.routeRetries=0}
+    }
    }
   }
   return;
