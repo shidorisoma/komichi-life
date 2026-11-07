@@ -6,7 +6,7 @@ const storage={};const b={console:{...console,warn:noop},Math,Date,Set,Map,WeakM
 function loadModel(){
  for(const key of Object.keys(storage))delete storage[key];
  vm.createContext(b);
- const exported='globalThis.qa={chars,addResident,buyFurniture,moveFurniture,canResidentUseFurniture,getFurniture:()=>furniture,furnitureCatalog,relationshipFor,evaluateRelationshipPromotions,relationshipThresholds,addDiary,writePersonalDiary,startSocialVisit,tryReplanSocialVisit,cancelSocialVisit,PAINTED_WALK_SPOTS,paintedTownArt,householdForResident,parsePairInstruction,relationTypeStances,stanceToward,relationGainFactors,typeSceneFor,RELATION_TYPE_OPTIONS,tickLife,getSharedGoal:()=>({goal:sharedGoal,pairId:sharedGoalPairId}),getMemories:()=>memories,getRelationships:()=>relationships,setClock:(h,m)=>{hour=h;minute=m}};})();';
+ const exported='globalThis.qa={chars,addResident,buyFurniture,moveFurniture,canResidentUseFurniture,getFurniture:()=>furniture,furnitureCatalog,relationshipFor,evaluateRelationshipPromotions,relationshipThresholds,addDiary,writePersonalDiary,startSocialVisit,tryReplanSocialVisit,cancelSocialVisit,PAINTED_WALK_SPOTS,paintedTownArt,householdForResident,parsePairInstruction,relationTypeStances,stanceToward,relationGainFactors,typeSceneFor,RELATION_TYPE_OPTIONS,tickLife,getSharedGoal:()=>({goal:sharedGoal,pairId:sharedGoalPairId}),getMemories:()=>memories,getRelationships:()=>relationships,setClock:(h,m)=>{hour=h;minute=m},getDiary:()=>diary};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);b.qa.paintedTownArt.complete=true;b.qa.paintedTownArt.naturalWidth=1122;b.qa.paintedTownArt.naturalHeight=1402;return b.qa;
 }
 const assert=require('assert').strict;let failures=0;
@@ -184,6 +184,23 @@ test('a date instruction sends that pair on a cafe date and rewards their relati
  assert(r.affection>before,'the pair relationship gains affection');
  assert(r.lastPairDateStamp>=0,'the date stamp is recorded');
  assert(q.getMemories().some(m=>m.pairId===r.id),'a memory is recorded for the pair');
+});
+
+// --- Log wording and de-duplication (2026-11-08) ---
+test('consecutive identical log entries collapse into one',()=>{
+ const q=loadModel();
+ const base=q.getDiary().length;
+ q.addDiary('同じ出来事。');q.addDiary('同じ出来事。');q.addDiary('同じ出来事。');
+ assert.equal(q.getDiary().length,base+1);
+ q.addDiary('別の出来事。');q.addDiary('同じ出来事。');
+ assert.equal(q.getDiary().length,base+3,'non-consecutive repeats still record');
+});
+test('rendezvous log lines do not narrate the rendezvous itself',()=>{
+ const q=loadModel(),[a,b]=q.chars,r=q.relationshipFor(a,b);
+ assert(q.startSocialVisit(a,b,r,a),'visit starts');
+ const line=q.getDiary()[0].text;
+ assert(!line.includes('待ち合わせ'),'no rendezvous narration: '+line);
+ assert(line.startsWith(a.name+'と'+b.name+'が'),'pair line keeps the two names: '+line);
 });
 
 process.exitCode=failures?1:0;
