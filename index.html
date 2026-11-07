@@ -2485,6 +2485,9 @@ function startBenchVisit(p,i,stayText,duration,scene){
  p.benchSeat=null;
  return false;
 }
+function cafeOccupancy(except){
+ return chars.filter(q=>q!==except&&(q.action==='cafe'||q.action==='date')&&(q.phaseState==='moving'||q.phaseState==='staying')).length;
+}
 function chooseRoutine(p,i){
  p.fishingTrip=false;p.photoTrip=false;p.shoppingTrip=false;p.errandTrip=false;p.mealSkill=null;p.mealBonusApplied=false;
  if(p.action==='social'){
@@ -2503,11 +2506,12 @@ function chooseRoutine(p,i){
  const options=[];
  const mealCook=p.needs.hunger<42?mealCookFor(p):null;
  if(mealCook&&previous!=='home')options.push({action:'home',isMeal:true,weight:mealCook.skill==='poor'?2:mealCook.skill==='good'?10:mealCook.by==='mate'?8:7,run:()=>{const home=getPlace(householdForResident(p).homeId);const stock=householdFoodStore(p);const fishMeal=stock.fishIngredients>0;if(fishMeal)stock.fishIngredients=Math.max(0,stock.fishIngredients-1);else stock.foodIngredients=Math.max(0,stock.foodIngredients-1);p.homeHobby={kind:'cooking',room:'kitchen',name:'食事',fishMeal,foodMeal:!fishMeal};p.mealSkill=mealCook.skill;const mealText=mealCook.by==='mate'?mealCook.cook.name+'が作ってくれた食事を食べている':fishMeal?'釣った魚を料理して食べている':'買っておいた食材で食事を作っている';setAction(p,i,'home',home.x,home.y+28,'家へ食事をしに戻っている',mealText,'sit',16+Math.random()*12)}});
- if(p.needs.hunger<42&&previous!=='cafe'&&(p.money??5000)>=450)options.push({action:'cafe',weight:['poor','none'].includes(cookingSkillOf(p))?8:5,run:()=>{const cafe=getPlace('cafe');const cafeScene=cafeSceneFor(p);p.cafeScene=cafeScene;setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている',cafeScene,'sit',18+Math.random()*14)}});
+ if(p.needs.hunger<42&&previous!=='cafe'&&(p.money??5000)>=450&&cafeOccupancy(p)<2)options.push({action:'cafe',weight:['poor','none'].includes(cookingSkillOf(p))?8:5,run:()=>{const cafe=getPlace('cafe');const cafeScene=cafeSceneFor(p);p.cafeScene=cafeScene;setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている',cafeScene,'sit',18+Math.random()*14)}});
  if(p.needs.energy<38&&previous!=='bench')options.push({action:'bench',weight:5,run:()=>{const scene=benchSceneFor(p);if(!startBenchVisit(p,i,scene.stay,18+Math.random()*18,scene))setAction(p,i,'walk',430,1100,'広場へ向かっている','広場でひと休みしている','stand',12+Math.random()*10)} });
  const homebody=(Math.max(0,Math.min(100,p.sociability??50))*.35+Math.max(0,Math.min(100,p.activityLevel??50))*.4+Math.max(0,Math.min(100,p.curiosity??50))*.25)<32;
  if(previous!=='home')options.push({action:'home',weight:homebody?5.5:1.1,run:()=>{const home=getPlace(householdForResident(p).homeId);p.homeHobby=null;const stay=(p.activityLevel??50)<35?'家でのんびり過ごしている':(p.curiosity??50)>65?'家で好きなことをしている':'家でひと休みしている';setAction(p,i,'home',home.x,home.y+28,'家へ戻っている',stay,'sit',14+Math.random()*22)}});
   const hobbies=hobbyChoicesFor(p).filter(h=>hobbyConditionMet(h)&&(h.kind!=='cooking'||cookingSkillOf(p)!=='none'));hobbies.forEach(hobby=>{
+  if(hobby.mode==='cafe'&&cafeOccupancy(p)>=2)return;
   const flexible=/^(reading|craft)$/.test(hobby.kind);
   const variants=hobby.mode==='home'?(flexible?['room','living','outdoor']:['room','living']):['default'];
   // 趣味欄の先頭ほど本人にとって大切。登録した趣味は通常行動より選ばれやすくする。
@@ -2531,7 +2535,7 @@ function chooseRoutine(p,i){
  });
  if(previous!=='flowers')options.push({action:'flowers',weight:1.2+(p.curiosity??50)/28,run:()=>{const spots=PAINTED_FLOWER_SPOTS;const q=chooseFreshSpot(p,spots);const scene=flowerSceneFor(p);p.flowerScene=scene;setAction(p,i,'flowers',q.x,ySafe(q.y),'花壇へ向かっている',scene.stay,'look',12+Math.random()*18)}});
  if(previous!=='walk')options.push({action:'walk',weight:2.5+(p.activityLevel??50)/20+(p.curiosity??50)/60,run:()=>{const spots=PAINTED_WALK_SPOTS;const q=chooseFreshSpot(p,spots);const scene=walkSceneFor(p,q);p.walkScene=scene;setAction(p,i,'walk',q.x,ySafe(q.y),q.label+'まで散歩中',scene.stay,'stand',8+Math.random()*12+(p.activityLevel??50)*.12)}});
- if(previous!=='cafe'&&p.needs.hunger>=42&&(p.money??5000)>=450)options.push({action:'cafe',weight:1.5+(p.curiosity??50)/100,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている','喫茶店でひと休み','sit',12+Math.random()*12)}});
+ if(previous!=='cafe'&&p.needs.hunger>=42&&(p.money??5000)>=450&&cafeOccupancy(p)<2)options.push({action:'cafe',weight:1.5+(p.curiosity??50)/100,run:()=>{const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている','喫茶店でひと休み','sit',12+Math.random()*12)}});
  if(previous!=='bench'&&p.needs.energy>=38)options.push({action:'bench',weight:2,run:()=>{const scene=benchSceneFor(p);if(!startBenchVisit(p,i,scene.stay,10+Math.random()*14,scene))setAction(p,i,'walk',430,1100,'広場へ向かっている','広場でひと休みしている','stand',10+Math.random()*14)} });
  const stampNow=calendarDay*1440+hour*60+minute;
  const stockNow=householdFoodStore(p);
@@ -2639,12 +2643,29 @@ function mainRoadMeetingBlocked(x,y){
  // Include pedestrian clearance so neither member of a pair stands at the edge of the main lane.
  return paintedRoadSegments.some(([a,b])=>a.paintRadius>=36&&b.paintRadius>=36&&pointSegmentDistance(x,y,a,b)<60);
 }
+function socialMeetingSpots(){
+ const spots=[];
+ for(const bench of WORLD_STREET_FURNITURE.benches){
+  if(bench.group==='cafe')continue;
+  if(bench.id==='south-bench'||bench.id==='south-bench-east')continue;
+  spots.push({x:bench.x,y:bench.y-14});
+ }
+ const cherry=PAINTED_WALK_SPOTS.find(spot=>spot.id==='garden-cherry');
+ if(cherry)spots.push({x:cherry.x,y:cherry.y});
+ const plaza=getPlace('plaza');
+ if(plaza)spots.push({x:plaza.x,y:plaza.y});
+ return spots;
+}
 function findSocialMeetingPoints(a,b){
  const centerX=(a.x+b.x)/2,centerY=(a.y+b.y)/2;
  let checkedRoutes=0;
- const centers=roadNodes.filter(n=>!mainRoadMeetingBlocked(n.x,n.y)).sort((u,v)=>Math.hypot(u.x-centerX,u.y-centerY)-Math.hypot(v.x-centerX,v.y-centerY)).slice(0,12);
+ const seenNodes=new Set();
+ const centers=socialMeetingSpots()
+  .map(spot=>{const node=roadNodes.filter(n=>!mainRoadMeetingBlocked(n.x,n.y)).sort((u,v)=>Math.hypot(u.x-spot.x,u.y-spot.y)-Math.hypot(v.x-spot.x,v.y-spot.y))[0];if(!node||seenNodes.has(node))return null;seenNodes.add(node);return {x:node.x,y:node.y}})
+  .filter(Boolean)
+  .sort((u,v)=>Math.hypot(u.x-centerX,u.y-centerY)-Math.hypot(v.x-centerX,v.y-centerY));
  for(const center of centers){
-  for(let step=0;step<1;step++){
+  {
    const cx=center.x,cy=center.y;
    for(let direction=0;direction<8;direction++){
     const angle=direction*Math.PI/4;
