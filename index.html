@@ -2931,11 +2931,12 @@ function residentWalkDirection(p){
   const oh=residentWalkDirection(other)||{x:0,y:0},cross=type==='yield'&&Math.abs(h.x*oh.x+h.y*oh.y)<.5;
   const plan={type,otherId:other.id,stage:'side',ready:false,age:0,startX:p.x,startY:p.y,goX:oh.x,goY:oh.y};
   if(cross&&Math.abs((p.x-other.x)*oh.y-(p.y-other.y)*oh.x)>30)return {...plan,stage:'wait',ready:true};
-  for(const sign of [1,-1])for(const width of [28,31,35]){
-   const sx=-h.y*sign*width,sy=h.x*sign*width,x=p.x+sx,y=p.y+sy;
+  const backs=type==='yield'?[0,14,26]:[0];
+  for(const sign of [1,-1])for(const width of [23,26,30,34,38])for(const back of backs){
+   const lx=-h.y*sign*width,ly=h.x*sign*width,x=p.x+lx-h.x*back,y=p.y+ly-h.y*back;
    if(!roadJoinFollowsPaint(p.x,p.y,x,y)||!movementSegmentClear(p.x,p.y,x,y,p)||!residentBodyClear(p,x,y))continue;
    if(cross&&Math.abs((x-other.x)*oh.y-(y-other.y)*oh.x)<28)continue;
-   const fx=other.x+h.x*42+sx,fy=other.y+h.y*42+sy;
+   const fx=other.x+h.x*42+lx,fy=other.y+h.y*42+ly;
    if(type==='bypass'){
     if(!roadJoinFollowsPaint(x,y,fx,fy)||!movementSegmentClear(x,y,fx,fy,p)||!residentBodyClear(p,fx,fy))continue;
     const dx=fx-x,dy=fy-y,t=Math.max(0,Math.min(1,((other.x-x)*dx+(other.y-y)*dy)/Math.max(1,dx*dx+dy*dy)));
@@ -2959,7 +2960,7 @@ function residentWalkDirection(p){
   const t=p.passing;
   if(t){
    const other=residentById(t.otherId);
-   if(!other||!isOutdoorResident(other)||t.age>6.5){finishPassing(p);return false}
+   if(!other||!isOutdoorResident(other)||t.age>5){finishPassing(p);return false}
    t.age+=dt;
    if(t.stage==='side'||t.stage==='forward'){
     const x=t.stage==='side'?t.x:t.fx,y=t.stage==='side'?t.y:t.fy;
@@ -2972,7 +2973,7 @@ function residentWalkDirection(p){
      if(!movementSegmentClear(p.x,p.y,nx,ny,p)){finishPassing(p);return true}
      if(!residentBodyClear(p,nx,ny)){
       t.blockedFor=(t.blockedFor||0)+dt;
-      if(t.blockedFor>1.8){finishPassing(p);p.passingCooldown=(p.phase||0)+1.6}
+      if(t.blockedFor>1.3){finishPassing(p);p.passingCooldown=(p.phase||0)+1.6}
       p.stuckTime=0;p.routeRetries=0;return true;
      }
      t.blockedFor=0;p.x=nx;p.y=ny;
@@ -2990,7 +2991,7 @@ function residentWalkDirection(p){
    }
   }
   const yielding=chars.find(q=>q!==p&&q.passing?.type==='yield'&&q.passing.otherId===p.id&&q.phaseState==='moving');
-  if(yielding&&!yielding.passing.ready&&Math.hypot(yielding.x-p.x,yielding.y-p.y)<82){
+  if(yielding&&!yielding.passing.ready&&Math.hypot(yielding.x-p.x,yielding.y-p.y)<50){
    p.stuckTime=0;p.routeRetries=0;return true;
   }
   const heading=residentWalkDirection(p);if(!heading)return false;
@@ -3031,9 +3032,9 @@ function residentWalkDirection(p){
    const tau=Math.max(0,Math.min(1.2,-(dx*vx+dy*vy)/Math.max(1,vx*vx+vy*vy)));
    if(Math.hypot(dx+vx*tau,dy+vy*tau)>28||d>73||(p.phase||0)<(p.passingCooldown||0))continue;
    const first=String(p.id)>String(q.id)?p:q,second=first===p?q:p;
-   const best=preparePassing(first,second,'yield');
-   if(best)first.passing=best;
-   else{const alternate=preparePassing(second,first,'yield');if(alternate)second.passing=alternate}
+   let plan=null;
+   if(!first.passing){plan=preparePassing(first,second,'yield');if(plan)first.passing=plan}
+   if(!plan&&!second.passing){plan=preparePassing(second,first,'yield');if(plan)second.passing=plan}
    if(p.passing)return moveWithPassing(p,dt);
    if(q.passing?.type==='yield'&&q.passing.otherId===p.id&&!q.passing.ready){p.stuckTime=0;return true}
   }
@@ -3080,7 +3081,7 @@ function loop(t){
  else if(staticClear){
   // A nearby person isn't a broken route. Wait without the old stuck/teleport cycle.
   p.trafficWait=(p.trafficWait||0)+dt;p.stuckTime=0;p.routeRetries=0;
-  if(p.trafficWait>2.4){
+  if(p.trafficWait>1.2){
    p.trafficWait=0;
    const nearest=chars.filter(q=>q!==p&&isOutdoorResident(q)&&['moving','staying','idle'].includes(q.phaseState))
     .sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
