@@ -2675,9 +2675,14 @@ function findSocialMeetingPoints(a,b){
  const centerX=(a.x+b.x)/2,centerY=(a.y+b.y)/2;
  let checkedRoutes=0;
  const seenNodes=new Set();
+ // A spot another pair is already heading to (or using) stays out of the draw:
+ // two pairs converging on the same garden corner is what jams the narrow paths.
+ const busy=[];
+ chars.forEach(q=>{if(q!==a&&q!==b&&q.action==='social'&&(q.phaseState==='moving'||q.phaseState==='staying')){busy.push({x:q.tx,y:q.ty});busy.push({x:q.x,y:q.y})}});
  const centers=socialMeetingSpots()
   .map(spot=>{const node=roadNodes.filter(n=>!mainRoadMeetingBlocked(n.x,n.y)).sort((u,v)=>Math.hypot(u.x-spot.x,u.y-spot.y)-Math.hypot(v.x-spot.x,v.y-spot.y))[0];if(!node||seenNodes.has(node))return null;seenNodes.add(node);return {x:node.x,y:node.y}})
   .filter(Boolean)
+  .filter(center=>!busy.some(point=>Math.hypot(point.x-center.x,point.y-center.y)<110))
   .sort((u,v)=>Math.hypot(u.x-centerX,u.y-centerY)-Math.hypot(v.x-centerX,v.y-centerY));
  for(const center of centers){
   {
