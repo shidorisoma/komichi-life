@@ -27,9 +27,9 @@ const paintedTownArt=new Image(),paintedOccluderTiles=new Map();
 paintedTownArt.src='assets/town-painted-v10.webp';
 paintedTownArt.onload=()=>paintedOccluderTiles.clear();
 const PAINTED_PLOTS=[
- {id:'north-west',label:'北西の花庭の家',anchor:[475,204],approach:[[531,225],[541,241],[552,251]],footprint:[[397,169],[465,145],[556,176],[555,220],[474,239],[397,214]]},
- {id:'north-center',label:'北東の花庭の家',anchor:[682,224],approach:[[704,245],[711,260],[710,282]],footprint:[[610,194],[673,173],[752,206],[751,244],[681,268],[610,239]]},
- {id:'south-west',label:'川を望む東の家',anchor:[868,278],approach:[[908,309],[914,323],[906,338]],footprint:[[799,245],[863,223],[941,254],[941,294],[864,317],[799,288]]},
+ {id:'north-west',label:'北西の花庭の家',anchor:[475,204],approach:[[526,219],[541,241],[552,251]],footprint:[[397,169],[465,145],[556,176],[555,220],[474,239],[397,214]]},
+ {id:'north-center',label:'北東の花庭の家',anchor:[682,224],approach:[[696,244],[711,260],[710,282]],footprint:[[610,194],[673,173],[752,206],[751,244],[681,268],[610,239]]},
+ {id:'south-west',label:'川を望む東の家',anchor:[868,278],approach:[[882,307],[898,311],[914,323],[906,338]],footprint:[[799,245],[863,223],[941,254],[941,294],[864,317],[799,288]]},
  {id:'south-center',label:'石段の上の家',anchor:[405,487],approach:[[424,511],[430,542],[438,560],[447,585],[456,610]],footprint:[[311,459],[403,430],[506,473],[504,516],[412,545],[311,511]]},
  {id:'south-east',label:'広場から離れた花庭の家',anchor:[285,805],approach:[[328,838],[339,855],[385,872],[418,870]],footprint:[[191,769],[282,737],[389,777],[389,823],[291,858],[191,824]]},
  {id:'center-west-home',label:'北の木陰の家',anchor:[270,125],approach:[[300,174],[322,196],[374,231]],footprint:[[208,121],[270,99],[328,124],[329,161],[273,181],[208,161]],extra:true}
@@ -79,7 +79,7 @@ const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,
 const places=[
  {id:'home',name:'西の住宅',icon:'🏡',...artPoint(475,204),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'home2',name:'東の住宅',icon:'🏠',...artPoint(682,224),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
- {id:'cafe',name:'喫茶こもれび',icon:'☕',x:artPoint(367,357).x-30,y:artPoint(367,357).y-40,type:'cafe',description:'花に囲まれたテラスのある喫茶店',actions:['食事','休憩','デート']},
+ {id:'cafe',name:'喫茶こもれび',icon:'☕',x:artPoint(324,357).x-30,y:artPoint(324,357).y-40,type:'cafe',description:'花に囲まれたテラスのある喫茶店',actions:['食事','休憩','デート']},
  {id:'shop',name:'こみち商店',icon:'🛒',...artPoint(220,625),type:'shop',description:'石段の上にある小さな商店',actions:['買い物','食材を買う']},
  {id:'plaza',name:'川辺の広場',icon:'🌳',...artPoint(482,1077),type:'outdoor',description:'大きな木を囲む円形広場',actions:['散歩','休憩']},
  {id:'bench-river',name:'川辺のベンチ',icon:'🪑',...artPoint(794,779),type:'bench',description:'水辺を眺めて休めるベンチ',actions:['休憩']},
@@ -381,13 +381,13 @@ function homeBlocksMovement(home,x,y,p){
  const departure=departureHomeFor(p);
  if(departure&&p.phaseState==='moving'&&departure.mapPlotId===home.mapPlotId){
   const exit=homeApproachPoints(departure);
-  if(exit.some((q,i)=>i>0&&pointSegmentDistance(x,y,exit[i-1],q)<24))return false;
+  if(exit.some((q,i)=>i>0&&pointSegmentDistance(x,y,exit[i-1],q)<48))return false;
  }
  const own=p&&householdForResident(p).homeId===home.id;
  if(!own)return true;
  const approach=homeApproachPoints(home),door=approach[0];
- const corridor=approach.some((q,i)=>i>0&&pointSegmentDistance(x,y,approach[i-1],q)<24);
- const exiting=p.phaseState==='moving'&&!['home','sleep'].includes(p.action)&&Math.hypot(p.x-door.x,p.y-door.y)<90;
+ const corridor=approach.some((q,i)=>i>0&&pointSegmentDistance(x,y,approach[i-1],q)<48);
+ const exiting=p.phaseState==='moving'&&!['home','sleep'].includes(p.action)&&Math.hypot(p.x-door.x,p.y-door.y)<180;
  return !(corridor&&(['home','sleep'].includes(p.action)||exiting));
 }
 function isBlockedByHome(x,y,p){
@@ -395,8 +395,8 @@ function isBlockedByHome(x,y,p){
 }
 // Shared placement and collision geometry for fixed public buildings.
 const WORLD_BUILDINGS={
- cafe:{id:'cafe',...artPoint(300,310),footprint:artPolygon([[163,278],[237,249],[404,276],[403,330],[343,352],[248,344],[164,322]]),door:{x:artPoint(367,357).x,halfWidth:22,minY:artPoint(367,335).y,maxY:artPoint(367,357).y},targetAction:'cafe'},
- shop:{id:'shop',...artPoint(220,625),footprint:artPolygon([[113,577],[215,546],[321,593],[320,650],[245,680],[114,642]]),door:{x:artPoint(265,671).x,halfWidth:22,minY:artPoint(265,646).y,maxY:artPoint(265,671).y},targetAction:'shoppingTrip'}
+ cafe:{id:'cafe',...artPoint(300,310),footprint:artPolygon([[163,278],[237,249],[404,276],[403,330],[343,352],[248,344],[164,322]]),door:{x:artPoint(324,357).x,halfWidth:22,minY:artPoint(324,335).y,maxY:artPoint(324,357).y},targetAction:'cafe'},
+ shop:{id:'shop',...artPoint(220,625),footprint:artPolygon([[113,577],[215,546],[321,593],[320,650],[245,680],[114,642]]),door:{x:artPoint(258,671).x,halfWidth:22,minY:artPoint(258,646).y,maxY:artPoint(258,671).y},targetAction:'shoppingTrip'}
 };
 function facilityBlocksMovement(x,y,p){
  // 建物の接地面・入口・行動目標は共通の建物データから判定する。
@@ -474,10 +474,10 @@ function streetFurnitureBlocksMovement(x,y,p){
  // 街に描画しているベンチをすべて障害物として扱う。
  // カフェ前のテラス3台も含め、表示と当たり判定の数を一致させる。
  for(const bench of WORLD_STREET_FURNITURE.benches){
-  const atSeat=p.action==='bench'&&Math.hypot(x-p.tx,y-p.ty)<42;
+  const atSeat=p.action==='bench'&&Math.hypot(x-p.tx,y-p.ty)<84;
   // 立ち上がった直後だけ、座っていたベンチから安全に歩き出せるようにする。
-   const leavingSeat=p.benchExit?.id===bench.id&&Math.hypot(p.x-p.benchExit.x,p.y-p.benchExit.y)<85&&Math.hypot(x-p.benchExit.x,y-p.benchExit.y)<95;
-   if(!atSeat&&!leavingSeat&&x>=bench.x-32&&x<=bench.x+32&&y>=bench.y-19&&y<=bench.y+13)return true;
+   const leavingSeat=p.benchExit?.id===bench.id&&Math.hypot(p.x-p.benchExit.x,p.y-p.benchExit.y)<170&&Math.hypot(x-p.benchExit.x,y-p.benchExit.y)<190;
+   if(!atSeat&&!leavingSeat&&x>=bench.x-64&&x<=bench.x+64&&y>=bench.y-38&&y<=bench.y+26)return true;
  }
  // 街灯の上部は歩行を塞がず、足元の支柱だけを障害物にする。
  if(WORLD_STREET_FURNITURE.lamps.some(l=>x>=l.x-7&&x<=l.x+7&&y>=l.y-12&&y<=l.y+6))return true;
@@ -489,9 +489,9 @@ function streetFurnitureBlocksMovement(x,y,p){
 function restoreBenchExitClearance(p){
  if(!p||p.action==='bench'||p.phaseState!=='moving'||!Number.isFinite(p.x)||!Number.isFinite(p.y))return false;
  const bench=WORLD_STREET_FURNITURE.benches.filter(b=>b.group!=='cafe')
-  .find(b=>p.x>=b.x-32&&p.x<=b.x+32&&p.y>=b.y-19&&p.y<=b.y+13);
+  .find(b=>p.x>=b.x-64&&p.x<=b.x+64&&p.y>=b.y-38&&p.y<=b.y+26);
  if(!bench)return false;
- if(p.benchExit?.id===bench.id&&Math.hypot(p.x-p.benchExit.x,p.y-p.benchExit.y)<50)return false;
+ if(p.benchExit?.id===bench.id&&Math.hypot(p.x-p.benchExit.x,p.y-p.benchExit.y)<100)return false;
  p.benchExit={id:bench.id,x:p.x,y:p.y};return true;
 }
 function isBlockedAtPoint(x,y,p){
@@ -546,8 +546,8 @@ const WORLD_NATURE_OBJECTS={
  flowerbeds:[...[["garden-upper-bed",685,454,31,12],["garden-middle-bed",660,632,39,13],["garden-lower-bed",674,847,44,16]].map(([id,x,y,rx,ry])=>({id,soil:nativeEllipse(x,y,rx,ry).map(q=>Object.values(artPoint(...q))),top:nativeEllipse(x,y,rx,ry).map(q=>Object.values(artPoint(...q)))})),{id:'plaza-tree-bed',soil:nativeEllipse(502,1108,80,27).map(q=>Object.values(artPoint(...q))),top:nativeEllipse(502,1108,80,27).map(q=>Object.values(artPoint(...q)))}]
 };
 function natureBlocksMovement(x,y,p){
- for(const t of WORLD_NATURE_OBJECTS.trees)if(Math.abs(x-t.x)<7&&Math.abs(y-t.y)<7)return true;
- if([[816,508],[936,510],[419,1248],[552,1248]].some(q=>{const a=artPoint(...q);return Math.hypot(x-a.x,y-a.y)<7}))return true;
+ for(const t of WORLD_NATURE_OBJECTS.trees)if(Math.abs(x-t.x)<14&&Math.abs(y-t.y)<14)return true;
+ if([[816,508],[936,510],[419,1248],[552,1248]].some(q=>{const a=artPoint(...q);return Math.hypot(x-a.x,y-a.y)<14}))return true;
  return WORLD_NATURE_OBJECTS.flowerbeds.some(b=>pointInPolygon(x,y,b.top.map(([x,y])=>({x,y}))));
 }
 
@@ -2614,8 +2614,8 @@ function walkSceneFor(p,spot){
 function availableBenchSeats(i){
  const benches=WORLD_STREET_FURNITURE.benches.filter(item=>item.group!=='cafe');
  const seats=benches.flatMap((bench,index)=>[
-  {bench:index,slot:0,x:bench.x-17,y:bench.y-10},
-  {bench:index,slot:1,x:bench.x+17,y:bench.y-10}
+  {bench:index,slot:0,x:bench.x-34,y:bench.y-20},
+  {bench:index,slot:1,x:bench.x+34,y:bench.y-20}
  ]);
  const occupied=new Set();
  chars.forEach((q,j)=>{
