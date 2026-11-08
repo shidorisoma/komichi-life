@@ -3514,13 +3514,12 @@ function loop(t){
   return}
  if(p.action==='social'&&p.socialPartnerId){
   const socialPartner=residentById(p.socialPartnerId);
-  const targetDist=Math.hypot(p.tx-p.x,p.ty-p.y);
-  if(socialPartner&&socialPartner.action==='social'&&socialPartner.phaseState==='staying'&&Math.hypot(socialPartner.x-p.x,socialPartner.y-p.y)<=44&&targetDist<=90){
-   // Only a traveller who has stopped getting closer counts as arrived beside
-   // the partner; someone still walking the last metres in must not stop short.
-   if(p.socialCloseBest==null||targetDist<p.socialCloseBest-4){p.socialCloseBest=targetDist;p.socialCloseSeconds=0}
-   else if((p.socialCloseSeconds=(p.socialCloseSeconds||0)+dt)>=3){p.socialCloseSeconds=0;p.socialCloseBest=null;p.tx=p.x;p.ty=p.y;arrive(p,i);return}
-  }else{p.socialCloseSeconds=0;p.socialCloseBest=null}
+  // Meeting up is about reaching the partner, not the exact assigned
+  // point: being within arm's reach of the partner counts as arrived,
+  // so nobody keeps orbiting a partner who is standing right there.
+  if(socialPartner&&socialPartner.action==='social'&&socialPartner.socialPartnerId===p.id&&Math.hypot(socialPartner.x-p.x,socialPartner.y-p.y)<=90){
+   p.socialCloseSeconds=0;p.socialCloseBest=null;p.tx=p.x;p.ty=p.y;arrive(p,i);return;
+  }
  }
  if(moveWithPassing(p,dt))return;
  if(restoreBenchExitClearance(p)){

@@ -38,6 +38,23 @@ test('a pair visiting the cafe together sits at the same table',()=>{
  assert(Math.hypot(b.x-seats[b.cafeSeat].x,b.y-seats[b.cafeSeat].y)<14,'second of the pair sits at the assigned chair');
  assert.equal(q.getErrors(),0);
 });
+test('a traveller counts as arrived once beside the waiting partner',()=>{
+ const q=loadModel();
+ const [a,b]=q.chars;
+ let t=0;const run=(sec,pred)=>{const end=t+sec*1000;while(t<end){t+=100;q.loop(t);if(pred&&pred())return true}return pred?pred():true};
+ const start=q.artPoint(510,430),goal=q.artPoint(720,514);
+ const route=q.roadRoute(start.x,start.y,goal.x,goal.y,null,b);
+ assert(route.length>=6,'a route across town exists');
+ // a waits beside b's route; b's own assigned point is the far goal, so
+ // only the partner-radius rule can complete this meeting.
+ const beside=route[Math.floor(route.length/3)];
+ Object.assign(a,{x:beside.x,y:beside.y,tx:beside.x,ty:beside.y,action:'social',phaseState:'staying',stay:10000,socialPartnerId:b.id,stayText:'一緒に過ごしている',activity:'一緒に過ごしている'});
+ Object.assign(b,{x:start.x,y:start.y,tx:goal.x,ty:goal.y,action:'social',phaseState:'moving',stay:10000,socialPartnerId:a.id,stayText:'一緒に過ごしている',activity:a.name+'のところへ向かっている',routePoints:route,routeIndex:1});
+ assert(run(30,()=>b.phaseState==='staying'),'traveller stops beside the partner instead of walking past');
+ assert(Math.hypot(b.x-a.x,b.y-a.y)<=95,'traveller stops within reach of the partner');
+ assert.equal(b.activity,'一緒に過ごしている');
+ assert.equal(q.getErrors(),0);
+});
 test('cafe guests sit at separate terrace seats and can leave past each other',()=>{
  const q=loadModel();
  const [a,b]=q.chars,cafe=q.places.find(p=>p.id==='cafe'),seats=q.getCafeSeats();

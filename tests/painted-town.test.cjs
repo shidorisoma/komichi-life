@@ -34,14 +34,16 @@ for(const plot of q.PAINTED_PLOTS){
  for(const [x,y] of plot.footprint)assert(((x-482)/306)**2+((y-1077)/192)**2>1,'Housing touches the plaza buffer '+plot.id);
 }
 q.paintedTownArt.complete=true;q.paintedTownArt.naturalWidth=1122;q.paintedTownArt.naturalHeight=1402;q.drawWorld();
-// A waiting social partner must not trigger an endless proactive bypass when
-// the reserved destination is already safely separated from that partner.
+// A waiting social partner must not cause an endless approach: once the
+// traveller is within reach of the partner, the meeting counts as made
+// and the traveller stops beside them instead of walking to the exact
+// reserved point (which can sit past the partner and invite orbiting).
 const a=q.chars[0],mate=q.chars[1];
 Object.assign(a,{x:831.6,y:1142.4,tx:831.6,ty:1142.4,action:'social',phaseState:'staying',stay:1000,socialPartnerId:mate.id,passing:null});
 Object.assign(mate,{x:894.2,y:1107.0,tx:928.0,ty:1142.0,action:'social',phaseState:'moving',stay:1000,socialPartnerId:a.id,passing:null,phase:0,passingCooldown:0,routePoints:[{x:894.2,y:1107.0},{x:876.0,y:1192.0},{x:928.0,y:1142.0}],routeIndex:1});
 for(let frame=1;frame<=120;frame++)q.loop(frame*80);
 assert.equal(mate.phaseState,'staying','Social approach loops around a waiting partner');
-assert(Math.hypot(mate.x-928.0,mate.y-1142.0)<4,'Social approach did not arrive');
+assert(Math.hypot(mate.x-a.x,mate.y-a.y)<=90,'Social approach did not stop beside the partner');
 // Reopen a v9-style state in the real initialization sequence.
 const legacy=originalSave;legacy.townLayoutRevision=9;
 legacy.clock={hour:12,minute:34,day:4,calendarDay:19};legacy.view={zoom:2,panX:500,panY:500};
