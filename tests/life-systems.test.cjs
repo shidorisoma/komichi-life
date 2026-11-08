@@ -6,7 +6,7 @@ const storage={};const b={console:{...console,warn:noop},Math,Date,Set,Map,WeakM
 function loadModel(){
  for(const key of Object.keys(storage))delete storage[key];
  vm.createContext(b);
- const exported='globalThis.qa={chars,addResident,buyFurniture,moveFurniture,canResidentUseFurniture,getFurniture:()=>furniture,furnitureCatalog,relationshipFor,evaluateRelationshipPromotions,relationshipThresholds,addDiary,writePersonalDiary,startSocialVisit,tryReplanSocialVisit,cancelSocialVisit,PAINTED_WALK_SPOTS,paintedTownArt,householdForResident,parsePairInstruction,relationTypeStances,stanceToward,relationGainFactors,typeSceneFor,RELATION_TYPE_OPTIONS,tickLife,getSharedGoal:()=>({goal:sharedGoal,pairId:sharedGoalPairId,kind:sharedGoalKind}),getCafeSeats:()=>CAFE_SEATS,getMemories:()=>memories,getRelationships:()=>relationships,setClock:(h,m)=>{hour=h;minute=m},getDiary:()=>diary};})();';
+ const exported='globalThis.qa={chars,addResident,buyFurniture,moveFurniture,canResidentUseFurniture,getFurniture:()=>furniture,furnitureCatalog,relationshipFor,evaluateRelationshipPromotions,relationshipThresholds,addDiary,writePersonalDiary,startSocialVisit,tryReplanSocialVisit,cancelSocialVisit,PAINTED_WALK_SPOTS,paintedTownArt,householdForResident,parsePairInstruction,relationTypeStances,stanceToward,relationGainFactors,typeSceneFor,RELATION_TYPE_OPTIONS,tickLife,tryAutoTreat,completeWork,getTreat:()=>({by:sharedGoalTreatBy,mode:sharedGoalTreatMode}),setDay:v=>{calendarDay=v},getSharedGoal:()=>({goal:sharedGoal,pairId:sharedGoalPairId,kind:sharedGoalKind}),getCafeSeats:()=>CAFE_SEATS,getMemories:()=>memories,getRelationships:()=>relationships,setClock:(h,m)=>{hour=h;minute=m},getDiary:()=>diary};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);b.qa.paintedTownArt.complete=true;b.qa.paintedTownArt.naturalWidth=1122;b.qa.paintedTownArt.naturalHeight=1402;return b.qa;
 }
 const assert=require('assert').strict;let failures=0;
@@ -279,6 +279,48 @@ test('nearby residents sometimes actually talk, and only then it counts',()=>{
   place('cafe','cafe',50);q.tickLife();
   assert(chats()[0].text.includes('喫茶店で少し話をした'),'both at the cafe can talk about it');
  }finally{Math.random=orig}
+});
+
+test('weekly support pays remittance and scholarship once per week',()=>{
+ const q=loadModel(),p=q.chars[0];
+ p.supportRemittance=true;p.supportRemittanceAmount=7000;p.supportScholarship=true;p.supportScholarshipAmount=5000;p.supportWeekKey=-1;
+ q.setClock(12,0);const before=p.money;
+ q.tickLife();assert.equal(p.money,before+12000);
+ q.tickLife();assert.equal(p.money,before+12000,'no double payment within the same week');
+ q.setDay(7);q.tickLife();assert.equal(p.money,before+24000);
+ assert(q.getDiary().some(d=>d.text.includes('仕送り')),'remittance is logged');
+ assert(q.getDiary().some(d=>d.text.includes('奨学金')),'scholarship is logged');
+});
+test('relief treat fires when a rich close partner can cover a broke one',()=>{
+ const q=loadModel(),a=q.chars[0],b=q.chars[1];
+ const rel=q.relationshipFor(a,b);rel.lastTreatDay=-1;
+ a.money=15000;b.money=2000;
+ a.action='walk';b.action='walk';a.phaseState='idle';b.phaseState='idle';
+ q.setClock(12,0);
+ assert.equal(q.tryAutoTreat(720),true);
+ assert.equal(q.getTreat().by,a.id);assert.equal(q.getTreat().mode,'relief');
+ a.action='date';b.action='date';a.phaseState='staying';b.phaseState='staying';
+ a.x=1000;a.y=1000;b.x=1050;b.y=1000;
+ for(let i=0;i<25;i++)q.tickLife();
+ assert.equal(a.money,14100,'payer covers both meals at 450 each');
+ assert(q.getDiary().some(d=>d.text.includes('食事をおごった')),'treat is logged');
+});
+test('affection treat fires randomly for close pairs regardless of money',()=>{
+ const q=loadModel(),a=q.chars[0],b=q.chars[1];
+ const rel=q.relationshipFor(a,b);rel.lastTreatDay=-1;
+ a.money=5000;b.money=5000;
+ a.action='walk';b.action='walk';a.phaseState='idle';b.phaseState='idle';
+ q.setClock(12,0);
+ const orig=Math.random;Math.random=()=>0.01;
+ try{assert.equal(q.tryAutoTreat(720),true);assert.equal(q.getTreat().mode,'affection')}finally{Math.random=orig}
+});
+test('makanai feeds the resident when work completes',()=>{
+ const q=loadModel(),p=q.chars[1];
+ p.makanai=true;p.needs.hunger=40;p.pendingWorkPay={amount:1000,description:'バイト'};
+ const before=p.money;q.completeWork(p);
+ assert.equal(p.needs.hunger,70);
+ assert.equal(p.money,before+1000);
+ assert(q.getDiary().some(d=>d.text.includes('まかない')),'makanai is logged');
 });
 
 process.exitCode=failures?1:0;
