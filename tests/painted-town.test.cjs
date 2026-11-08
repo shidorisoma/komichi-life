@@ -37,11 +37,11 @@ q.paintedTownArt.complete=true;q.paintedTownArt.naturalWidth=1122;q.paintedTownA
 // A waiting social partner must not trigger an endless proactive bypass when
 // the reserved destination is already safely separated from that partner.
 const a=q.chars[0],mate=q.chars[1];
-Object.assign(a,{x:523.0,y:777.6,tx:523.0,ty:777.6,action:'social',phaseState:'staying',stay:1000,socialPartnerId:mate.id,passing:null});
-Object.assign(mate,{x:563.7,y:754.6,tx:585.7,ty:777.3,action:'social',phaseState:'moving',stay:1000,socialPartnerId:a.id,passing:null,phase:0,passingCooldown:0,routePoints:[{x:563.7,y:754.6},{x:551.9,y:809.8},{x:585.7,y:777.3}],routeIndex:1});
+Object.assign(a,{x:831.6,y:1142.4,tx:831.6,ty:1142.4,action:'social',phaseState:'staying',stay:1000,socialPartnerId:mate.id,passing:null});
+Object.assign(mate,{x:894.2,y:1107.0,tx:928.0,ty:1142.0,action:'social',phaseState:'moving',stay:1000,socialPartnerId:a.id,passing:null,phase:0,passingCooldown:0,routePoints:[{x:894.2,y:1107.0},{x:876.0,y:1192.0},{x:928.0,y:1142.0}],routeIndex:1});
 for(let frame=1;frame<=120;frame++)q.loop(frame*80);
 assert.equal(mate.phaseState,'staying','Social approach loops around a waiting partner');
-assert(Math.hypot(mate.x-585.7,mate.y-777.3)<3,'Social approach did not arrive');
+assert(Math.hypot(mate.x-928.0,mate.y-1142.0)<4,'Social approach did not arrive');
 // Reopen a v9-style state in the real initialization sequence.
 const legacy=originalSave;legacy.townLayoutRevision=9;
 legacy.clock={hour:12,minute:34,day:4,calendarDay:19};legacy.view={zoom:2,panX:500,panY:500};

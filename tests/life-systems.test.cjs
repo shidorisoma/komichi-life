@@ -6,7 +6,7 @@ const storage={};const b={console:{...console,warn:noop},Math,Date,Set,Map,WeakM
 function loadModel(){
  for(const key of Object.keys(storage))delete storage[key];
  vm.createContext(b);
- const exported='globalThis.qa={chars,addResident,buyFurniture,moveFurniture,canResidentUseFurniture,getFurniture:()=>furniture,furnitureCatalog,relationshipFor,evaluateRelationshipPromotions,relationshipThresholds,addDiary,writePersonalDiary,startSocialVisit,tryReplanSocialVisit,cancelSocialVisit,PAINTED_WALK_SPOTS,paintedTownArt,householdForResident,parsePairInstruction,relationTypeStances,stanceToward,relationGainFactors,typeSceneFor,RELATION_TYPE_OPTIONS,tickLife,getSharedGoal:()=>({goal:sharedGoal,pairId:sharedGoalPairId,kind:sharedGoalKind}),getMemories:()=>memories,getRelationships:()=>relationships,setClock:(h,m)=>{hour=h;minute=m},getDiary:()=>diary};})();';
+ const exported='globalThis.qa={chars,addResident,buyFurniture,moveFurniture,canResidentUseFurniture,getFurniture:()=>furniture,furnitureCatalog,relationshipFor,evaluateRelationshipPromotions,relationshipThresholds,addDiary,writePersonalDiary,startSocialVisit,tryReplanSocialVisit,cancelSocialVisit,PAINTED_WALK_SPOTS,paintedTownArt,householdForResident,parsePairInstruction,relationTypeStances,stanceToward,relationGainFactors,typeSceneFor,RELATION_TYPE_OPTIONS,tickLife,getSharedGoal:()=>({goal:sharedGoal,pairId:sharedGoalPairId,kind:sharedGoalKind}),getCafeSeats:()=>CAFE_SEATS,getMemories:()=>memories,getRelationships:()=>relationships,setClock:(h,m)=>{hour=h;minute=m},getDiary:()=>diary};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);b.qa.paintedTownArt.complete=true;b.qa.paintedTownArt.naturalWidth=1122;b.qa.paintedTownArt.naturalHeight=1402;return b.qa;
 }
 const assert=require('assert').strict;let failures=0;
@@ -191,8 +191,8 @@ test('a date instruction sends that pair on a cafe date and rewards their relati
  for(let i=0;i<10&&!q.getSharedGoal().goal;i++)q.tickLife();
  assert.equal(q.getSharedGoal().goal,'pair-date');
  assert.equal(q.getSharedGoal().pairId,r.id);
- a.action='date';a.phaseState='staying';a.x=250;a.y=330;
- b.action='date';b.phaseState='staying';b.x=310;b.y=365;
+ a.action='date';a.phaseState='staying';a.x=q.getCafeSeats()[0].x;a.y=q.getCafeSeats()[0].y;
+ b.action='date';b.phaseState='staying';b.x=q.getCafeSeats()[1].x;b.y=q.getCafeSeats()[1].y;
  for(let i=0;i<25;i++)q.tickLife();
  assert.equal(q.getSharedGoal().goal,'');
  assert(r.affection>before,'the pair relationship gains affection');
@@ -237,8 +237,8 @@ test('a meal instruction becomes a one-time cafe meal',()=>{
  assert.equal(q.getSharedGoal().goal,'pair-date');
  assert.equal(q.getSharedGoal().kind,'meal');
  assert.equal(r.pendingInstruction,'','consumed when the meal starts');
- a.action='date';a.phaseState='staying';a.x=250;a.y=330;
- b.action='date';b.phaseState='staying';b.x=310;b.y=365;
+ a.action='date';a.phaseState='staying';a.x=q.getCafeSeats()[0].x;a.y=q.getCafeSeats()[0].y;
+ b.action='date';b.phaseState='staying';b.x=q.getCafeSeats()[1].x;b.y=q.getCafeSeats()[1].y;
  for(let i=0;i<25;i++)q.tickLife();
  assert(q.getMemories().some(m=>m.pairId===r.id&&m.title==='ふたりの食事時間'),'meal memory recorded');
 });

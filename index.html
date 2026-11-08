@@ -19,7 +19,7 @@
 (()=>{
 // The painted scene and its interaction geometry share the reference's native
 // 1122 x 1402 coordinate system. Only this conversion enters world coordinates.
-const PAINTED_TOWN={width:1122,height:1402,left:-50,top:100,scale:1300/1122};
+const PAINTED_TOWN={width:1122,height:1402,left:-50,top:100,scale:2000/1122};
 function artPoint(x,y){return {x:PAINTED_TOWN.left+x*PAINTED_TOWN.scale,y:PAINTED_TOWN.top+y*PAINTED_TOWN.scale}}
 function artPolygon(points){return points.map(([x,y])=>artPoint(x,y))}
 function nativePoint(x,y){return {x:(x-PAINTED_TOWN.left)/PAINTED_TOWN.scale,y:(y-PAINTED_TOWN.top)/PAINTED_TOWN.scale}}
@@ -75,7 +75,7 @@ const PAINTED_OCCLUDERS=[
  {id:'wisteria-post-right',depth:515,polygon:[[932,436],[944,437],[943,510],[931,514]]},
  {id:'flower-arch',depth:1248,polygon:[[395,1215],[405,1173],[437,1141],[483,1127],[526,1138],[559,1167],[575,1210],[569,1253],[548,1253],[548,1204],[533,1175],[511,1158],[479,1152],[449,1166],[427,1192],[423,1255],[402,1256]]}
 ];
-const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,pageSuspended=false,residentDiagnosticTimer=null,residentDiagnosticsOpen=false,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:522,y:581,tx:665,ty:711,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:691,y:1010,tx:574,ty:867,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が街を散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let relationFolderId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let sharedGoalPairId='';let sharedGoalStartStamp=-1;let sharedGoalKind='date';let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
+const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,pageSuspended=false,residentDiagnosticTimer=null,residentDiagnosticsOpen=false,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:830,y:840,tx:1050,ty:1040,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:1090,y:1500,tx:910,ty:1280,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が街を散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let relationFolderId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let sharedGoalPairId='';let sharedGoalStartStamp=-1;let sharedGoalKind='date';let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;
 const places=[
  {id:'home',name:'西の住宅',icon:'🏡',...artPoint(475,204),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'home2',name:'東の住宅',icon:'🏠',...artPoint(682,224),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
@@ -97,7 +97,7 @@ const ROAD_CLEARANCE_PROBE={id:'road-clearance-probe',x:-10000,y:-10000,action:'
 const SAVE_BACKUP_KEY=SAVE_KEY+'.backup';
 const SAVE_BEFORE_IMPORT_KEY=SAVE_KEY+'.before-import';
 let saveWritesBlocked=false,saveReady=false,loadedSaveData=null,saveWarningMessage='';
-const TOWN_LAYOUT_REVISION=14;let previousTownRevision=0;
+const TOWN_LAYOUT_REVISION=15;let previousTownRevision=0;
 // 家具・住居データ。購入者、所有者、利用者、設置場所を独立して管理する。
 const furnitureCatalog={
  bed:{id:'bed',name:'ベッド',price:1800,rooms:['bedroom'],actions:['sleep','rest'],capacity:2,ownership:'household',unique:'household',size:{w:2,h:2}},
@@ -451,6 +451,8 @@ function riverBlocksMovement(x,y){
  return x>riverEdgeX(y)-10;
 }
 // Shared placement data for street furniture. Rendering and collision use these same objects.
+const CAFE_SEATS=[artPoint(130,320),artPoint(191,336)];
+const CAFE_GATEWAY=artPoint(140,360);
 const WORLD_STREET_FURNITURE={
  benches:[
  {id:'wisteria-bench',...artPoint(883,498)},
@@ -494,10 +496,10 @@ function restoreBenchExitClearance(p){
 }
 function isBlockedAtPoint(x,y,p){
  // 街の外周を越えないようにし、住人の胴体にも余白を確保する。
- if(x<-40||x>1254||y<95||y>1745)return true;
+ if(x<-40||x>1954||y<95||y>2619)return true;
  const reserve=Object.values(homes||{}).some(h=>h.mapPlotId==='center-west-home');
  const onPier=pointInPolygon(x,y,WORLD_ROAD_NETWORK.bridge.deck.map(([x,y])=>({x,y})));
- if(!pointInPolygon(x,y,PAINTED_LAND)&&!onPier&&!(reserve&&x>138&&x<444&&y>113&&y<399))return true;
+ if(!pointInPolygon(x,y,PAINTED_LAND)&&!onPier&&!(reserve&&x>240&&x<710&&y>120&&y<560))return true;
  return isBlockedByHome(x,y,p)||facilityBlocksMovement(x,y,p)||natureBlocksMovement(x,y,p)||riverBlocksMovement(x,y)||streetFurnitureBlocksMovement(x,y,p);
 }
 // 住人の胴体を中心とした複数点で当たり判定し、斜め・上下方向のすり抜けも防ぐ。
@@ -525,7 +527,7 @@ function findMovementDetour(p,point){
   for(let i=0;i<32;i++){
    const angle=Math.PI*2*i/32;
    const candidate={x:point.x+Math.cos(angle)*radius,y:point.y+Math.sin(angle)*radius};
-   if(candidate.x<24||candidate.x>1230||candidate.y<24||candidate.y>1721)continue;
+   if(candidate.x<24||candidate.x>1802||candidate.y<24||candidate.y>2652)continue;
    if(isBlockedByStructure(candidate.x,candidate.y,p)||!nearPaintedRoad(candidate.x,candidate.y,30)||!roadJoinFollowsPaint(p.x,p.y,candidate.x,candidate.y)||!roadJoinFollowsPaint(candidate.x,candidate.y,point.x,point.y))continue;
    const remaining=Math.hypot(point.x-candidate.x,point.y-candidate.y);
    const travel=Math.hypot(candidate.x-p.x,candidate.y-p.y);
@@ -857,7 +859,7 @@ function validateSocialPairs(){
 function resetResidentPosition(p,i){
  if(!p)return;
  if(p.socialPartnerId){const partner=residentById(p.socialPartnerId);if(partner&&partner.socialPartnerId===p.id){partner.socialPartnerId=null;if(partner.action==='social'){partner.action='idle';partner.phaseState='idle';partner.stay=0;partner.activity='街で過ごしている';partner.pose='stand'}}p.socialPartnerId=null}
- const center={x:Math.max(40,Math.min(1160,600-panX)),y:Math.max(40,Math.min(1634,912-panY))};
+ const center={x:Math.max(40,Math.min(1770,950-panX)),y:Math.max(40,Math.min(2620,1350-panY))};
  let destination=null;
  if(!isBlockedByStructure(center.x,center.y,p))destination=center;
  else{
@@ -906,7 +908,7 @@ function jumpToResident(p,i){
   if(homeId&&homes[homeId]){interiorHomeId=homeId;homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;selected=i;drawWorld();showTab('home',true);renderResidentStatus();return}
  }
  if(p.action==='workOutside'){selected=i;renderResidentStatus();return}
- interiorHomeId='';homeListOpen=false;selected=i;panX=600-p.x;panY=912-p.y;showTab('walk',true);renderResidentStatus();drawWorld();
+ interiorHomeId='';homeListOpen=false;selected=i;panX=950-p.x;panY=1350-p.y;showTab('walk',true);renderResidentStatus();drawWorld();
 }
 function updateResidentDiagnostics(){
  if(!residentDiagnosticsOpen||document.hidden||pageSuspended)return;
@@ -1733,8 +1735,8 @@ function drawCafeAccessSteps(){
 function drawWorld(){
  ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(interiorHomeId);return}
  if(!paintedTownArt.complete||!paintedTownArt.naturalWidth){ctx.fillStyle='#fadca9';ctx.fillRect(0,0,W,H);ctx.fillStyle='#8c7350';ctx.font='16px serif';ctx.textAlign='center';ctx.fillText('街',W/2,H/2);return}
- ctx.save();const fit=Math.min(W/1300,H/1820);
- ctx.translate(W/2,H/2);ctx.scale(fit*zoom,fit*zoom);ctx.translate(-600+panX,-912+panY);
+ ctx.save();const fit=Math.min(W/2000,H/2800);
+ ctx.translate(W/2,H/2);ctx.scale(fit*zoom,fit*zoom);ctx.translate(-950+panX,-1350+panY);
  ctx.fillStyle='#fadca9';ctx.fillRect(-600,-400,2200,2300);
  ctx.drawImage(paintedTownArt,PAINTED_TOWN.left,PAINTED_TOWN.top,1122*PAINTED_TOWN.scale,1402*PAINTED_TOWN.scale);
  drawCafeAccessSteps();
@@ -1930,7 +1932,7 @@ roadRoutes.forEach((route,r)=>{
    let node=roadNodes.find(n=>Math.hypot(n.x-q.x,n.y-q.y)<5);
    if(!node){node={id:'road-'+r+'-'+c+'-'+j,x:q.x,y:q.y,links:[]};roadNodes.push(node)}
    if(previous&&previous!==node){if(!previous.links.includes(node.id))previous.links.push(node.id);if(!node.links.includes(previous.id))node.links.push(previous.id)}
-   node.paintRadius=Math.max(node.paintRadius||0,route.main?46.8:route.garden?18.2:26);
+   node.paintRadius=Math.max(node.paintRadius||0,route.main?72:route.garden?28:40);
    if(route.followPaintedBend)node.followPaintedBend=true;
    ids.push(node.id);previous=node;
   }
@@ -2088,8 +2090,8 @@ function remainingHomeExitPoints(home,x,y){
 function stairConnectionAllowed(x,y,node){
  const a=artPoint(439,359),b=artPoint(505,405),bottom=artPoint(535,425);
  const onFlight=(px,py)=>Math.min(pointSegmentDistance(px,py,a,b),pointSegmentDistance(px,py,b,bottom));
- if(onFlight(node.x,node.y)>16||Math.hypot(node.x-bottom.x,node.y-bottom.y)<20)return true;
- return onFlight(x,y)<=18||Math.hypot(x-a.x,y-a.y)<=24;
+ if(onFlight(node.x,node.y)>32||Math.hypot(node.x-bottom.x,node.y-bottom.y)<40)return true;
+ return onFlight(x,y)<=36||Math.hypot(x-a.x,y-a.y)<=48;
 }
 function roadCandidates(x,y,p){
  const ordered=roadNodes.map(n=>({node:n,distance:Math.hypot(n.x-x,n.y-y)})).sort((a,b)=>a.distance-b.distance);
@@ -2099,7 +2101,7 @@ function roadCandidates(x,y,p){
  for(const {node,distance} of ordered){
   if(reach!==null&&distance>reach)break;
   if(isBlockedByStructure(node.x,node.y,p)||!stairConnectionAllowed(x,y,node)||!roadJoinFollowsPaint(x,y,node.x,node.y)||!movementSegmentClear(x,y,node.x,node.y,p))continue;
-  if(reach===null)reach=Math.max(189,Math.min(241,distance+85));
+  if(reach===null)reach=Math.max(290,Math.min(370,distance+130));
   if(distance<=reach)visible.push(node);
   if(visible.length===3)break;
  }
@@ -2642,8 +2644,6 @@ function startBenchVisit(p,i,stayText,duration,scene){
 function cafeOccupancy(except){
  return chars.filter(q=>q!==except&&(q.action==='cafe'||q.action==='date')&&(q.phaseState==='moving'||q.phaseState==='staying')).length;
 }
-const CAFE_SEATS=[artPoint(130,320),artPoint(191,336)];
-const CAFE_GATEWAY=artPoint(140,360);
 function cafeSeatAssign(p){
  const taken=new Set(chars.filter(q=>q!==p&&(q.action==='cafe'||q.action==='date')&&(q.phaseState==='moving'||q.phaseState==='staying')&&Number.isFinite(q.cafeSeat)).map(q=>q.cafeSeat));
  for(let i=0;i<CAFE_SEATS.length;i++)if(!taken.has(i)){p.cafeSeat=i;return CAFE_SEATS[i]}
@@ -2809,7 +2809,7 @@ function nearPaintedRoad(x,y,radius=20){
 }
 function mainRoadMeetingBlocked(x,y){
  // Include pedestrian clearance so neither member of a pair stands at the edge of the main lane.
- return paintedRoadSegments.some(([a,b])=>a.paintRadius>=36&&b.paintRadius>=36&&pointSegmentDistance(x,y,a,b)<78);
+ return paintedRoadSegments.some(([a,b])=>a.paintRadius>=36&&b.paintRadius>=36&&pointSegmentDistance(x,y,a,b)<120);
 }
 function socialMeetingSpots(){
  const spots=[];
@@ -3066,7 +3066,7 @@ function tickLife(){
  if(sharedGoal){
   if(sharedGoalStartStamp<0)sharedGoalStartStamp=nowStamp;
   const goalRel=sharedGoalPairId?relationships[sharedGoalPairId]:null;
-  const datePair=(goalRel?goalRel.residentIds:['nagisumi','yaku']).map(residentById).filter(Boolean);const together=datePair.length===2&&datePair.every(p=>p.phaseState==='staying'&&p.action==='date')&&Math.hypot(datePair[0].x-datePair[1].x,datePair[0].y-datePair[1].y)<110;
+  const datePair=(goalRel?goalRel.residentIds:['nagisumi','yaku']).map(residentById).filter(Boolean);const together=datePair.length===2&&datePair.every(p=>p.phaseState==='staying'&&p.action==='date')&&Math.hypot(datePair[0].x-datePair[1].x,datePair[0].y-datePair[1].y)<220;
   if(together)goalTicks++;else goalTicks=0;
   if(goalTicks>=20){
    const finishedPairId=sharedGoalPairId;
@@ -3275,7 +3275,7 @@ function residentWalkDirection(p){
      if(t.stage==='side'){t.ready=true;t.stage=t.type==='bypass'?'forward':'wait'}
      else{finishPassing(p);return true}
     }else{
-     const step=Math.min(d,dt*62.4),nx=p.x+dx*step/d,ny=p.y+dy*step/d;
+     const step=Math.min(d,dt*96),nx=p.x+dx*step/d,ny=p.y+dy*step/d;
      if(!movementSegmentClear(p.x,p.y,nx,ny,p)){finishPassing(p);return true}
      if(!residentBodyClear(p,nx,ny)){
       t.blockedFor=(t.blockedFor||0)+dt;
@@ -3397,7 +3397,7 @@ function loop(t){
  if(!route&&Math.hypot(p.tx-p.x,p.ty-p.y)>2){recoverResidentFromFailedRoute(p,i);return}
  const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?(point.curve?3:6):2;if(d>waypointTolerance){
  const oldX=p.x,oldY=p.y;
- let step=Math.min(d,dt*54.6),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
+ let step=Math.min(d,dt*84),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
  // 目標地点だけでなく、現在地からの移動線全体を検査して壁抜けを防ぐ。
  const staticClear=movementSegmentClear(p.x,p.y,nx,ny,p);
  if(staticClear&&residentBodyClear(p,nx,ny)){p.x=nx;p.y=ny;p.trafficWait=0;p.passHoldSeconds=0}
@@ -3466,7 +3466,7 @@ function loop(t){
  }finally{requestAnimationFrame(loop)}
 }requestAnimationFrame(loop);
 const dayNames=['日','月','火','水','木','金','土'];function updateClock(){let s=String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0');document.getElementById('clock').textContent=s+'（'+dayNames[day%7]+'）'+(lastFrameErrorCount?' ⚠':'');const night=hour>=20||hour<6;document.querySelector('.sun').textContent=weatherType==='rainy'?'☂':weatherType==='cloudy'?'☁':night?'☾':hour>=17?'🌇':'☀';{const subtitle=document.getElementById('placeSubtitle');if(subtitle)subtitle.textContent='春・'+weatherLabel()}}updateClock();setInterval(updateClock,500);
-function select(i){if(!chars[i])return;selected=i;if(!interiorHomeId){panX=600-chars[i].x;panY=912-chars[i].y}renderResidentStatus();drawWorld()};document.getElementById('residentStatus').addEventListener('click',e=>{
+function select(i){if(!chars[i])return;selected=i;if(!interiorHomeId){panX=950-chars[i].x;panY=1350-chars[i].y}renderResidentStatus();drawWorld()};document.getElementById('residentStatus').addEventListener('click',e=>{
  const person=e.target.closest('.person');if(!person)return;
  const i=Number(person.dataset.index),p=chars[i];if(!p)return;
  const isAtHome=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying';
@@ -3480,12 +3480,12 @@ function select(i){if(!chars[i])return;selected=i;if(!interiorHomeId){panX=600-c
   showTab('home',true);drawWorld();
  }else{
   interiorHomeId='';homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;
-  showTab('walk',true);panX=600-p.x;panY=912-p.y;drawWorld();
+  showTab('walk',true);panX=950-p.x;panY=1350-p.y;drawWorld();
  }
 });
 
 const activePointers=new Map();let gesture=null;
-function screenToWorld(x,y){const fit=Math.min(W/1300,H/1820),scale=fit*zoom;return{x:(x-W/2)/scale+600-panX,y:(y-H/2)/scale+912-panY}}
+function screenToWorld(x,y){const fit=Math.min(W/2000,H/2800),scale=fit*zoom;return{x:(x-W/2)/scale+950-panX,y:(y-H/2)/scale+1350-panY}}
 function pointerMid(){const pts=[...activePointers.values()];return{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}}
 function pointerDistance(){const pts=[...activePointers.values()];return Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)}
 function clearPointerGesture(){
@@ -3510,14 +3510,14 @@ c.addEventListener('pointermove',e=>{
   if(Math.hypot(dx,dy)>8)gesture.moved=true;
   if(gesture.moved){
    if(gesture.interior){interiorPanX=gesture.panX+dx;interiorPanY=gesture.panY+dy}
-   else{const scale=Math.min(W/1300,H/1820)*zoom;panX=gesture.panX+dx/scale;panY=gesture.panY+dy/scale}
+   else{const scale=Math.min(W/2000,H/2800)*zoom;panX=gesture.panX+dx/scale;panY=gesture.panY+dy/scale}
    drawWorld();
   }
  }
  if(activePointers.size>=2&&(gesture?.type==='map'||gesture?.type==='interior')){
-  const mid=pointerMid(),dist=Math.max(20,pointerDistance()),fit=gesture.type==='interior'?Math.min(W/900,H/1400)*1.05:Math.min(W/1300,H/1820),nextZoom=Math.max(.65,Math.min(2.4,gesture.zoom*dist/Math.max(20,gesture.distance))),scale=fit*nextZoom;
+  const mid=pointerMid(),dist=Math.max(20,pointerDistance()),fit=gesture.type==='interior'?Math.min(W/900,H/1400)*1.05:Math.min(W/2000,H/2800),nextZoom=Math.max(.65,Math.min(2.4,gesture.zoom*dist/Math.max(20,gesture.distance))),scale=fit*nextZoom;
   if(gesture.type==='interior'){interiorZoom=nextZoom;interiorPanX=mid.x-W/2-(gesture.mid.x-W/2)*nextZoom/gesture.zoom+gesture.panX*nextZoom/gesture.zoom;interiorPanY=mid.y-H/2-(gesture.mid.y-H/2)*nextZoom/gesture.zoom+gesture.panY*nextZoom/gesture.zoom}
-  else{zoom=nextZoom;panX=(mid.x-W/2)/scale-gesture.world.x+600;panY=(mid.y-H/2)/scale-gesture.world.y+912}
+  else{zoom=nextZoom;panX=(mid.x-W/2)/scale-gesture.world.x+950;panY=(mid.y-H/2)/scale-gesture.world.y+1350}
   drawWorld();
  }
 });

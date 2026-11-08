@@ -53,7 +53,7 @@ for(const slot of [0,1])test('garden walk follows the winding path to upper seat
   if(p.phaseState==='moving')assert.equal(p.pose,'stand','Sat before reaching the selected bench');
   return p.phaseState==='staying';
  });
- assert(reached(p,bench.x+(slot?17:-17),bench.y-10));assert(sawLowerBend&&sawTreeWest,'Skipped the painted winding path');assert(travel<1100,'Unnecessary garden detour');
+ assert(reached(p,bench.x+(slot?17:-17),bench.y-10));assert(sawLowerBend&&sawTreeWest,'Skipped the painted winding path');assert(travel<2200,'Unnecessary garden detour');
 });
 test('lower bench departure stays standing until the upper bench',()=>{
  const q=setup(),p=q.chars[0],lower=q.WORLD_STREET_FURNITURE.benches[2],upper=q.WORLD_STREET_FURNITURE.benches[1];
