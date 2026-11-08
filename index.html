@@ -638,6 +638,7 @@ function ensureRelationship(a,b,seed){
  if(typeof r.status!=='string')r.status=id==='nagisumi-yaku'?'恋人':'知り合い';
  if(!Number.isFinite(r.lastInteractionStamp))r.lastInteractionStamp=-1;
  if(!Number.isFinite(r.lastSocialStamp))r.lastSocialStamp=-1;
+ if(!Number.isFinite(r.lastChatStamp))r.lastChatStamp=-1;
  if(!Number.isFinite(r.lastSocialVisitStamp))r.lastSocialVisitStamp=-1;
  if(typeof r.relType!=='string'||!RELATION_TYPE_OPTIONS.some(o=>o.key===r.relType))r.relType='';
  if(typeof r.instructionText!=='string')r.instructionText='';
@@ -3095,21 +3096,24 @@ function tickLife(){
  scheduleSocialVisits(nowStamp);
  for(let i=0;i<chars.length;i++)for(let j=i+1;j<chars.length;j++){
   const a=chars[i],b=chars[j],relation=relationshipFor(a,b);
-  const close=isOutdoorResident(a)&&isOutdoorResident(b)&&(a.phaseState==='staying'||a.phaseState==='moving')&&(b.phaseState==='staying'||b.phaseState==='moving')&&Math.hypot(a.x-b.x,a.y-b.y)<95;
-  if(close&&nowStamp-relation.lastInteractionStamp>=15){
-   relation.lastInteractionStamp=nowStamp;const gainFactors=relationGainFactors(relation);relation.affection=Math.min(100,relation.affection+.15*gainFactors.affection);relation.trust=Math.min(100,relation.trust+.2);relation.intimacy=Math.min(100,relation.intimacy+.15*gainFactors.intimacy);
-   if(relation.affection>=70&&relation.trust>=70&&relation.intimacy>=65){
-    const names=a.name+'と'+b.name;
-    recordMemory('relationship_deepening_'+encodeURIComponent(relation.id),'距離が近づいた日',names+'の関係が深まり、以前より自然に一緒の時間を過ごせるようになった。',relation.id);
-   }
-  }
-  if(close&&nowStamp-relation.lastSocialStamp>=30){
-   relation.lastSocialStamp=nowStamp;
+  // Being near someone is not interaction: proximity alone changes nothing
+  // and writes nothing. Only two residents who are actually next to each
+  // other, both standing or sitting still, sometimes strike up a real
+  // conversation - and only that conversation counts.
+  const canChat=isOutdoorResident(a)&&isOutdoorResident(b)&&(a.phaseState==='staying'||a.phaseState==='idle')&&(b.phaseState==='staying'||b.phaseState==='idle')&&!isSocialBusy(a)&&!isSocialBusy(b)&&a.action!=='work'&&b.action!=='work'&&a.action!=='sleep'&&b.action!=='sleep'&&a.action!=='date'&&b.action!=='date'&&Math.hypot(a.x-b.x,a.y-b.y)<62;
+  if(canChat&&nowStamp-relation.lastChatStamp>=120&&Math.random()<.06){
+   relation.lastChatStamp=nowStamp;
+   const gainFactors=relationGainFactors(relation);
+   relation.affection=Math.min(100,relation.affection+.5*gainFactors.affection);
+   relation.trust=Math.min(100,relation.trust+.4);
+   relation.intimacy=Math.min(100,relation.intimacy+.6*gainFactors.intimacy);
+   a.needs.mood=Math.min(100,(a.needs?.mood??80)+2);b.needs.mood=Math.min(100,(b.needs?.mood??80)+2);
    const pairNames=a.name+'と'+b.name;
-   const sharedActivity=(a.action==='cafe'||b.action==='cafe')?'喫茶店で一緒にひと休み':(a.action==='flowers'||b.action==='flowers')?'並んで花や景色を眺め':(a.action==='bench'||b.action==='bench')?'近くで休憩しながら':(a.action==='social'||b.action==='social')?'一緒に過ごし':'散歩の途中で';
-   addDiary(pairNames+'が'+sharedActivity+'、穏やかな時間を過ごした。');
-   const eventKey='first_pair_time_'+encodeURIComponent(relation.id);
-   recordMemory(eventKey,'一緒に過ごした時間',pairNames+'が'+sharedActivity+'、穏やかな時間を過ごした。',relation.id);
+   const chatLine=a.action==='cafe'&&b.action==='cafe'?'喫茶店で少し話をした':a.action==='flowers'&&b.action==='flowers'?'花を眺めながら少し話をした':a.action==='bench'&&b.action==='bench'?'ベンチで少し話をした':['立ち話をした','少し話をした','近況を話した','言葉を交わした'][(Math.random()*4)|0];
+   addDiary(pairNames+'が'+chatLine+'。');
+   if(relation.affection>=70&&relation.trust>=70&&relation.intimacy>=65){
+    recordMemory('relationship_deepening_'+encodeURIComponent(relation.id),'距離が近づいた日',pairNames+'の関係が深まり、以前より自然に一緒の時間を過ごせるようになった。',relation.id);
+   }
   }
  }
  evaluateRelationshipPromotions();

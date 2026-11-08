@@ -243,4 +243,42 @@ test('a meal instruction becomes a one-time cafe meal',()=>{
  assert(q.getMemories().some(m=>m.pairId===r.id&&m.title==='ふたりの食事時間'),'meal memory recorded');
 });
 
+test('proximity alone is not interaction: no gains, no shared-time log',()=>{
+ const q=loadModel(),[a,b]=q.chars,r=q.relationshipFor(a,b);
+ q.setClock(10,0);
+ a.x=400;a.y=900;b.x=440;b.y=900;a.phaseState='staying';b.phaseState='staying';a.action='bench';b.action='bench';
+ a.lastInitiatedSocialStamp=600;b.lastInitiatedSocialStamp=600;r.lastChatStamp=-1;
+ const snap={aff:r.affection,tru:r.trust,int:r.intimacy};
+ const orig=Math.random;Math.random=()=>0.99;
+ try{for(let i=0;i<30;i++)q.tickLife()}finally{Math.random=orig}
+ assert.equal(r.affection,snap.aff);assert.equal(r.trust,snap.tru);assert.equal(r.intimacy,snap.int);
+ assert(!q.getDiary().some(d=>d.text.includes('穏やかな時間を過ごした')),'no fabricated shared-time log');
+ a.phaseState='moving';b.phaseState='moving';
+ Math.random=()=>0;
+ try{for(let i=0;i<10;i++)q.tickLife()}finally{Math.random=orig}
+ assert(!q.getDiary().some(d=>d.text.startsWith(a.name+'と'+b.name+'が')&&d.text.includes('話')),'walking past never starts a chat');
+});
+test('nearby residents sometimes actually talk, and only then it counts',()=>{
+ const q=loadModel(),[a,b]=q.chars,r=q.relationshipFor(a,b);
+ q.setClock(10,0);
+ const place=(actA,actB,dist)=>{a.x=400;a.y=900;b.x=400+dist;b.y=900;a.phaseState='staying';b.phaseState='staying';a.action=actA;b.action=actB;a.lastInitiatedSocialStamp=600;b.lastInitiatedSocialStamp=600;r.lastChatStamp=-1};
+ const chats=()=>q.getDiary().filter(d=>d.text.startsWith(a.name+'と'+b.name+'が')&&(d.text.includes('話をした')||d.text.includes('近況を話した')||d.text.includes('言葉を交わした')));
+ const orig=Math.random;Math.random=()=>0;
+ try{
+  place('bench','bench',40);
+  const aff=r.affection;q.tickLife();
+  assert.equal(chats().length,1,'a real chat is logged');
+  assert(r.affection>aff,'the chat raises the relationship');
+  const aff2=r.affection;
+  for(let i=0;i<10;i++)q.tickLife();
+  assert.equal(chats().length,1,'a pair does not chat again right away');
+  assert.equal(r.affection,aff2,'no passive gains during the cooldown');
+  place('cafe','walk',50);q.tickLife();
+  assert.equal(chats().length,2);
+  assert(!chats()[0].text.includes('喫茶店で'),'a place is only named when both are actually there');
+  place('cafe','cafe',50);q.tickLife();
+  assert(chats()[0].text.includes('喫茶店で少し話をした'),'both at the cafe can talk about it');
+ }finally{Math.random=orig}
+});
+
 process.exitCode=failures?1:0;
