@@ -452,6 +452,7 @@ function riverBlocksMovement(x,y){
 }
 // Shared placement data for street furniture. Rendering and collision use these same objects.
 const CAFE_SEATS=[artPoint(130,320),artPoint(191,336)];
+const TOWN_EXIT_WAYPOINTS=[artPoint(485,1215),artPoint(485,1262),artPoint(485,1318),artPoint(485,1392)];
 const CAFE_GATEWAY=artPoint(140,360);
 const WORLD_STREET_FURNITURE={
  benches:[
@@ -497,6 +498,9 @@ function restoreBenchExitClearance(p){
 function isBlockedAtPoint(x,y,p){
  // 街の外周を越えないようにし、住人の胴体にも余白を確保する。
  if(x<-40||x>1954||y<95||y>2619)return true;
+ // The south exit steps leave the painted land polygon; residents on a
+ // work exit/enter trip may use that corridor (and only that corridor).
+ if(p&&(p.action==='workExit'||p.action==='workEnter')&&x>TOWN_EXIT_WAYPOINTS[0].x-46&&x<TOWN_EXIT_WAYPOINTS[0].x+46&&y>TOWN_EXIT_WAYPOINTS[0].y-10)return false;
  const reserve=Object.values(homes||{}).some(h=>h.mapPlotId==='center-west-home');
  const onPier=pointInPolygon(x,y,WORLD_ROAD_NETWORK.bridge.deck.map(([x,y])=>({x,y})));
  if(!pointInPolygon(x,y,PAINTED_LAND)&&!onPier&&!(reserve&&x>240&&x<710&&y>120&&y<560))return true;
@@ -802,7 +806,7 @@ function loadGame(){
     const base=defaultResidents.find(p=>p.id===saved.id)||defaultResidents[i]||{};
     const coordinate=(value,fallback)=>Number.isFinite(value)?value:fallback;
     const px=coordinate(saved.x,base.x??450),py=coordinate(saved.y,base.y??720),repairPosition=!Number.isFinite(saved.x)||!Number.isFinite(saved.y);
-    const knownAction=['idle','walk','flowers','bench','cafe','date','home','sleep','work','workOutside','social'].includes(saved.action);
+    const knownAction=['idle','walk','flowers','bench','cafe','date','home','sleep','work','workOutside','workExit','workEnter','social'].includes(saved.action);
     const needs={};for(const key of ['energy','hunger','mood'])needs[key]=Number.isFinite(saved.needs?.[key])?Math.max(0,Math.min(100,saved.needs[key])):(base.needs?.[key]??80);
     return {...base,...saved,id:saved.id||base.id||'legacy-'+i,name:String(saved.name||base.name||'住人'),x:px,y:py,tx:coordinate(saved.tx,px),ty:coordinate(saved.ty,py),phase:coordinate(saved.phase,0),stay:Math.max(0,coordinate(saved.stay,0)),action:knownAction?saved.action:'idle',phaseState:knownAction&&['moving','staying','idle'].includes(saved.phaseState)?saved.phaseState:'idle',needsPositionRepair:repairPosition,money:Number.isFinite(saved.money)?Math.max(0,saved.money):5000,workPayDay:Number.isFinite(saved.workPayDay)?saved.workPayDay:-1,workDaysPerWeek:Number.isFinite(saved.workDaysPerWeek)?Math.max(1,Math.min(7,saved.workDaysPerWeek)):3,workDays:Array.isArray(saved.workDays)?saved.workDays:[],workWeekKey:Number.isFinite(saved.workWeekKey)?saved.workWeekKey:-1,workWeekDays:Array.isArray(saved.workWeekDays)?saved.workWeekDays:[],incomeMode:['fixed','mixed','random'].includes(saved.incomeMode)?saved.incomeMode:'fixed',fixedIncome:Number.isFinite(saved.fixedIncome)?Math.max(0,saved.fixedIncome):1500,randomIncomeMin:Number.isFinite(saved.randomIncomeMin)?Math.max(0,saved.randomIncomeMin):0,randomIncomeMax:Number.isFinite(saved.randomIncomeMax)?Math.max(0,saved.randomIncomeMax):0,supportRemittance:saved.supportRemittance===true,supportRemittanceAmount:Number.isFinite(saved.supportRemittanceAmount)?Math.max(0,Math.floor(saved.supportRemittanceAmount)):0,supportScholarship:saved.supportScholarship===true,supportScholarshipAmount:Number.isFinite(saved.supportScholarshipAmount)?Math.max(0,Math.floor(saved.supportScholarshipAmount)):0,supportWeekKey:Number.isFinite(saved.supportWeekKey)?saved.supportWeekKey:-1,makanai:saved.makanai===true,moneyHistory:Array.isArray(saved.moneyHistory)?saved.moneyHistory.filter(h=>h&&typeof h==='object').slice(0,100):[],profile:{...(base.profile||{}),...(saved.profile||{})},needs,sociability:Number.isFinite(saved.sociability)?Math.max(0,Math.min(100,saved.sociability)):50,curiosity:Number.isFinite(saved.curiosity)?Math.max(0,Math.min(100,saved.curiosity)):50,activityLevel:Number.isFinite(saved.activityLevel)?Math.max(0,Math.min(100,saved.activityLevel)):50,walkPreference:Number.isFinite(saved.walkPreference)?Math.max(0,Math.min(100,saved.walkPreference)):50,naturePreference:Number.isFinite(saved.naturePreference)?Math.max(0,Math.min(100,saved.naturePreference)):50,cafePreference:Number.isFinite(saved.cafePreference)?Math.max(0,Math.min(100,saved.cafePreference)):50,lastInitiatedSocialStamp:Number.isFinite(saved.lastInitiatedSocialStamp)?saved.lastInitiatedSocialStamp:-1,lastSocialStamp:Number.isFinite(saved.lastSocialStamp)?saved.lastSocialStamp:-1};
    });
@@ -1816,6 +1820,11 @@ function spriteImageFor(p){
   const frame=Math.floor(nowMs/160)%4;
   return pick('walk-'+dir+'-'+frame)||pick('walk-right-'+frame)||pick('stand-'+dir)||pick('stand-front');
  }
+ // Together with someone (a social visit or a shared goal), face them.
+ let partner=null;
+ if(p.socialPartnerId)partner=residentById(p.socialPartnerId);
+ else if(p.action==='date'&&sharedGoalPairId&&relationships[sharedGoalPairId])partner=relationships[sharedGoalPairId].residentIds.map(residentById).find(q=>q&&q.id!==p.id)||null;
+ if(partner&&Math.hypot(partner.x-p.x,partner.y-p.y)<230){const dx=partner.x-p.x,dy=partner.y-p.y;dir=Math.abs(dx)>=Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'front':'back');p.spriteDir=dir}
  return pick('stand-'+dir)||pick('stand-front');
 }
 function drawChar(p,i,showLabel=true){
@@ -2429,6 +2438,15 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
  p.workPayDay=calendarDay;
  recordMoney(p,'income',payment.amount,payment.description);
 }
+function startWorkEnter(p,i){
+ const gate=TOWN_EXIT_WAYPOINTS[0];
+ p.action='workEnter';p.phaseState='moving';p.passing=null;p.trafficWait=0;p.socialWaitSeconds=0;p.socialPartnerId=null;p.homeHobby=null;p.benchSeat=null;
+ p.tx=gate.x;p.ty=gate.y;
+ p.routePoints=[{x:p.x,y:p.y},TOWN_EXIT_WAYPOINTS[2],TOWN_EXIT_WAYPOINTS[1],{x:gate.x,y:gate.y}];
+ p.routeIndex=1;p.stuckTime=0;p.routeRetries=0;
+ p.activity='仕事から帰ってきた';p.stayText='仕事から帰ってきた';p.pose='stand';p.stay=0;
+ renderResidentStatus();
+}
 function startWork(p,i,plan){
  const homeBased=/自宅|在宅|配信|ストリーマー|streamer|streaming|リモート|オンライン/.test(String(p.workplace||''));
  const mode=p.incomeMode||'fixed',fixed=Math.max(0,Math.floor(Number(p.fixedIncome??1500)||0)),min=Math.max(0,Math.floor(Number(p.randomIncomeMin)||0)),max=Math.max(min,Math.floor(Number(p.randomIncomeMax)||0));
@@ -2443,10 +2461,20 @@ function startWork(p,i,plan){
   };
   if(p.workOutside){
    interruptSocialForNewAction(p);
-   p.action='workOutside';p.socialPartnerId=null;p.homeHobby=null;p.benchSeat=null;
-   p.activity='街の外で仕事中';p.stayText='街の外で'+stay;
-   p.phaseState='staying';p.stay=plan.duration;p.pose='stand';p.tx=p.x;p.ty=p.y;
+   p.socialPartnerId=null;p.homeHobby=null;p.benchSeat=null;
    commitStart();
+   // Walk out of town through the flower arch and down the south steps
+   // instead of vanishing on the spot; only fall back to vanishing when
+   // the gate cannot be routed to at all.
+   const gate=TOWN_EXIT_WAYPOINTS[0],exit=TOWN_EXIT_WAYPOINTS[TOWN_EXIT_WAYPOINTS.length-1];
+   if(setAction(p,i,'workExit',gate.x,gate.y,travel,'街の外で'+stay,'stand',plan.duration)){
+    p.routePoints=[...p.routePoints,...TOWN_EXIT_WAYPOINTS.slice(1)];
+    p.tx=exit.x;p.ty=exit.y;
+   }else{
+    p.action='workOutside';
+    p.activity='街の外で仕事中';p.stayText='街の外で'+stay;
+    p.phaseState='staying';p.stay=plan.duration;p.pose='stand';p.tx=p.x;p.ty=p.y;
+   }
    renderResidentStatus();return;
   }
   if(homeBased){
@@ -2775,6 +2803,8 @@ function arrive(p,i){
  p.passing=null;p.trafficWait=0;
  if(p.action==='sleep')writePersonalDiary(p);
  p.phaseState='staying';p.x=p.tx;p.y=p.ty;p.activity=p.stayText;
+ if(p.action==='workExit'){p.action='workOutside';p.activity='街の外で仕事中';p.stayText=p.activity}
+ else if(p.action==='workEnter'){p.action='idle'}
  if(p.action==='social'){
   const partner=residentById(p.socialPartnerId);
   if(partner?.action==='social'&&partner.socialPartnerId===p.id&&partner.phaseState==='staying'&&Math.hypot(partner.x-p.x,partner.y-p.y)<=115){
@@ -3549,7 +3579,7 @@ function loop(t){
  }else{
   p.stuckTime=0;p.routeRetries=0;
  }
-}else if(route&&(p.routeIndex||1)<route.length-1){const reached=route[Math.min(p.routeIndex||1,route.length-1)];const safeReach=reached&&!isBlockedByStructure(reached.x,reached.y,p)&&movementSegmentClear(p.x,p.y,reached.x,reached.y,p);if(safeReach){p.x=reached.x;p.y=reached.y;p.routeIndex=(p.routeIndex||1)+1;p.stuckTime=0;p.routeRetries=0}else{const detour=reached?findMovementDetour(p,reached):null;if(detour){route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route}else{p.stuckTime=(p.stuckTime||0)+dt;if(p.stuckTime>1.5){p.stuckTime=0;p.routeRetries=(p.routeRetries||0)+1;if(p.routeRetries>=2)recoverResidentFromFailedRoute(p,i);else{p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);p.routeIndex=1}}}}}else arrive(p,i)}else if(p.phaseState==='staying'){if(p.action==='social'&&waitForSocialPartner(p,dt))return;p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else{if(p.action==='work'||p.action==='workOutside'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}else if(p.phaseState==='idle'){
+}else if(route&&(p.routeIndex||1)<route.length-1){const reached=route[Math.min(p.routeIndex||1,route.length-1)];const safeReach=reached&&!isBlockedByStructure(reached.x,reached.y,p)&&movementSegmentClear(p.x,p.y,reached.x,reached.y,p);if(safeReach){p.x=reached.x;p.y=reached.y;p.routeIndex=(p.routeIndex||1)+1;p.stuckTime=0;p.routeRetries=0}else{const detour=reached?findMovementDetour(p,reached):null;if(detour){route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route}else{p.stuckTime=(p.stuckTime||0)+dt;if(p.stuckTime>1.5){p.stuckTime=0;p.routeRetries=(p.routeRetries||0)+1;if(p.routeRetries>=2)recoverResidentFromFailedRoute(p,i);else{p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);p.routeIndex=1}}}}}else arrive(p,i)}else if(p.phaseState==='staying'){if(p.action==='social'&&waitForSocialPartner(p,dt))return;p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else if(p.action==='workOutside'){completeWork(p);startWorkEnter(p,i)}else{if(p.action==='work'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}else if(p.phaseState==='idle'){
  p.nextActionRetrySeconds=Math.max(0,(Number.isFinite(p.nextActionRetrySeconds)?p.nextActionRetrySeconds:0)-dt);
  if(p.nextActionRetrySeconds<=0)chooseRoutine(p,i)
 }})}}drawWorld();

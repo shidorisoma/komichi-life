@@ -9,7 +9,7 @@ let testNow=0;const storage={};const b={console,Math,Date,Set,Map,WeakMap,JSON,N
 // separately in the browser. This test catches disconnected paths and save loss.
 function loadModel(){
  vm.createContext(b);
- const exported='globalThis.qa={loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,setAction,availableBenchSeats,deleteHome,updateHomeDetails,households,places,rooms,getFurniture:()=>furniture,getErrors:()=>lastFrameErrorCount,advanceGameClock,getClock:()=>({hour,minute,calendarDay}),saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
+ const exported='globalThis.qa={loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,setAction,startWork,TOWN_EXIT_WAYPOINTS,availableBenchSeats,deleteHome,updateHomeDetails,households,places,rooms,getFurniture:()=>furniture,getErrors:()=>lastFrameErrorCount,advanceGameClock,getClock:()=>({hour,minute,calendarDay}),saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);return b.qa;
 }
 const assert=require('assert').strict,q=loadModel(),p=q.chars[0];
@@ -66,4 +66,28 @@ assert.equal(h.getClock().calendarDay,1);assert.equal(h.getClock().hour,15);asse
 b.document.hidden=true;testNow+=60000;h.advanceGameClock();assert.equal(h.getClock().minute,25);
 b.document.hidden=false;testNow+=1000;h.advanceGameClock();assert.equal(h.getClock().minute,26);
 assert.equal(h.getErrors(),0);
-console.log('PASS: all bench departures, retargeting and actual arrival; home transfers and deletion, personal furniture and save; 24-hour clock and background resume');
+// Outside work walks out through the south flower arch and back in again.
+const exitModel=loadModel(),worker=exitModel.chars[0];
+exitModel.chars[1].action='workOutside';exitModel.chars[1].phaseState='staying';exitModel.chars[1].stay=100000;
+Object.assign(worker,{x:900,y:900,tx:900,ty:900,action:'walk',phaseState:'idle',workOutside:true,jobTitle:'配達員',workplace:'街の外'});
+exitModel.startWork(worker,0,{duration:600,urgent:false});
+assert.equal(worker.action,'workExit','Outside work should start by walking out');
+assert.equal(worker.phaseState,'moving');
+const wps=exitModel.TOWN_EXIT_WAYPOINTS,exitPoint=wps[wps.length-1];
+assert(Math.hypot(worker.tx-exitPoint.x,worker.ty-exitPoint.y)<1,'Exit target should be the south exit');
+let exitFrame=0,minArchDist=Infinity;
+while(!(worker.action==='workOutside'&&worker.phaseState==='staying')&&exitFrame<6000){exitModel.loop(++exitFrame*80);minArchDist=Math.min(minArchDist,Math.hypot(worker.x-wps[1].x,worker.y-wps[1].y))}
+assert.equal(worker.action,'workOutside','Worker never left town');
+assert(minArchDist<90,'Worker did not pass through the arch (min '+Math.round(minArchDist)+')');
+assert.equal(worker.stay,600);
+worker.stay=0.01;
+let enterFrame=0;
+while(worker.action!=='workEnter'&&enterFrame<600){exitModel.loop(++enterFrame*80)}
+assert.equal(worker.action,'workEnter','Worker did not start walking back in');
+minArchDist=Infinity;
+while(worker.phaseState==='moving'&&enterFrame<8000){exitModel.loop(++enterFrame*80);minArchDist=Math.min(minArchDist,Math.hypot(worker.x-wps[1].x,worker.y-wps[1].y))}
+assert.equal(worker.phaseState,'staying','Worker did not re-enter town');
+assert(minArchDist<90,'Worker did not pass back through the arch');
+assert(Math.hypot(worker.x-wps[0].x,worker.y-wps[0].y)<60,'Worker did not reach the gate');
+assert.equal(exitModel.getErrors(),0);
+console.log('PASS: all bench departures, retargeting and actual arrival; home transfers and deletion, personal furniture and save; 24-hour clock and background resume; outside work exits and re-enters through the south arch');
