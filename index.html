@@ -1788,6 +1788,7 @@ function drawHomeInterior(homeId){ctx.save();ctx.fillStyle='#e9dfc9';ctx.fillRec
 // 画像データは assets/sprites-data.js（window.__SPRITE_DATA__）から遅延読み込みし、
 // データがない住人・読み込めないコマは従来の図形描画にフォールバックする。
 const SPRITE_SETS={};
+const BENCH_SIT_FACING=['left','left','left','right','left'];
 function spriteSetFor(kind){
  if(Object.prototype.hasOwnProperty.call(SPRITE_SETS,kind))return SPRITE_SETS[kind];
  const frames=(typeof window!=='undefined'&&window.__SPRITE_DATA__&&window.__SPRITE_DATA__[kind])||null;
@@ -1799,7 +1800,7 @@ function spriteSetFor(kind){
 function spriteImageFor(p){
  const set=spriteSetFor(p.kind);if(!set)return null;
  const pick=name=>{const img=set[name];return img&&img.complete&&img.naturalWidth>0?img:null};
- if(interiorHomeId)return pick('stand-front');
+ if(interiorHomeId)return pick('sit-left')||pick('stand-front');
  const moving=p.phaseState==='moving';
  let dir=p.spriteDir||'front';
  if(moving){
@@ -1807,8 +1808,8 @@ function spriteImageFor(p){
   const dx=target.x-p.x,dy=target.y-p.y;
   if(Math.abs(dx)>2||Math.abs(dy)>2){dir=Math.abs(dx)>=Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'front':'back');p.spriteDir=dir}
  }
- if(p.action==='bench'&&p.phaseState==='staying')return pick('sit-front')||pick('stand-front');
- if((p.action==='cafe'||p.action==='date')&&p.phaseState==='staying')return pick('drink')||pick('stand-front');
+ if(p.action==='bench'&&p.phaseState==='staying'){const sitDir=(p.benchSeat&&BENCH_SIT_FACING[p.benchSeat.bench])||'left';return pick('sit-'+sitDir)||pick('sit-left')||pick('sit-right')||pick('stand-front')}
+ if((p.action==='cafe'||p.action==='date')&&p.phaseState==='staying')return pick('sit-left')||pick('drink')||pick('stand-front');
  if(p.fishingTrip&&p.phaseState==='staying')return pick('fishing')||pick('stand-front');
  if(moving){
   const nowMs=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
