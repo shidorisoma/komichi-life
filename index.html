@@ -1737,7 +1737,7 @@ function drawWorld(){
  if(!paintedTownArt.complete||!paintedTownArt.naturalWidth){ctx.fillStyle='#fadca9';ctx.fillRect(0,0,W,H);ctx.fillStyle='#8c7350';ctx.font='16px serif';ctx.textAlign='center';ctx.fillText('街',W/2,H/2);return}
  ctx.save();const fit=Math.min(W/2000,H/2800);
  ctx.translate(W/2,H/2);ctx.scale(fit*zoom,fit*zoom);ctx.translate(-950+panX,-1350+panY);
- ctx.fillStyle='#fadca9';ctx.fillRect(-600,-400,2200,2300);
+ ctx.fillStyle='#fadca9';ctx.fillRect(PAINTED_TOWN.left-650,PAINTED_TOWN.top-550,1122*PAINTED_TOWN.scale+1300,1402*PAINTED_TOWN.scale+1100);
  ctx.drawImage(paintedTownArt,PAINTED_TOWN.left,PAINTED_TOWN.top,1122*PAINTED_TOWN.scale,1402*PAINTED_TOWN.scale);
  drawCafeAccessSteps();
  const outdoors=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
@@ -1754,7 +1754,7 @@ function drawWorld(){
  layers.sort((a,b)=>a.y-b.y);layers.forEach(item=>item.draw());
  outdoors.forEach(({p})=>drawCharLabel(p));
  const night=hour>=22||hour<5?1:hour>=20?(hour-20)/2:hour>=5&&hour<7?(7-hour)/2:hour>=18?(hour-18)/2:0;
- if(night>0){ctx.fillStyle='rgba(28,41,68,'+(night*.40)+')';ctx.fillRect(-600,-400,2200,2300);WORLD_STREET_FURNITURE.lamps.forEach(l=>{const glow=ctx.createRadialGradient(l.x,l.y-46,1,l.x,l.y-46,28);glow.addColorStop(0,'rgba(255,223,140,'+night*.35+')');glow.addColorStop(1,'rgba(255,223,140,0)');ctx.fillStyle=glow;ctx.fillRect(l.x-28,l.y-74,56,56)})}
+ if(night>0){ctx.fillStyle='rgba(28,41,68,'+(night*.40)+')';ctx.fillRect(PAINTED_TOWN.left-650,PAINTED_TOWN.top-550,1122*PAINTED_TOWN.scale+1300,1402*PAINTED_TOWN.scale+1100);WORLD_STREET_FURNITURE.lamps.forEach(l=>{const glow=ctx.createRadialGradient(l.x,l.y-46,1,l.x,l.y-46,28);glow.addColorStop(0,'rgba(255,223,140,'+night*.35+')');glow.addColorStop(1,'rgba(255,223,140,0)');ctx.fillStyle=glow;ctx.fillRect(l.x-28,l.y-74,56,56)})}
  ctx.restore();
 }
 
@@ -3241,6 +3241,10 @@ function residentWalkDirection(p){
    const lx=-h.y*sign*width,ly=h.x*sign*width,x=p.x+lx-h.x*back,y=p.y+ly-h.y*back;
    if(!roadJoinFollowsPaint(p.x,p.y,x,y)||!movementSegmentClear(p.x,p.y,x,y,p)||!residentBodyClear(p,x,y))continue;
    if(cross&&Math.abs((x-other.x)*oh.y-(y-other.y)*oh.x)<28)continue;
+   // The sidestep target can be clear while the straight walk to it clips the
+   // other resident's body circle; the mover then cannot take the first step
+   // and the pair locks in place. Only accept paths that keep the gap.
+   if(pointSegmentDistance(other.x,other.y,p,{x,y})<Math.min(22,Math.hypot(other.x-p.x,other.y-p.y)))continue;
    const fx=other.x+h.x*42+lx,fy=other.y+h.y*42+ly;
    if(type==='bypass'){
     if(!roadJoinFollowsPaint(x,y,fx,fy)||!movementSegmentClear(x,y,fx,fy,p)||!residentBodyClear(p,fx,fy))continue;
@@ -3262,6 +3266,12 @@ function residentWalkDirection(p){
  }
  function moveWithPassing(p,dt){
   if(!isOutdoorResident(p)||p.phaseState!=='moving'){p.passing=null;return false}
+  // A destination already occupied by settled residents cannot be reached
+  // exactly; circling it with bypass plans never settles. Stop beside them.
+  if(['walk','flowers','cafe','work'].includes(p.action)&&Math.hypot(p.x-p.tx,p.y-p.ty)<55&&
+     chars.some(q=>q!==p&&isOutdoorResident(q)&&['staying','idle'].includes(q.phaseState)&&Math.hypot(q.x-p.tx,q.y-p.ty)<48)){
+   p.passing=null;p.tx=p.x;p.ty=p.y;arrive(p,chars.indexOf(p));return true;
+  }
  if(p.passing)p.passHoldSeconds=0;
   const t=p.passing;
   if(t){
@@ -3275,7 +3285,7 @@ function residentWalkDirection(p){
      if(t.stage==='side'){t.ready=true;t.stage=t.type==='bypass'?'forward':'wait'}
      else{finishPassing(p);return true}
     }else{
-     const step=Math.min(d,dt*96),nx=p.x+dx*step/d,ny=p.y+dy*step/d;
+     const step=Math.min(d,dt*67.2),nx=p.x+dx*step/d,ny=p.y+dy*step/d;
      if(!movementSegmentClear(p.x,p.y,nx,ny,p)){finishPassing(p);return true}
      if(!residentBodyClear(p,nx,ny)){
       t.blockedFor=(t.blockedFor||0)+dt;
@@ -3319,7 +3329,7 @@ function residentWalkDirection(p){
     const finalStep=!route?.length||(p.routeIndex||1)>=route.length-1;
     if(['walk','flowers','cafe','work'].includes(p.action)&&
        Math.hypot(p.x-p.tx,p.y-p.ty)<55&&
-       (finalStep||Math.hypot(q.x-p.tx,q.y-p.ty)<28))continue;
+       (finalStep||Math.hypot(q.x-p.tx,q.y-p.ty)<48))continue;
     if(forward < -4||across>28||d>59)continue;
     if((p.phase||0)>=(p.passingCooldown||0)){
      const plan=preparePassing(p,q,'bypass');
@@ -3397,7 +3407,7 @@ function loop(t){
  if(!route&&Math.hypot(p.tx-p.x,p.ty-p.y)>2){recoverResidentFromFailedRoute(p,i);return}
  const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};let dx=point.x-p.x,dy=point.y-p.y,d=Math.hypot(dx,dy);const waypointTolerance=route&&(p.routeIndex||1)<route.length-1?(point.curve?3:6):2;if(d>waypointTolerance){
  const oldX=p.x,oldY=p.y;
- let step=Math.min(d,dt*84),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
+ let step=Math.min(d,dt*58.8),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
  // 目標地点だけでなく、現在地からの移動線全体を検査して壁抜けを防ぐ。
  const staticClear=movementSegmentClear(p.x,p.y,nx,ny,p);
  if(staticClear&&residentBodyClear(p,nx,ny)){p.x=nx;p.y=ny;p.trafficWait=0;p.passHoldSeconds=0}
@@ -3410,8 +3420,10 @@ function loop(t){
     .sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
    if(nearest&&Math.hypot(nearest.x-p.x,nearest.y-p.y)<44){
     const finalStep=!route||(p.routeIndex||1)>=route.length-1;
-    // Occupied destinations: stop comfortably beside the other resident.
-    if(finalStep&&Math.hypot(p.x-p.tx,p.y-p.ty)<55&&['walk','flowers','cafe','work'].includes(p.action)){
+    // Occupied destinations: stop comfortably beside the other resident. A
+    // settled crowd can also block an earlier route step, not just the last.
+    const settledBlocker=['staying','idle'].includes(nearest.phaseState)&&Math.hypot(nearest.x-p.tx,nearest.y-p.ty)<48;
+    if((finalStep||settledBlocker)&&Math.hypot(p.x-p.tx,p.y-p.ty)<55&&['walk','flowers','cafe','work'].includes(p.action)){
      p.tx=p.x;p.ty=p.y;arrive(p,i);return;
     }
     const detour=preparePassing(p,nearest,'bypass');
