@@ -404,7 +404,7 @@ function facilityBlocksMovement(x,y,p){
   const door=building.door;
   const inDoor=Math.abs(x-door.x)<door.halfWidth&&y>=door.minY&&y<=door.maxY;
   const atTarget=building.targetAction==='cafe'
-   ?p.action==='cafe'&&Math.hypot(x-p.tx,y-p.ty)<28
+   ?((p.action==='cafe'||p.action==='date')&&Math.hypot(x-p.tx,y-p.ty)<28)||(p.cafeSeatAt&&Number.isFinite(p.cafeSeat)&&CAFE_SEATS[p.cafeSeat]&&Math.hypot(x-CAFE_SEATS[p.cafeSeat].x,y-CAFE_SEATS[p.cafeSeat].y)<70)
    :p.shoppingTrip&&Math.hypot(x-p.tx,y-p.ty)<28;
   if(pointInPolygon(x,y,building.footprint)&&!inDoor&&!atTarget)return true;
  }
@@ -2284,11 +2284,20 @@ function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',dur
   p.benchExit={id:previousBench.id,x:p.x,y:p.y};
  }else if(!p.benchExit||Math.hypot(p.x-p.benchExit.x,p.y-p.benchExit.y)>=85)p.benchExit=null;
  p.benchSeat=null;
- if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='walk'||kind==='flowers'){const open=paintedActivityDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}if(['cafe','work','walk','flowers'].includes(kind)){
+ if(kind!=='social')p.socialPartnerId=null;if(kind!=='home')p.homeHobby=null;let destinationHome=null;if(kind==='home'||kind==='sleep'){destinationHome=homes[householdForResident(p).homeId];const entrance=homeEntrance(destinationHome);const alreadyInside=(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'&&destinationHome&&Math.hypot(p.x-entrance.x,p.y-entrance.y)<140;if(alreadyInside){p.action=kind;p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;p.activity=stayText;p.stayText=stayText;p.pose=pose;p.phaseState='staying';p.stay=duration;p.stuckTime=0;p.routeRetries=0;renderResidentStatus();return}if(entrance){targetX=entrance.x;targetY=entrance.y}}p.action=kind;p.tx=targetX;p.ty=targetY;if(kind==='cafe'||kind==='date'){const seat=cafeSeatAssign(p);targetX=seat.x;targetY=seat.y;p.tx=targetX;p.ty=targetY}if(kind==='walk'||kind==='flowers'){const open=paintedActivityDestination(targetX,targetY,p);targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY}if(['work','walk','flowers'].includes(kind)){
  const open=uncrowdedActivityDestination(p,targetX,targetY);
  targetX=open.x;targetY=open.y;p.tx=targetX;p.ty=targetY;
 }
-p.phaseState='moving';p.stuckTime=0;p.routeRetries=0;p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);p.routeIndex=1;
+p.phaseState='moving';p.stuckTime=0;p.routeRetries=0;
+ if(kind==='cafe'||kind==='date'){
+  const toGate=roadRoute(p.x,p.y,CAFE_GATEWAY.x,CAFE_GATEWAY.y,destinationHome,p);
+  p.routePoints=toGate.length>=2?[...toGate,{x:targetX,y:targetY}]:roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);
+  p.cafeSeatAt=true;
+ }else if(p.cafeSeatAt&&Number.isFinite(p.cafeSeat)&&CAFE_SEATS[p.cafeSeat]&&Math.hypot(p.x-CAFE_SEATS[p.cafeSeat].x,p.y-CAFE_SEATS[p.cafeSeat].y)<48){
+  const fromGate=roadRoute(CAFE_GATEWAY.x,CAFE_GATEWAY.y,targetX,targetY,destinationHome,p);
+  p.routePoints=fromGate.length>=2?[{x:p.x,y:p.y},{x:CAFE_GATEWAY.x,y:CAFE_GATEWAY.y},...fromGate.slice(1)]:roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);
+ }else p.routePoints=roadRoute(p.x,p.y,targetX,targetY,destinationHome,p);
+ p.routeIndex=1;
  if(p.routePoints.length<2&&Math.hypot(targetX-p.x,targetY-p.y)>2){
   p.action='idle';p.phaseState='idle';p.tx=p.x;p.ty=p.y;p.routePoints=[];p.routeIndex=0;
   p.activity='次の行き先を探している';p.stayText='';p.pose='stand';p.stay=0;p.nextActionRetrySeconds=4;
@@ -2631,6 +2640,13 @@ function startBenchVisit(p,i,stayText,duration,scene){
 }
 function cafeOccupancy(except){
  return chars.filter(q=>q!==except&&(q.action==='cafe'||q.action==='date')&&(q.phaseState==='moving'||q.phaseState==='staying')).length;
+}
+const CAFE_SEATS=[artPoint(130,320),artPoint(191,336)];
+const CAFE_GATEWAY=artPoint(140,360);
+function cafeSeatAssign(p){
+ const taken=new Set(chars.filter(q=>q!==p&&(q.action==='cafe'||q.action==='date')&&(q.phaseState==='moving'||q.phaseState==='staying')&&Number.isFinite(q.cafeSeat)).map(q=>q.cafeSeat));
+ for(let i=0;i<CAFE_SEATS.length;i++)if(!taken.has(i)){p.cafeSeat=i;return CAFE_SEATS[i]}
+ p.cafeSeat=taken.has(0)?1:0;return CAFE_SEATS[p.cafeSeat];
 }
 // 喫茶こもれび opens 9:00-22:00. Nobody new heads there outside those hours;
 // guests already inside simply finish their stay.
@@ -3034,6 +3050,7 @@ function tryExecutePairInstruction(nowStamp){
 function tickLife(){
  chars.forEach(p=>{const n=p.needs;n.energy=Math.max(8,n.energy-.12);n.hunger=Math.max(8,n.hunger-.08);n.mood=Math.max(20,Math.min(100,n.mood+(n.energy<25?-.15:.025)))});
  const nowStamp=calendarDay*1440+hour*60+minute;
+ chars.forEach(p=>{if(p.cafeSeatAt&&p.action!=='cafe'&&p.action!=='date'&&Number.isFinite(p.cafeSeat)&&CAFE_SEATS[p.cafeSeat]&&Math.hypot(p.x-CAFE_SEATS[p.cafeSeat].x,p.y-CAFE_SEATS[p.cafeSeat].y)>90)p.cafeSeatAt=false});
  chars.forEach(p=>recoverMoodFromRoutine(p,nowStamp));
  if(!sharedGoal&&nowStamp%30===0)tryExecutePairInstruction(nowStamp);
  if(!sharedGoal&&nowStamp%30===0&&cafeOpen()){
