@@ -451,7 +451,7 @@ function riverBlocksMovement(x,y){
  return x>riverEdgeX(y)-10;
 }
 // Shared placement data for street furniture. Rendering and collision use these same objects.
-const CAFE_SEATS=[artPoint(130,320),artPoint(191,336)];
+const CAFE_SEATS=[{...artPoint(112,371),face:'right'},{...artPoint(161,374),face:'left'},{...artPoint(201,408),face:'right'},{...artPoint(252,407),face:'left'}];
 const TOWN_EXIT_WAYPOINTS=[artPoint(485,1215),artPoint(485,1262),artPoint(485,1318),artPoint(485,1392)];
 const CAFE_GATEWAY=artPoint(140,360);
 const WORLD_STREET_FURNITURE={
@@ -1813,7 +1813,7 @@ function spriteImageFor(p){
   if(Math.abs(dx)>2||Math.abs(dy)>2){dir=Math.abs(dx)>=Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'front':'back');p.spriteDir=dir}
  }
  if(p.action==='bench'&&p.phaseState==='staying'){const sitDir=(p.benchSeat&&BENCH_SIT_FACING[p.benchSeat.bench])||'left';return pick('sit-'+sitDir)||pick('sit-left')||pick('sit-right')||pick('stand-front')}
- if((p.action==='cafe'||p.action==='date')&&p.phaseState==='staying')return pick('sit-left')||pick('drink')||pick('stand-front');
+ if((p.action==='cafe'||p.action==='date')&&p.phaseState==='staying'){const seat=Number.isFinite(p.cafeSeat)?CAFE_SEATS[p.cafeSeat]:null;return pick('sit-'+(seat?seat.face:'left'))||pick('sit-left')||pick('drink')||pick('stand-front')}
  if(p.fishingTrip&&p.phaseState==='staying')return pick('fishing')||pick('stand-front');
  if(moving){
   const nowMs=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
@@ -2716,6 +2716,18 @@ function cafeOccupancy(except){
 }
 function cafeSeatAssign(p){
  const taken=new Set(chars.filter(q=>q!==p&&(q.action==='cafe'||q.action==='date')&&(q.phaseState==='moving'||q.phaseState==='staying')&&Number.isFinite(q.cafeSeat)).map(q=>q.cafeSeat));
+ // A pair that came together (shared goal) sits at the same table: take
+ // the other chair of the partner's table whenever it is free.
+ if(sharedGoal==='pair-date'&&sharedGoalPairId&&relationships[sharedGoalPairId]){
+  const partner=relationships[sharedGoalPairId].residentIds.map(residentById).find(q=>q&&q.id!==p.id);
+  if(partner&&(partner.action==='cafe'||partner.action==='date')&&(partner.phaseState==='moving'||partner.phaseState==='staying')&&Number.isFinite(partner.cafeSeat)){
+   const sibling=partner.cafeSeat%2===0?partner.cafeSeat+1:partner.cafeSeat-1;
+   if(!taken.has(sibling)){p.cafeSeat=sibling;return CAFE_SEATS[sibling]}
+  }
+ }
+ // Otherwise prefer a table with both chairs free, so a pair arriving
+ // later can still sit together there.
+ for(let t=0;t<CAFE_SEATS.length;t+=2)if(!taken.has(t)&&!taken.has(t+1)){p.cafeSeat=t;return CAFE_SEATS[t]}
  for(let i=0;i<CAFE_SEATS.length;i++)if(!taken.has(i)){p.cafeSeat=i;return CAFE_SEATS[i]}
  p.cafeSeat=taken.has(0)?1:0;return CAFE_SEATS[p.cafeSeat];
 }
