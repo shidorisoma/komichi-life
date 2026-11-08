@@ -1784,10 +1784,50 @@ function drawHomeFurniture(homeId){
  });
 }
 function drawHomeInterior(homeId){ctx.save();ctx.fillStyle='#e9dfc9';ctx.fillRect(0,0,W,H);const scale=Math.min(W/900,H/1400)*1.05*interiorZoom;ctx.translate(W/2+interiorPanX,H/2+interiorPanY);ctx.scale(scale,scale);ctx.translate(-450,-700);const customHome=homes[homeId]?.rooms?.length>0;ctx.fillStyle='#b99b76';if(customHome){const rs=homes[homeId].rooms;rs.forEach(r=>{ctx.fillRect(r.x-10,r.y-10,r.w+20,r.h+20);ctx.fillStyle='#eadfc9';ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeStyle='#a58a68';ctx.lineWidth=7;ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.fillStyle='#eadfc9';ctx.font='bold 19px sans-serif';ctx.fillText(r.name,r.x+14,r.y+27);ctx.fillStyle='#b99b76'})}else{ctx.fillRect(105,390,690,620);ctx.fillStyle='#eadfc9';ctx.fillRect(125,410,650,580);ctx.strokeStyle='#a58a68';ctx.lineWidth=9;ctx.strokeRect(125,410,650,580);ctx.fillStyle='#d9c7a8';ctx.fillRect(430,410,10,580);ctx.fillRect(125,690,650,9)}ctx.fillStyle='#8d7054';ctx.font='bold 23px sans-serif';ctx.fillText(homes[homeId]?.name||(homeId==='home'?'西の住宅':'東の住宅'),145,365);drawHomeFurniture(homeId);const residents=chars.filter(p=>householdForResident(p).homeId===homeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'),spots={living:[{x:235,y:590},{x:295,y:590},{x:355,y:590}],hobby:[{x:570,y:590},{x:630,y:590},{x:510,y:590}],bedroom:[{x:235,y:900},{x:295,y:900},{x:355,y:900}],kitchen:[{x:580,y:900},{x:640,y:900},{x:700,y:900}]},roomCounts={};residents.forEach(p=>{const roomType=p.action==='sleep'?'bedroom':(p.homeHobby?.room||'living'),customRoom=homes[homeId]?.rooms?.find(r=>r.type===roomType)||homes[homeId]?.rooms?.[0],slots=customHome&&customRoom?[{x:customRoom.x+customRoom.w*.34,y:customRoom.y+customRoom.h*.58},{x:customRoom.x+customRoom.w*.52,y:customRoom.y+customRoom.h*.64},{x:customRoom.x+customRoom.w*.7,y:customRoom.y+customRoom.h*.56},{x:customRoom.x+customRoom.w*.84,y:customRoom.y+customRoom.h*.64}]:(spots[roomType]||spots.living),index=roomCounts[roomType]||0;if(index>=slots.length)return;roomCounts[roomType]=index+1;const q=slots[index];drawChar({...p,x:q.x,y:q.y,pose:'sit'},chars.indexOf(p))});ctx.textAlign='left';ctx.restore();}
+// 仮のアバター用スプライト（凪澄・夜玖のみ、確認用の先行組み込み）。
+// 画像データは assets/sprites-data.js（window.__SPRITE_DATA__）から遅延読み込みし、
+// データがない住人・読み込めないコマは従来の図形描画にフォールバックする。
+const SPRITE_SETS={};
+function spriteSetFor(kind){
+ if(Object.prototype.hasOwnProperty.call(SPRITE_SETS,kind))return SPRITE_SETS[kind];
+ const frames=(typeof window!=='undefined'&&window.__SPRITE_DATA__&&window.__SPRITE_DATA__[kind])||null;
+ if(!frames)return null;
+ const set={};
+ for(const name of Object.keys(frames)){const img=new Image();img.src=frames[name];set[name]=img}
+ SPRITE_SETS[kind]=set;return set;
+}
+function spriteImageFor(p){
+ const set=spriteSetFor(p.kind);if(!set)return null;
+ const pick=name=>{const img=set[name];return img&&img.complete&&img.naturalWidth>0?img:null};
+ if(interiorHomeId)return pick('stand-front');
+ const moving=p.phaseState==='moving';
+ let dir=p.spriteDir||'front';
+ if(moving){
+  const target=(p.routePoints&&p.routePoints[p.routeIndex])||{x:p.tx,y:p.ty};
+  const dx=target.x-p.x,dy=target.y-p.y;
+  if(Math.abs(dx)>2||Math.abs(dy)>2){dir=Math.abs(dx)>=Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'front':'back');p.spriteDir=dir}
+ }
+ if(p.action==='bench'&&p.phaseState==='staying')return pick('sit-front')||pick('stand-front');
+ if((p.action==='cafe'||p.action==='date')&&p.phaseState==='staying')return pick('drink')||pick('stand-front');
+ if(p.fishingTrip&&p.phaseState==='staying')return pick('fishing')||pick('stand-front');
+ if(moving){
+  const nowMs=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+  const frame=Math.floor(nowMs/160)%4;
+  return pick('walk-'+dir+'-'+frame)||pick('walk-right-'+frame)||pick('stand-'+dir)||pick('stand-front');
+ }
+ return pick('stand-'+dir)||pick('stand-front');
+}
 function drawChar(p,i,showLabel=true){
  let x=p.x;const tall=p.scale||1,seated=p.action==='bench'&&p.phaseState==='staying',groundAnchored=!interiorHomeId&&!seated;let y=p.y-(groundAnchored?16*tall:0); // 住人ごとの表示スケール
  ellipse(x,groundAnchored?p.y:y+15,19*tall,7,'#776b51aa');
  if(selected===i){ctx.strokeStyle='#8da17a';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,groundAnchored?p.y:y+16,23*tall,8,0,0,Math.PI*2);ctx.stroke()}
+ const sprite=spriteImageFor(p);
+ if(sprite){
+  const spriteH=60*tall,spriteW=spriteH*sprite.naturalWidth/sprite.naturalHeight,baseY=groundAnchored?p.y:p.y+16;
+  ctx.drawImage(sprite,x-spriteW/2,baseY-spriteH,spriteW,spriteH);
+  if(showLabel)drawCharLabel(p);
+  return;
+ }
  ctx.save();ctx.translate(x,y);ctx.scale(1,tall);
  // 影と足
  ctx.strokeStyle='#383b40';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();if(p.pose==='sit'){ctx.moveTo(-5,3);ctx.lineTo(-10,9);ctx.lineTo(-3,12);ctx.moveTo(5,3);ctx.lineTo(10,9);ctx.lineTo(3,12)}else{ctx.moveTo(-5,4);ctx.lineTo(-6,15);ctx.moveTo(5,4);ctx.lineTo(7,15)}ctx.stroke();
@@ -3653,4 +3693,4 @@ document.getElementById('mapToggle').onclick=()=>{if(interiorHomeId){interiorHom
 showTab('walk',true);
 c.addEventListener('click',()=>{if(panel.classList.contains('show'))showTab('walk')});
 })();
-</script></body></html>
+</script><script src="assets/sprites-data.js"></script></body></html>
