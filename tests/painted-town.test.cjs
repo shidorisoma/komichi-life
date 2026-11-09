@@ -9,7 +9,7 @@ const storage={};const b={console,Math,Date,Set,Map,WeakMap,JSON,Number,String,O
 // separately in the browser. This test catches disconnected paths and save loss.
 function loadModel(){
  vm.createContext(b);
- const exported='globalThis.qa={pointInPolygon,WORLD_NATURE_OBJECTS,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,CAFE_SEATS,paintedTownArt,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
+ const exported='globalThis.qa={pointInPolygon,WORLD_NATURE_OBJECTS,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,CAFE_SEATS,townObjectLayers,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);return b.qa;
 }
 const assert=require('assert').strict,q=loadModel(),p=q.chars[0];
@@ -33,7 +33,7 @@ for(const h of Object.values(q.homes)){
 for(const plot of q.PAINTED_PLOTS){
  for(const [x,y] of plot.footprint)assert(((x-482)/306)**2+((y-1077)/192)**2>1,'Housing touches the plaza buffer '+plot.id);
 }
-q.paintedTownArt.complete=true;q.paintedTownArt.naturalWidth=1122;q.paintedTownArt.naturalHeight=1402;q.drawWorld();
+q.drawWorld();
 // A waiting social partner must not cause an endless approach: once the
 // traveller is within reach of the partner, the meeting counts as made
 // and the traveller stops beside them instead of walking to the exact
@@ -59,28 +59,22 @@ assert.equal(JSON.parse(storage['komichi-life-save-v1']).furnitureWorld.furnitur
 assert.equal(restored.zoom,1);assert.equal(restored.panX,0);assert.equal(restored.panY,0);
 console.log('PASS: clear roads, 10 destinations, 6 two-way home approaches, plaza separation, foreground rendering and legacy save migration');
 
-// Image-derived roots and the open ground beside the trunk must agree with
-// the foreground tile. A broad patch of copied grass used to erase walkers.
-const small=q.PAINTED_OCCLUDERS.find(o=>o.id==='garden-tree-small');
-assert.equal(small.depth,784);
-assert(!q.pointInPolygon(690,780,small.polygon.map(([x,y])=>({x,y}))),'Tree tile paints over the open path beside the trunk');
-assert(q.pointInPolygon(720,780,small.polygon.map(([x,y])=>({x,y}))),'Tree trunk lost its foreground silhouette');
-const root=q.WORLD_NATURE_OBJECTS.trees.find(t=>t.id==='painted-tree-2');
-assert(Math.abs(q.nativePoint(root.x,root.y).y-small.depth)<1,'Collision and visual root disagree');
-for(const [id,index] of [['garden-tree',0],['west-tree-small',3],['cherry-tree',1]]){
- const occluder=q.PAINTED_OCCLUDERS.find(o=>o.id===id),tree=q.WORLD_NATURE_OBJECTS.trees[index];
- assert(Math.abs(occluder.depth-q.nativePoint(tree.x,tree.y).y)<1,'Tree depth differs from its root '+id);
+// Every tree sorts at its trunk, with a walker visible on the near side.
+for(const tree of q.WORLD_NATURE_OBJECTS.trees){
+ const behind={x:tree.x,y:tree.y-1},ahead={x:tree.x,y:tree.y+1};
+ const layers=q.townObjectLayers([{p:behind,i:0},{p:ahead,i:1}]);
+ const trunk=layers.findIndex(l=>l.y===tree.y);
+ assert(trunk>0,'Missing independent tree layer');
+ assert(layers.findIndex(l=>l.y===behind.y)<trunk);
+ assert(layers.findIndex(l=>l.y===ahead.y)>trunk);
 }
-console.log('PASS tree silhouettes preserve open ground and depth matches painted roots');
-
-// Cafe seats must stay visible: no occluder that covers a seat may sort in front of the seated resident.
-{
- const q=loadModel();
- for(const seat of q.CAFE_SEATS){
-  const art=q.nativePoint(seat.x,seat.y);
-  for(const occ of q.PAINTED_OCCLUDERS){
-   if(q.pointInPolygon(art.x,art.y,occ.polygon))assert(occ.depth<=art.y+0.01,'Occluder '+occ.id+' covers cafe seat at '+art.x+','+art.y);
-  }
- }
- console.log('PASS cafe seats are not covered by any occluder');
+const bench=q.WORLD_STREET_FURNITURE.benches[0];
+const seated={x:bench.x,y:bench.y-12,action:'bench',phaseState:'staying',benchSeat:{bench:0}};
+const layers=q.townObjectLayers([{p:seated,i:0}]);
+assert(layers.some(l=>l.y===bench.y),'Missing bench layer');
+assert(!layers.some(l=>l.y===seated.y),'Seated resident must draw inside the bench layer');
+for(const seat of q.CAFE_SEATS){
+ const layers=q.townObjectLayers([{p:seat,i:0}]);
+ assert(layers.some(l=>l.y===seat.y-3),'Missing cafe chair');
+ assert(layers.some(l=>l.y===seat.y),'Missing seated resident');
 }

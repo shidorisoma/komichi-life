@@ -9,7 +9,7 @@ let testNow=0;const storage={};const b={console,Math,Date,Set,Map,WeakMap,JSON,N
 // separately in the browser. This test catches disconnected paths and save loss.
 function loadModel(){
  vm.createContext(b);
- const exported='globalThis.qa={loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,setAction,startWork,TOWN_EXIT_WAYPOINTS,availableBenchSeats,deleteHome,updateHomeDetails,households,places,rooms,getFurniture:()=>furniture,getErrors:()=>lastFrameErrorCount,advanceGameClock,getClock:()=>({hour,minute,calendarDay}),saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
+ const exported='globalThis.qa={loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,setAction,startWork,TOWN_EXIT_WAYPOINTS,availableBenchSeats,deleteHome,updateHomeDetails,households,places,rooms,getFurniture:()=>furniture,getErrors:()=>lastFrameErrorCount,advanceGameClock,getClock:()=>({hour,minute,calendarDay}),saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);return b.qa;
 }
 const assert=require('assert').strict,q=loadModel(),p=q.chars[0];
