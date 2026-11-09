@@ -708,14 +708,19 @@ function parseSaveData(raw){
  }
  return data;
 }
-function serializeCurrentSave(){
+function serializeCurrentSave(embedAvatars=false){
  const data={version:5,stampEpoch:'calendar',furnitureWorld:{homes,households,rooms,furniture},savedAt:Date.now(),clock:{hour,minute,day,calendarDay},weather:{type:weatherType,day:weatherDay},bond:{affection:bond.affection,trust:bond.trust,intimacy:bond.intimacy},relationships,lastSocialPairId,sameSocialPairCount,diary:diary.slice(0,300),memories:memories.slice(0,100),unlockedEvents,sharedGoal,goalTicks,sharedGoalPairId,sharedGoalStartStamp,sharedGoalKind,lastRoutine,lastRecoveryStamp,lastBondStamp,selected,view:{zoom,panX,panY},townLayoutRevision:TOWN_LAYOUT_REVISION,residents:chars.map(p=>{const {passing,passingCooldown,trafficWait,...saved}=p;return {...saved,profile:{...p.profile},needs:{...p.needs}}})};
+ if(!embedAvatars&&AVATAR_IDB.ready)data.residents.forEach(r=>{
+  if(r.avatarImage&&AVATAR_SYNCED[r.id]===r.avatarImage){r.avatarStored=true;r.avatarImage=''}
+  else if(!r.avatarImage)delete r.avatarStored;
+ });
  return JSON.stringify(data);
 }
 function saveGame(notify=false){
  if(saveWritesBlocked){showSaveWarning(saveWarningMessage||'保存済みデータを保護しています。自動保存は停止中です。');return false}
  if(!saveReady)return false;
  try{
+  chars.forEach(syncAvatarToIdb);
   const serialized=serializeCurrentSave(),previous=localStorage.getItem(SAVE_KEY);let backupFailed=false;
   let previousValid=false;if(previous){try{parseSaveData(previous);previousValid=true}catch{}}
   // メインを先に書く。容量不足で失敗したら、予備（前回の状態）を手放してでもメインを守る。
@@ -732,14 +737,14 @@ function saveGame(notify=false){
 function backupSaveText(source='current'){
  if(source==='current'){
   if(saveWritesBlocked)throw Error('保存保護中です。「保存済みデータ」を書き出してください。');
-  return serializeCurrentSave();
+  return serializeCurrentSave(true);
  }
  const key={stored:SAVE_KEY,backup:SAVE_BACKUP_KEY,beforeImport:SAVE_BEFORE_IMPORT_KEY}[source];
  if(!key)throw Error('書き出すデータを選んでください。');
  const raw=localStorage.getItem(key);if(!raw)throw Error('書き出せるデータがありません。');return raw;
 }
 function validateSaveImport(raw){
- if(typeof raw!=='string'||raw.length>10*1024*1024)throw Error('ファイルが大きすぎます。');
+ if(typeof raw!=='string'||raw.length>32*1024*1024)throw Error('ファイルが大きすぎます。');
  const data=parseSaveData(raw.replace(/^\uFEFF/,''));
  return {data,raw:JSON.stringify(data),residents:(data.residents||data.chars).length,homes:Object.keys(data.furnitureWorld?.homes||{}).length};
 }
@@ -753,13 +758,14 @@ function commitSaveImport(raw){
  saveWritesBlocked=true;showSaveWarning('復元データを保存しました。再読み込みして街を開き直します。');
  return true;
 }
-function downloadSave(source){
+async function downloadSave(source){
  try{
-  const text=backupSaveText(source),blob=new Blob([text],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+  let text=backupSaveText(source);
+  if(source!=='current')text=await rehydrateAvatarText(text);
+  const blob=new Blob([text],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
   link.href=url;link.download='komichi-life-'+source+'-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
  }catch(error){showSaveWarning('書き出せませんでした。'+error.message)}
-}
-function renderSavePanel(){
+}function renderSavePanel(){
  const body=document.getElementById('panelBody');document.getElementById('panelTitle').textContent='データの保存・復旧';
  body.innerHTML='<button class="relationBack" id="savePanelBack" aria-label="住人一覧へ戻る">‹</button><p class="subtle">バックアップをファイルに保存すると、別の端末でも街を引き継げます。ダウンロード後にファイルが保存されたことを確認してください。</p><button class="actionBtn" id="exportCurrentSave">現在の街を書き出す</button><button class="actionBtn" id="exportStoredSave">保存済みデータを書き出す</button><button class="actionBtn" id="exportBackupSave">予備データを書き出す</button><button class="actionBtn" id="exportBeforeImportSave">前回の復元前データを書き出す</button><div class="metricTitle">ファイルから復元</div><label class="subtle" for="importSaveFile">バックアップ（JSON）を選ぶ</label><input id="importSaveFile" type="file" accept=".json,application/json" style="width:100%;margin:10px 0"><div class="subtle" id="importSavePreview" role="status">ファイルを選ぶと内容を確認できます。復元すると現在の街を置き換えます。復元前の街も端末内に保管します。</div><button class="actionBtn" id="applySaveImport" disabled>この内容で復元して再読み込み</button>';
  document.getElementById('savePanelBack').onclick=renderResidentManager;
@@ -841,7 +847,7 @@ function loadGame(){
   return true;
  }catch(e){saveWritesBlocked=true;loadedSaveData=null;showSaveWarning('保存データを読み込めませんでした。元データを保護するため自動保存を停止しています。');console.warn('セーブデータを読み込めませんでした',e);return false}
 }
-const hasSave=loadGame();
+const hasSave=loadGame();avatarIdbOpen();
 ensureFurnitureWorld(loadedSaveData?.furnitureWorld||null);
 syncHomePlaces();
 
@@ -1809,6 +1815,58 @@ function spriteSetFor(kind){
 // avatarMode 'sheet' は歩行シート4×4（行: 正面/右/左/後ろ、列: 立つ/踏み出す/立つ/逆脚）、
 // 'single' は全身1枚絵。追加画像がある住人は内蔵スプライトより優先して描く。
 const AVATAR_IMAGES={};
+// アバター画像の置き場所は大容量の IndexedDB にする。localStorage のセーブには
+// 目印（avatarStored）だけを残し、実データは保存しない。IndexedDB が使えない
+// 環境では従来どおりセーブ内に埋め込む（データの唯一のコピーを消さないため、
+// 同期が確認できた画像だけをセーブから外す）。
+const AVATAR_IDB={db:null,ready:false},AVATAR_SYNCED={};
+function avatarStoreKey(id){return 'avatar:'+id}
+function avatarIdbOpen(){
+ if(typeof indexedDB==='undefined')return;
+ try{
+  const req=indexedDB.open('komichi-life-images',1);
+  req.onupgradeneeded=()=>{try{req.result.createObjectStore('images')}catch{}};
+  req.onsuccess=()=>{AVATAR_IDB.db=req.result;AVATAR_IDB.ready=true;chars.forEach(syncAvatarToIdb);hydrateAvatars()};
+  req.onerror=()=>{};
+ }catch{}
+}
+function avatarIdbGet(key){
+ return new Promise(resolve=>{
+  if(!AVATAR_IDB.ready)return resolve(null);
+  try{const r=AVATAR_IDB.db.transaction('images','readonly').objectStore('images').get(key);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>resolve(null)}catch{resolve(null)}
+ });
+}
+function syncAvatarToIdb(p){
+ if(!AVATAR_IDB.ready||!p||!p.id)return;
+ try{
+  const store=AVATAR_IDB.db.transaction('images','readwrite').objectStore('images'),key=avatarStoreKey(p.id);
+  if(p.avatarImage){
+   if(AVATAR_SYNCED[p.id]===p.avatarImage)return;
+   const r=store.put(p.avatarImage,key);r.onsuccess=()=>{AVATAR_SYNCED[p.id]=p.avatarImage};r.onerror=()=>{};
+  }else if(AVATAR_SYNCED[p.id]){
+   const r=store.delete(key);r.onsuccess=()=>{delete AVATAR_SYNCED[p.id]};r.onerror=()=>{};
+  }
+ }catch{}
+}
+async function hydrateAvatars(){
+ for(const p of chars){
+  if(!p.avatarStored||p.avatarImage)continue;
+  const img=await avatarIdbGet(avatarStoreKey(p.id));
+  if(img&&!p.avatarImage){p.avatarImage=img;AVATAR_SYNCED[p.id]=img;delete AVATAR_IMAGES[p.id]}
+ }
+}
+async function rehydrateAvatarText(raw){
+ if(!AVATAR_IDB.ready)return raw;
+ try{
+  const data=JSON.parse(raw);if(!data||!Array.isArray(data.residents))return raw;
+  let changed=false;
+  for(const r of data.residents){
+   if(r.avatarStored&&!r.avatarImage){const img=await avatarIdbGet(avatarStoreKey(r.id));if(img){r.avatarImage=img;changed=true}}
+   if(r.avatarStored){delete r.avatarStored;changed=true}
+  }
+  return changed?JSON.stringify(data):raw;
+ }catch{return raw}
+}
 function avatarImageFor(p){
  if(!p.avatarImage)return null;
  const cached=AVATAR_IMAGES[p.id];
