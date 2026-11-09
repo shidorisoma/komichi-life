@@ -70,6 +70,8 @@ const PAINTED_OCCLUDERS=[
  {id:'garden-tree',depth:427,polygon:[[644,361],[662,328],[701,298],[758,293],[811,324],[828,364],[804,405],[766,421],[760,440],[735,442],[730,420],[688,409],[655,387]]},
  {id:'garden-tree-small',depth:784,polygon:[[654,718],[662,695],[690,678],[717,667],[743,679],[762,695],[772,716],[780,728],[772,741],[756,747],[752,755],[740,752],[732,761],[729,777],[735,785],[724,784],[719,790],[711,783],[703,786],[713,775],[714,760],[701,752],[690,754],[684,749],[674,753],[670,743],[660,743],[659,735],[647,734]]},
  {id:'west-tree-small',depth:760,polygon:[[357,707],[377,680],[419,662],[460,680],[479,714],[457,745],[432,755],[429,779],[408,780],[401,757],[375,744]]},
+ {id:'cherry-tree',depth:706,polygon:[[826,596],[847,554],[887,529],[932,517],[979,526],[1020,557],[1062,603],[1048,653],[1009,679],[976,690],[970,725],[947,726],[939,692],[886,678],[848,645]]},
+ {id:'plaza-tree',depth:1104,polygon:[[377,1003],[397,963],[432,933],[475,919],[527,925],[574,949],[610,990],[611,1027],[579,1061],[532,1079],[522,1104],[490,1108],[477,1081],[431,1065],[394,1039]]},
  {id:'wisteria',depth:430,polygon:[[789,427],[808,397],[842,376],[895,375],[935,400],[951,438],[936,468],[920,460],[902,442],[847,442],[830,464],[810,460]]},
  {id:'wisteria-post-left',depth:515,polygon:[[808,435],[823,436],[826,514],[811,514]]},
  {id:'wisteria-post-right',depth:515,polygon:[[932,436],[944,437],[943,510],[931,514]]},
@@ -1747,7 +1749,6 @@ function drawCafeAccessSteps(){
  const q=cafeStairPatch,p=artPoint(q.left,q.top);ctx.drawImage(q.tile,p.x,p.y,q.width*PAINTED_TOWN.scale,q.height*PAINTED_TOWN.scale);
 }
 function drawWorld(){
- ensureLayeredTown();
  ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(interiorHomeId);return}
  if(!paintedTownArt.complete||!paintedTownArt.naturalWidth){ctx.fillStyle='#fadca9';ctx.fillRect(0,0,W,H);ctx.fillStyle='#8c7350';ctx.font='16px serif';ctx.textAlign='center';ctx.fillText('街',W/2,H/2);return}
  ctx.save();const fit=Math.min(W/2000,H/2800);
@@ -1757,7 +1758,6 @@ function drawWorld(){
  drawCafeAccessSteps();
  const outdoors=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
  const layers=PAINTED_OCCLUDERS.map(item=>({y:artPoint(0,item.depth).y,draw:()=>drawPaintedOccluder(item)}));
- if(layeredPlateReady)for(const def of TOWN_OBJECT_DEFS)layers.push({y:artPoint(0,def.depth).y,draw:()=>drawTownObject(def)});
  // Optional sixth home uses its retained painted cottage asset; the five main
  // plots are already part of the town art, occupied or vacant.
  Object.values(homes).filter(h=>residentialPlots.find(q=>q.id===h.mapPlotId)?.extra).forEach((h,i)=>layers.push({y:homeEntrance(h).y,draw:()=>drawHouseExterior(h,i)}));
@@ -1800,34 +1800,6 @@ function drawHomeFurniture(homeId){
  });
 }
 function drawHomeInterior(homeId){ctx.save();ctx.fillStyle='#e9dfc9';ctx.fillRect(0,0,W,H);const scale=Math.min(W/900,H/1400)*1.05*interiorZoom;ctx.translate(W/2+interiorPanX,H/2+interiorPanY);ctx.scale(scale,scale);ctx.translate(-450,-700);const customHome=homes[homeId]?.rooms?.length>0;ctx.fillStyle='#b99b76';if(customHome){const rs=homes[homeId].rooms;rs.forEach(r=>{ctx.fillRect(r.x-10,r.y-10,r.w+20,r.h+20);ctx.fillStyle='#eadfc9';ctx.fillRect(r.x,r.y,r.w,r.h);ctx.strokeStyle='#a58a68';ctx.lineWidth=7;ctx.strokeRect(r.x,r.y,r.w,r.h);ctx.fillStyle='#eadfc9';ctx.font='bold 19px sans-serif';ctx.fillText(r.name,r.x+14,r.y+27);ctx.fillStyle='#b99b76'})}else{ctx.fillRect(105,390,690,620);ctx.fillStyle='#eadfc9';ctx.fillRect(125,410,650,580);ctx.strokeStyle='#a58a68';ctx.lineWidth=9;ctx.strokeRect(125,410,650,580);ctx.fillStyle='#d9c7a8';ctx.fillRect(430,410,10,580);ctx.fillRect(125,690,650,9)}ctx.fillStyle='#8d7054';ctx.font='bold 23px sans-serif';ctx.fillText(homes[homeId]?.name||(homeId==='home'?'西の住宅':'東の住宅'),145,365);drawHomeFurniture(homeId);const residents=chars.filter(p=>householdForResident(p).homeId===homeId&&(p.action==='home'||p.action==='sleep')&&p.phaseState==='staying'),spots={living:[{x:235,y:590},{x:295,y:590},{x:355,y:590}],hobby:[{x:570,y:590},{x:630,y:590},{x:510,y:590}],bedroom:[{x:235,y:900},{x:295,y:900},{x:355,y:900}],kitchen:[{x:580,y:900},{x:640,y:900},{x:700,y:900}]},roomCounts={};residents.forEach(p=>{const roomType=p.action==='sleep'?'bedroom':(p.homeHobby?.room||'living'),customRoom=homes[homeId]?.rooms?.find(r=>r.type===roomType)||homes[homeId]?.rooms?.[0],slots=customHome&&customRoom?[{x:customRoom.x+customRoom.w*.34,y:customRoom.y+customRoom.h*.58},{x:customRoom.x+customRoom.w*.52,y:customRoom.y+customRoom.h*.64},{x:customRoom.x+customRoom.w*.7,y:customRoom.y+customRoom.h*.56},{x:customRoom.x+customRoom.w*.84,y:customRoom.y+customRoom.h*.64}]:(spots[roomType]||spots.living),index=roomCounts[roomType]||0;if(index>=slots.length)return;roomCounts[roomType]=index+1;const q=slots[index];drawChar({...p,x:q.x,y:q.y,pose:'sit'},chars.indexOf(p))});ctx.textAlign='left';ctx.restore();}
-// レイヤー化した街の素材（assets/town-plate-v11-data.js / assets/objects-data.js）。
-// プレートと置物の両方が読み込めた場合だけ、木などを消したプレートv11と
-// 輪郭どおりに透過された置物画像に差し替える。読み込めなければ従来の
-// 1枚絵＋切り抜き遮蔽のまま動作する（桜・広場の木はその場合も切り抜き対象外）。
-let layeredPlateReady=false;
-const TOWN_OBJECT_DEFS=[
- {key:'cherry',root:[949,706],w:233,h:209,ax:.5046,depth:706},
- {key:'plaza',root:[498,1104],w:224,h:189,ax:.4973,depth:1104}
-];
-const townObjectImages={};
-function ensureLayeredTown(){
- if(layeredPlateReady)return;
- if(typeof window==='undefined'||!window.__TOWN_PLATE_V11__||!window.__TOWN_OBJECT_DATA__)return;
- layeredPlateReady=true;
- paintedTownArt.src=window.__TOWN_PLATE_V11__;
-}
-function townObjectImage(key){
- if(townObjectImages[key]!==undefined)return townObjectImages[key];
- const src=(typeof window!=='undefined'&&window.__TOWN_OBJECT_DATA__&&window.__TOWN_OBJECT_DATA__[key])||null;
- if(!src){townObjectImages[key]=null;return null}
- const img=new Image();img.src=src;townObjectImages[key]=img;return img;
-}
-function drawTownObject(def){
- const img=townObjectImage(def.key);
- if(!img||!img.complete||!img.naturalWidth)return;
- const r=artPoint(def.root[0],def.root[1]),s=PAINTED_TOWN.scale;
- ctx.drawImage(img,r.x-def.ax*def.w*s,r.y-def.h*s,def.w*s,def.h*s);
-}
 // 仮のアバター用スプライト（凪澄・夜玖のみ、確認用の先行組み込み）。
 // 画像データは assets/sprites-data.js（window.__SPRITE_DATA__）から遅延読み込みし、
 // データがない住人・読み込めないコマは従来の図形描画にフォールバックする。
@@ -3839,4 +3811,4 @@ document.getElementById('mapToggle').onclick=()=>{if(interiorHomeId){interiorHom
 showTab('walk',true);
 c.addEventListener('click',()=>{if(panel.classList.contains('show'))showTab('walk')});
 })();
-</script><script src="assets/sprites-data.js"></script><script src="assets/town-plate-v11-data.js"></script><script src="assets/objects-data.js"></script></body></html>
+</script><script src="assets/sprites-data.js"></script></body></html>

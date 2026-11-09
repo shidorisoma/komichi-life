@@ -9,7 +9,7 @@ const storage={};const b={console,Math,Date,Set,Map,WeakMap,JSON,Number,String,O
 // separately in the browser. This test catches disconnected paths and save loss.
 function loadModel(){
  vm.createContext(b);
- const exported='globalThis.qa={pointInPolygon,WORLD_NATURE_OBJECTS,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,TOWN_OBJECT_DEFS,CAFE_SEATS,paintedTownArt,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
+ const exported='globalThis.qa={pointInPolygon,WORLD_NATURE_OBJECTS,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,CAFE_SEATS,paintedTownArt,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);return b.qa;
 }
 const assert=require('assert').strict,q=loadModel(),p=q.chars[0];
@@ -67,20 +67,9 @@ assert(!q.pointInPolygon(690,780,small.polygon.map(([x,y])=>({x,y}))),'Tree tile
 assert(q.pointInPolygon(720,780,small.polygon.map(([x,y])=>({x,y}))),'Tree trunk lost its foreground silhouette');
 const root=q.WORLD_NATURE_OBJECTS.trees.find(t=>t.id==='painted-tree-2');
 assert(Math.abs(q.nativePoint(root.x,root.y).y-small.depth)<1,'Collision and visual root disagree');
-for(const [id,index] of [['garden-tree',0],['west-tree-small',3]]){
+for(const [id,index] of [['garden-tree',0],['west-tree-small',3],['cherry-tree',1]]){
  const occluder=q.PAINTED_OCCLUDERS.find(o=>o.id===id),tree=q.WORLD_NATURE_OBJECTS.trees[index];
  assert(Math.abs(occluder.depth-q.nativePoint(tree.x,tree.y).y)<1,'Tree depth differs from its root '+id);
-}
-// Cherry and plaza trees are layered objects now: real alpha images sorted by
-// the same root depth the cutout occluders used.
-assert(!q.PAINTED_OCCLUDERS.find(o=>o.id==='cherry-tree'||o.id==='plaza-tree'),'Converted trees must not keep cutout occluders');
-{
- const cherry=q.TOWN_OBJECT_DEFS.find(d=>d.key==='cherry'),tree=q.WORLD_NATURE_OBJECTS.trees[1],n=q.nativePoint(tree.x,tree.y);
- assert(cherry&&Math.abs(cherry.depth-n.y)<1,'Cherry object depth differs from its root');
- assert(Math.abs(cherry.root[0]-n.x)<=8&&Math.abs(cherry.root[1]-n.y)<1,'Cherry object anchor differs from its painted trunk');
- const plaza=q.TOWN_OBJECT_DEFS.find(d=>d.key==='plaza'),ptree=q.WORLD_NATURE_OBJECTS.trees[4],pn=q.nativePoint(ptree.x,ptree.y);
- assert(plaza&&plaza.depth===1104,'Plaza object keeps the depth its cutout occluder used');
- assert(Math.abs(plaza.root[0]-pn.x)<=6&&Math.abs(plaza.root[1]-1104)<1,'Plaza object anchor differs from its painted trunk');
 }
 console.log('PASS tree silhouettes preserve open ground and depth matches painted roots');
 
