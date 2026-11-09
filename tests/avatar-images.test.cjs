@@ -16,15 +16,15 @@ assert.equal(nagi.kind,'nagisumi');assert.equal(yaku.kind,'yaku');
 const builtin=q.spriteImageFor(nagi);
 assert(builtin&&builtin._src==='data:builtin192x192','built-in sprite expected without avatar');
 assert.equal(q.spriteImageFor(yaku),null,'yaku must fall back to shapes without avatar or built-in set');
-// Sheet avatar on yaku: standing faces spriteDir (left -> row 1, col 0).
+// Sheet avatar on yaku: standing faces spriteDir (format rows: front/right/left/back, so left -> row 2, col 0).
 Object.assign(yaku,{avatarImage:'data:sheet800x800',avatarMode:'sheet',phaseState:'staying',action:'walk',socialPartnerId:null,spriteDir:'left',x:1000,y:1000});
 let frame=q.avatarFrameFor(yaku);
 assert(frame&&frame.image,'sheet avatar frame expected');
 assert.equal(frame.sw,200);assert.equal(frame.sh,200);
-assert.equal(frame.sx,0);assert.equal(frame.sy,200);
-// Moving right cycles walk columns 0..3 by time (row 2).
+assert.equal(frame.sx,0);assert.equal(frame.sy,400);
+// Moving right cycles walk columns 0..3 by time (row 1 in the new format).
 Object.assign(yaku,{phaseState:'moving',routePoints:[{x:1200,y:1000}],routeIndex:0,tx:1200,ty:1000});
-testNow=0;frame=q.avatarFrameFor(yaku);assert.equal(frame.sy,400);assert.equal(frame.sx,0);
+testNow=0;frame=q.avatarFrameFor(yaku);assert.equal(frame.sy,200);assert.equal(frame.sx,0);
 testNow=170;frame=q.avatarFrameFor(yaku);assert.equal(frame.sx,200);
 testNow=330;frame=q.avatarFrameFor(yaku);assert.equal(frame.sx,400);
 testNow=490;frame=q.avatarFrameFor(yaku);assert.equal(frame.sx,600);
