@@ -1817,6 +1817,8 @@ function avatarFrameFor(p){
  const img=avatarImageFor(p);
  if(!img||!img.complete||!img.naturalWidth)return null;
  if(p.avatarMode!=='sheet')return img;
+ // 家の中では常に正面（内蔵スプライトの stand-front フォールバックと同じ扱い）。
+ if(interiorHomeId){const isw=img.naturalWidth/4,ish=img.naturalHeight/4;return {image:img,sx:0,sy:0,sw:isw,sh:ish}}
  const moving=p.phaseState==='moving';
  let dir=p.spriteDir||'front';
  if(moving){

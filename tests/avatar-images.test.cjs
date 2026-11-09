@@ -6,7 +6,7 @@ let testNow=0;const storage={};
 const b={console,Math,Date,Set,Map,WeakMap,JSON,Number,String,Object,Array,Infinity,performance:{now:()=>testNow},document:{getElementById:el,createElement:()=>el('created'),querySelectorAll:()=>[],querySelector:()=>el('query'),addEventListener:noop,body:el('body')},window:{addEventListener:noop,__SPRITE_DATA__:{nagisumi:{'stand-front':'data:builtin192x192','stand-left':'data:builtin192x192','walk-right-0':'data:builtin192x192','walk-right-1':'data:builtin192x192','walk-right-2':'data:builtin192x192','walk-right-3':'data:builtin192x192'}}},localStorage:{getItem:k=>storage[k]||null,setItem:(k,v)=>storage[k]=v},Image:class{constructor(){this.complete=false}set src(v){this._src=v;this.complete=true;const m=/(\d+)x(\d+)/.exec(v||'');this.naturalWidth=m?+m[1]:192;this.naturalHeight=m?+m[2]:192}get src(){return this._src}},ResizeObserver:class{observe(){}},devicePixelRatio:1,requestAnimationFrame:noop,setInterval:noop,setTimeout:noop,clearTimeout:noop,DOMMatrix:class{scale(){return this}},alert:noop,confirm:()=>true};
 function loadModel(){
  vm.createContext(b);
- const exported='globalThis.qa={spriteImageFor,avatarFrameFor,chars};})();';
+ const exported='globalThis.qa={spriteImageFor,avatarFrameFor,chars,setInterior:v=>{interiorHomeId=v}};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);return b.qa;
 }
 const assert=require('assert').strict,q=loadModel();
@@ -38,8 +38,15 @@ assert.equal(prioritized.sy,0);
 Object.assign(yaku,{avatarImage:'data:single500x700',avatarMode:'single',phaseState:'moving'});
 const single=q.avatarFrameFor(yaku);
 assert(single&&single._src==='data:single500x700','single mode must return the whole image');
+// Indoors the avatar always faces front, whatever direction was kept from outside.
+Object.assign(yaku,{avatarImage:'data:sheet800x800',avatarMode:'sheet',phaseState:'staying',action:'home',socialPartnerId:null,spriteDir:'back'});
+q.setInterior('home');
+const indoor=q.avatarFrameFor(yaku);
+assert(indoor&&indoor.image,'indoor avatar frame expected');
+assert.equal(indoor.sx,0);assert.equal(indoor.sy,0);
+q.setInterior('');
 // Clearing the avatar restores the previous behaviour.
 yaku.avatarImage='';assert.equal(q.avatarFrameFor(yaku),null);
 nagi.avatarImage='';const restored=q.spriteImageFor(nagi);
 assert(restored&&restored._src==='data:builtin192x192','clearing avatar must restore built-in sprite');
-console.log('avatar-images: 9 PASS');
+console.log('avatar-images: 10 PASS');
