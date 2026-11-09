@@ -6,7 +6,7 @@ let testNow=0;const storage={};
 const b={console,Math,Date,Set,Map,WeakMap,JSON,Number,String,Object,Array,Infinity,performance:{now:()=>testNow},document:{getElementById:el,createElement:()=>el('created'),querySelectorAll:()=>[],querySelector:()=>el('query'),addEventListener:noop,body:el('body')},window:{addEventListener:noop,__SPRITE_DATA__:{nagisumi:{'stand-front':'data:builtin192x192','stand-left':'data:builtin192x192','walk-right-0':'data:builtin192x192','walk-right-1':'data:builtin192x192','walk-right-2':'data:builtin192x192','walk-right-3':'data:builtin192x192'}}},localStorage:{getItem:k=>storage[k]||null,setItem:(k,v)=>storage[k]=v},Image:class{constructor(){this.complete=false}set src(v){this._src=v;this.complete=true;const m=/(\d+)x(\d+)/.exec(v||'');this.naturalWidth=m?+m[1]:192;this.naturalHeight=m?+m[2]:192}get src(){return this._src}},ResizeObserver:class{observe(){}},devicePixelRatio:1,requestAnimationFrame:noop,setInterval:noop,setTimeout:noop,clearTimeout:noop,DOMMatrix:class{scale(){return this}},alert:noop,confirm:()=>true};
 function loadModel(){
  vm.createContext(b);
- const exported='globalThis.qa={spriteImageFor,avatarFrameFor,chars,setInterior:v=>{interiorHomeId=v}};})();';
+ const exported='globalThis.qa={spriteImageFor,avatarFrameFor,encodeAvatarCanvas,chars,setInterior:v=>{interiorHomeId=v}};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);return b.qa;
 }
 const assert=require('assert').strict,q=loadModel();
@@ -49,4 +49,9 @@ q.setInterior('');
 yaku.avatarImage='';assert.equal(q.avatarFrameFor(yaku),null);
 nagi.avatarImage='';const restored=q.spriteImageFor(nagi);
 assert(restored&&restored._src==='data:builtin192x192','clearing avatar must restore built-in sprite');
-console.log('avatar-images: 10 PASS');
+// Avatar encoding prefers WebP when the browser provides it, PNG otherwise.
+const fakeWebp={width:800,height:800,toDataURL:t=>t==='image/webp'?'data:image/webp;base64,AAAA':'data:image/png;base64,BBBB'};
+assert.equal(q.encodeAvatarCanvas(fakeWebp),'data:image/webp;base64,AAAA');
+const fakePng={width:800,height:800,toDataURL:()=>'data:image/png;base64,CCCC'};
+assert.equal(q.encodeAvatarCanvas(fakePng),'data:image/png;base64,CCCC');
+console.log('avatar-images: 11 PASS');

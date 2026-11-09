@@ -1890,9 +1890,34 @@ function processAvatarImage(img,mode){
    if(cornerAt(0,0)>200&&cornerAt(w-1,0)>200&&cornerAt(0,h-1)>200&&cornerAt(w-1,h-1)>200)clearBackground(0,0,w,h);
   }
  }catch{}
- let out=canvas.toDataURL('image/png');
- if(out.length>900000){const s2=768/Math.max(w,h),smaller=document.createElement('canvas');smaller.width=Math.max(1,Math.round(w*s2));smaller.height=Math.max(1,Math.round(h*s2));smaller.getContext('2d').drawImage(canvas,0,0,smaller.width,smaller.height);out=smaller.toDataURL('image/png')}
+ return encodeAvatarCanvas(canvas);
+}
+// アバター画像の保存用エンコード: WebP優先で、データ量が上限を超える場合は段階的に縮小する。
+function encodeAvatarCanvas(canvas){
+ const encode=c=>{const o=c.toDataURL('image/webp',.88);return o.startsWith('data:image/webp')?o:c.toDataURL('image/png')};
+ let cur=canvas,out=encode(cur);
+ while(out.length>520000&&cur.width>384){
+  const nw=Math.max(384,Math.round(cur.width*.8)),nc=document.createElement('canvas');
+  nc.width=nw;nc.height=Math.max(1,Math.round(cur.height*nw/cur.width));
+  nc.getContext('2d').drawImage(cur,0,0,nc.width,nc.height);cur=nc;out=encode(cur);
+ }
  return out;
+}
+// セーブ済みの大きなアバター画像を読み込み時に縮小し、保存容量（予備データ分を含む）を空ける。
+function shrinkOversizedAvatars(){
+ chars.forEach(p=>{
+  if(!p.avatarImage||p.avatarImage.length<=520000)return;
+  const img=new Image();
+  img.onload=()=>{try{
+   const s=Math.min(1,768/Math.max(img.naturalWidth||1,img.naturalHeight||1)),cv=document.createElement('canvas');
+   cv.width=Math.max(1,Math.round((img.naturalWidth||1)*s));cv.height=Math.max(1,Math.round((img.naturalHeight||1)*s));
+   cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+   const out=encodeAvatarCanvas(cv);
+   if(out&&out.length<p.avatarImage.length){p.avatarImage=out;delete AVATAR_IMAGES[p.id];saveGame()}
+  }catch{}};
+  img.onerror=()=>{};
+  img.src=p.avatarImage;
+ });
 }
 function spriteImageFor(p){
  const avatar=avatarFrameFor(p);if(avatar)return avatar;
@@ -2337,7 +2362,7 @@ chars.forEach(p=>{
 });
 // Retire saved rendezvous on the through street without moving residents.
 chars.filter(p=>p.action==='social'&&mainRoadMeetingBlocked(p.tx,p.ty)).forEach(cancelSocialVisit);
-saveReady=true;saveGame();
+saveReady=true;saveGame();shrinkOversizedAvatars();
 function paintedActivityDestination(x,y,p){
  const sorted=roadNodes.filter(n=>!isBlockedByStructure(n.x,n.y,p)).sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y));
  if(!sorted.length)return {x,y};const nearest=sorted[0];
