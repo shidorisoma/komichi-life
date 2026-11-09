@@ -9,7 +9,7 @@ const storage={};const b={console,Math,Date,Set,Map,WeakMap,JSON,Number,String,O
 // separately in the browser. This test catches disconnected paths and save loss.
 function loadModel(){
  vm.createContext(b);
- const exported='globalThis.qa={pointInPolygon,WORLD_NATURE_OBJECTS,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,paintedTownArt,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
+ const exported='globalThis.qa={pointInPolygon,WORLD_NATURE_OBJECTS,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,CAFE_SEATS,paintedTownArt,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);return b.qa;
 }
 const assert=require('assert').strict,q=loadModel(),p=q.chars[0];
@@ -72,3 +72,15 @@ for(const [id,index] of [['garden-tree',0],['west-tree-small',3],['cherry-tree',
  assert(Math.abs(occluder.depth-q.nativePoint(tree.x,tree.y).y)<1,'Tree depth differs from its root '+id);
 }
 console.log('PASS tree silhouettes preserve open ground and depth matches painted roots');
+
+// Cafe seats must stay visible: no occluder that covers a seat may sort in front of the seated resident.
+{
+ const q=loadModel();
+ for(const seat of q.CAFE_SEATS){
+  const art=q.nativePoint(seat.x,seat.y);
+  for(const occ of q.PAINTED_OCCLUDERS){
+   if(q.pointInPolygon(art.x,art.y,occ.polygon))assert(occ.depth<=art.y+0.01,'Occluder '+occ.id+' covers cafe seat at '+art.x+','+art.y);
+  }
+ }
+ console.log('PASS cafe seats are not covered by any occluder');
+}
