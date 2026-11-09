@@ -718,9 +718,13 @@ function saveGame(notify=false){
  try{
   const serialized=serializeCurrentSave(),previous=localStorage.getItem(SAVE_KEY);let backupFailed=false;
   let previousValid=false;if(previous){try{parseSaveData(previous);previousValid=true}catch{}}
+  // メインを先に書く。容量不足で失敗したら、予備（前回の状態）を手放してでもメインを守る。
+  try{localStorage.setItem(SAVE_KEY,serialized)}catch{
+   try{localStorage.removeItem(SAVE_BACKUP_KEY)}catch{}
+   localStorage.setItem(SAVE_KEY,serialized);
+  }
   if(previousValid){try{localStorage.setItem(SAVE_BACKUP_KEY,previous)}catch{backupFailed=true}}
-  localStorage.setItem(SAVE_KEY,serialized);
-  if(!previous){try{localStorage.setItem(SAVE_BACKUP_KEY,serialized)}catch{backupFailed=true}}
+  else if(!previous){try{localStorage.setItem(SAVE_BACKUP_KEY,serialized)}catch{backupFailed=true}}
   showSaveWarning(backupFailed?'保存はできましたが、予備データを更新できませんでした。':'');
   if(notify)showSaveToast();return true;
  }catch(e){showSaveWarning('保存できませんでした。画面を閉じる前に、端末の空き容量やブラウザの保存設定を確認してください。');console.warn('セーブに失敗しました',e);return false}
@@ -1896,8 +1900,8 @@ function processAvatarImage(img,mode){
 function encodeAvatarCanvas(canvas){
  const encode=c=>{const o=c.toDataURL('image/webp',.88);return o.startsWith('data:image/webp')?o:c.toDataURL('image/png')};
  let cur=canvas,out=encode(cur);
- while(out.length>520000&&cur.width>384){
-  const nw=Math.max(384,Math.round(cur.width*.8)),nc=document.createElement('canvas');
+ while(out.length>300000&&cur.width>288){
+  const nw=Math.max(288,Math.round(cur.width*.8)),nc=document.createElement('canvas');
   nc.width=nw;nc.height=Math.max(1,Math.round(cur.height*nw/cur.width));
   nc.getContext('2d').drawImage(cur,0,0,nc.width,nc.height);cur=nc;out=encode(cur);
  }
@@ -1905,17 +1909,20 @@ function encodeAvatarCanvas(canvas){
 }
 // セーブ済みの大きなアバター画像を読み込み時に縮小し、保存容量（予備データ分を含む）を空ける。
 function shrinkOversizedAvatars(){
- chars.forEach(p=>{
-  if(!p.avatarImage||p.avatarImage.length<=520000)return;
+ const targets=chars.filter(p=>p.avatarImage&&p.avatarImage.length>300000);
+ if(!targets.length)return;
+ let pending=targets.length,changed=false;
+ const done=()=>{if(--pending<=0&&changed)saveGame()};
+ targets.forEach(p=>{
   const img=new Image();
   img.onload=()=>{try{
    const s=Math.min(1,768/Math.max(img.naturalWidth||1,img.naturalHeight||1)),cv=document.createElement('canvas');
    cv.width=Math.max(1,Math.round((img.naturalWidth||1)*s));cv.height=Math.max(1,Math.round((img.naturalHeight||1)*s));
    cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
    const out=encodeAvatarCanvas(cv);
-   if(out&&out.length<p.avatarImage.length){p.avatarImage=out;delete AVATAR_IMAGES[p.id];saveGame()}
-  }catch{}};
-  img.onerror=()=>{};
+   if(out&&out.length<p.avatarImage.length){p.avatarImage=out;delete AVATAR_IMAGES[p.id];changed=true}
+  }catch{}done()};
+  img.onerror=()=>done();
   img.src=p.avatarImage;
  });
 }
