@@ -2932,10 +2932,26 @@ function chooseRoutine(p,i){
 }
 function ySafe(y){return Math.max(260,Math.min(1260,y))}
 
+
+// 止まる時は、見守る時に重なって見えないよう、止まっている他の住人と間を空ける。
+const STOP_GAP=36;
+function separateArrivedResident(p){
+ const settled=chars.filter(q=>q!==p&&isOutdoorResident(q)&&['staying','idle'].includes(q.phaseState));
+ if(!settled.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<STOP_GAP))return;
+ for(const r of [STOP_GAP,STOP_GAP+14,STOP_GAP+30,STOP_GAP+48]){
+  for(let k=0;k<8;k++){
+   const a=k*Math.PI/4+(r>STOP_GAP?.39:0),c={x:p.tx+Math.cos(a)*r,y:p.ty+Math.sin(a)*r};
+   if(isBlockedByStructure(c.x,c.y,p)||!movementSegmentClear(p.x,p.y,c.x,c.y,p))continue;
+   if(settled.some(q=>Math.hypot(q.x-c.x,q.y-c.y)<STOP_GAP))continue;
+   p.x=c.x;p.y=c.y;p.tx=c.x;p.ty=c.y;return;
+  }
+ }
+}
 function arrive(p,i){
  p.passing=null;p.trafficWait=0;
  if(p.action==='sleep')writePersonalDiary(p);
  p.phaseState='staying';p.x=p.tx;p.y=p.ty;p.activity=p.stayText;
+ if(isOutdoorResident(p)&&['walk','flowers'].includes(p.action))separateArrivedResident(p);
  if(p.action==='workExit'){p.action='workOutside';p.activity='街の外で仕事中';p.stayText=p.activity}
  else if(p.action==='workEnter'){p.action='idle'}
  if(p.action==='social'){
@@ -3458,156 +3474,12 @@ function recoverResidentFromFailedRoute(p,i){
  chooseRoutine(p,i);
  if(partner&&partner.action==='idle')chooseRoutine(partner,chars.indexOf(partner));
 }
-// Right-hand passing keeps pedestrians moving instead of pushing face-to-face.
-function residentWalkDirection(p){
- const route=Array.isArray(p.routePoints)&&p.routePoints.length?p.routePoints:null;
- const point=route?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};
- let vx=point.x-p.x,vy=point.y-p.y,len=Math.hypot(vx,vy);
- if(len<5){vx=p.tx-p.x;vy=p.ty-p.y;len=Math.hypot(vx,vy)}
- return len>=5?{x:vx/len,y:vy/len}:null;
+function moveWithPassing(p,dt){
+ // 持ち主ちゃんの指定（2026-11-09）: すれ違いは現実感より流れを優先し、体の通り抜けを許可する。
+ // 譲り合い・迂回・待ちは一切せず経路どおりに歩く。止まる時の間隔は arrive 側で確保する。
+ if(p.passing)p.passing=null;
+ return false;
 }
-// Pedestrian encounters are held for several frames: never alternate left/right
- // or push somebody backwards immediately after following the route.
- // Guard every actual step, including bypasses, against nearby pedestrians.
- // When loading old overlapping positions, allow movement OUT of the overlap.
- function residentBodyClear(p,x,y,gap=22){
-  return !chars.some(q=>q!==p&&isOutdoorResident(q)&&['moving','staying','idle'].includes(q.phaseState)&&(()=>{
-   const before=Math.hypot(p.x-q.x,p.y-q.y),after=Math.hypot(x-q.x,y-q.y);
-   return after<gap&&!(before<gap&&after>before+.12);
-  })());
- }
- function preparePassing(p,other,type){
-  const h=residentWalkDirection(p);if(!h)return null;
-  const oh=residentWalkDirection(other)||{x:0,y:0},cross=type==='yield'&&Math.abs(h.x*oh.x+h.y*oh.y)<.5;
-  const plan={type,otherId:other.id,stage:'side',ready:false,age:0,startX:p.x,startY:p.y,goX:oh.x,goY:oh.y};
-  if(cross&&Math.abs((p.x-other.x)*oh.y-(p.y-other.y)*oh.x)>30)return {...plan,stage:'wait',ready:true};
-  const backs=type==='yield'?[0,14,26]:[0];
-  for(const sign of [1,-1])for(const width of [23,26,30,34,38])for(const back of backs){
-   const lx=-h.y*sign*width,ly=h.x*sign*width,x=p.x+lx-h.x*back,y=p.y+ly-h.y*back;
-   if(!roadJoinFollowsPaint(p.x,p.y,x,y)||!movementSegmentClear(p.x,p.y,x,y,p)||!residentBodyClear(p,x,y))continue;
-   if(cross&&Math.abs((x-other.x)*oh.y-(y-other.y)*oh.x)<28)continue;
-   // The sidestep target can be clear while the straight walk to it clips the
-   // other resident's body circle; the mover then cannot take the first step
-   // and the pair locks in place. Only accept paths that keep the gap.
-   if(pointSegmentDistance(other.x,other.y,p,{x,y})<Math.min(22,Math.hypot(other.x-p.x,other.y-p.y)))continue;
-   const fx=other.x+h.x*42+lx,fy=other.y+h.y*42+ly;
-   if(type==='bypass'){
-    if(!roadJoinFollowsPaint(x,y,fx,fy)||!movementSegmentClear(x,y,fx,fy,p)||!residentBodyClear(p,fx,fy))continue;
-    const dx=fx-x,dy=fy-y,t=Math.max(0,Math.min(1,((other.x-x)*dx+(other.y-y)*dy)/Math.max(1,dx*dx+dy*dy)));
-    if(Math.hypot(other.x-x-dx*t,other.y-y-dy*t)<27)continue;
-   }
-   return {...plan,x,y,fx,fy};
-  }
-  return null;
- }
- function finishPassing(p){
-  p.passing=null;p.passingCooldown=(p.phase||0)+1.1;p.trafficWait=0;
-  if(p.phaseState==='moving'){
-   const home=(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null;
-   const path=roadRoute(p.x,p.y,p.tx,p.ty,home,p);
-   if(path.length>1){p.routePoints=path;p.routeIndex=1}
-   p.stuckTime=0;p.routeRetries=0;
-  }
- }
- function moveWithPassing(p,dt){
-  if(!isOutdoorResident(p)||p.phaseState!=='moving'){p.passing=null;return false}
-  // A destination already occupied by settled residents cannot be reached
-  // exactly; circling it with bypass plans never settles. Stop beside them.
-  if(['walk','flowers','cafe','work'].includes(p.action)&&Math.hypot(p.x-p.tx,p.y-p.ty)<55&&
-     chars.some(q=>q!==p&&isOutdoorResident(q)&&['staying','idle'].includes(q.phaseState)&&Math.hypot(q.x-p.tx,q.y-p.ty)<48)){
-   p.passing=null;p.tx=p.x;p.ty=p.y;arrive(p,chars.indexOf(p));return true;
-  }
- if(p.passing)p.passHoldSeconds=0;
-  const t=p.passing;
-  if(t){
-   const other=residentById(t.otherId);
-   if(!other||!isOutdoorResident(other)||t.age>5){finishPassing(p);return false}
-   t.age+=dt;
-   if(t.stage==='side'||t.stage==='forward'){
-    const x=t.stage==='side'?t.x:t.fx,y=t.stage==='side'?t.y:t.fy;
-    const dx=x-p.x,dy=y-p.y,d=Math.hypot(dx,dy);
-    if(d<2){
-     if(t.stage==='side'){t.ready=true;t.stage=t.type==='bypass'?'forward':'wait'}
-     else{finishPassing(p);return true}
-    }else{
-     const step=Math.min(d,dt*67.2),nx=p.x+dx*step/d,ny=p.y+dy*step/d;
-     if(!movementSegmentClear(p.x,p.y,nx,ny,p)){finishPassing(p);return true}
-     if(!residentBodyClear(p,nx,ny)){
-      t.blockedFor=(t.blockedFor||0)+dt;
-      if(t.blockedFor>1.3){finishPassing(p);p.passingCooldown=(p.phase||0)+1.6}
-      p.stuckTime=0;p.routeRetries=0;return true;
-     }
-     t.blockedFor=0;p.x=nx;p.y=ny;
-    }
-    p.stuckTime=0;p.routeRetries=0;return true;
-   }
-   if(t.stage==='wait'){
-    const passed=(other.x-t.startX)*t.goX+(other.y-t.startY)*t.goY;
-    if((passed>17&&Math.hypot(other.x-p.x,other.y-p.y)>30)||
-       (t.age>1.4&&Math.hypot(other.x-p.x,other.y-p.y)>84)||
-       (other.phaseState!=='moving'&&t.age>2.2)){
-     finishPassing(p);return true;
-    }
-    p.stuckTime=0;p.routeRetries=0;return true;
-   }
-  }
-  const yielding=chars.find(q=>q!==p&&q.passing?.type==='yield'&&q.passing.otherId===p.id&&q.phaseState==='moving');
-  if(yielding&&!yielding.passing.ready&&Math.hypot(yielding.x-p.x,yielding.y-p.y)<50){
-   p.stuckTime=0;p.routeRetries=0;return true;
-  }
-  const heading=residentWalkDirection(p);if(!heading)return false;
-  const neighbors=chars.filter(q=>q!==p&&isOutdoorResident(q)&&['moving','staying','idle'].includes(q.phaseState)&&Math.hypot(q.x-p.x,q.y-p.y)<78)
-   .sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y));
-  for(const q of neighbors){
-   // Do not steal a pedestrian who has already committed to another encounter.
-   if(q.passing&&q.passing.otherId!==p.id)continue;
-   if(q.passing?.type==='yield'&&q.passing.otherId===p.id)continue;
-   const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy);
-   const forward=dx*heading.x+dy*heading.y,across=Math.abs(dx*heading.y-dy*heading.x);
-   if(q.phaseState!=='moving'){
-    // Nearby residents only need a bypass if they actually obstruct the next
-    // walking segment. A wide proximity cone made safe gaps loop forever.
-    const route=p.routePoints,waypoint=route?.length?route[Math.min(p.routeIndex||1,route.length-1)]:{x:p.tx,y:p.ty};
-    if(pointSegmentDistance(q.x,q.y,p,waypoint)>=24)continue;
-    // A shared public destination is not an obstacle to circle around forever.
-    // Let the regular collision guard hold a comfortable distance, then settle nearby.
-    const finalStep=!route?.length||(p.routeIndex||1)>=route.length-1;
-    if(['walk','flowers','cafe','work'].includes(p.action)&&
-       Math.hypot(p.x-p.tx,p.y-p.ty)<55&&
-       (finalStep||Math.hypot(q.x-p.tx,q.y-p.ty)<48))continue;
-    if(forward < -4||across>28||d>59)continue;
-    if((p.phase||0)>=(p.passingCooldown||0)){
-     const plan=preparePassing(p,q,'bypass');
-     if(plan){p.passing=plan;return moveWithPassing(p,dt)}
-    }
-    if(forward>0&&d<31){p.stuckTime=0;
-     // Held by a stationary neighbour: near a meeting spot, stop queueing and swing wide.
-     p.passHoldSeconds=(p.passHoldSeconds||0)+dt;
-     if(p.passHoldSeconds>2.5&&(p.phase||0)-(p.lastWideDetourPhase||-99)>7&&(nearMeetingSpot(p.x,p.y,170)||(p.action==='social'&&nearMeetingSpot(p.tx,p.ty,80)))){
-      const wide=meetingAreaWideDetour(p);
-      if(wide){p.routePoints=wide;p.routeIndex=1;p.lastWideDetourPhase=p.phase||0;p.passHoldSeconds=0;return false}
-     }
-     return true}
-    continue;
-   }
-   const hq=residentWalkDirection(q);if(!hq)continue;
-   const dot=heading.x*hq.x+heading.y*hq.y;
-   if(dot>.65){
-    if(forward>0&&across<23&&d<26){p.stuckTime=0;return true}
-    continue;
-   }
-   const vx=(hq.x-heading.x)*42,vy=(hq.y-heading.y)*42;
-   const tau=Math.max(0,Math.min(1.2,-(dx*vx+dy*vy)/Math.max(1,vx*vx+vy*vy)));
-   if(Math.hypot(dx+vx*tau,dy+vy*tau)>28||d>73||(p.phase||0)<(p.passingCooldown||0))continue;
-   const first=String(p.id)>String(q.id)?p:q,second=first===p?q:p;
-   let plan=null;
-   if(!first.passing){plan=preparePassing(first,second,'yield');if(plan)first.passing=plan}
-   if(!plan&&!second.passing){plan=preparePassing(second,first,'yield');if(plan)second.passing=plan}
-   if(p.passing)return moveWithPassing(p,dt);
-   if(q.passing?.type==='yield'&&q.passing.otherId===p.id&&!q.passing.ready){p.stuckTime=0;return true}
-  }
-  return false;
- }
 function loop(t){
  // Ignore duplicate same-timestamp callbacks after Safari resumes drawing.
  if(t<=last)return;
@@ -3654,32 +3526,7 @@ function loop(t){
  let step=Math.min(d,dt*58.8),mx=dx/d*step,my=dy/d*step,nx=p.x+mx,ny=p.y+my;
  // 目標地点だけでなく、現在地からの移動線全体を検査して壁抜けを防ぐ。
  const staticClear=movementSegmentClear(p.x,p.y,nx,ny,p);
- if(staticClear&&residentBodyClear(p,nx,ny)){p.x=nx;p.y=ny;p.trafficWait=0;p.passHoldSeconds=0}
- else if(staticClear){
-  // A nearby person isn't a broken route. Wait without the old stuck/teleport cycle.
-  p.trafficWait=(p.trafficWait||0)+dt;p.stuckTime=0;p.routeRetries=0;
-  if(p.trafficWait>1.2){
-   p.trafficWait=0;
-   const nearest=chars.filter(q=>q!==p&&isOutdoorResident(q)&&['moving','staying','idle'].includes(q.phaseState))
-    .sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];
-   if(nearest&&Math.hypot(nearest.x-p.x,nearest.y-p.y)<44){
-    const finalStep=!route||(p.routeIndex||1)>=route.length-1;
-    // Occupied destinations: stop comfortably beside the other resident. A
-    // settled crowd can also block an earlier route step, not just the last.
-    const settledBlocker=['staying','idle'].includes(nearest.phaseState)&&Math.hypot(nearest.x-p.tx,nearest.y-p.ty)<48;
-    if((finalStep||settledBlocker)&&Math.hypot(p.x-p.tx,p.y-p.ty)<55&&['walk','flowers','cafe','work'].includes(p.action)){
-     p.tx=p.x;p.ty=p.y;arrive(p,i);return;
-    }
-    const detour=preparePassing(p,nearest,'bypass');
-    if(detour){p.passing=detour;p.passingCooldown=0}
-    else if((p.phase||0)-(p.lastWideDetourPhase||-99)>7&&(nearMeetingSpot(p.x,p.y,170)||(p.action==='social'&&nearMeetingSpot(p.tx,p.ty,80)))){
-     const wide=meetingAreaWideDetour(p);
-     if(wide){p.routePoints=wide;p.routeIndex=1;p.lastWideDetourPhase=p.phase||0;p.stuckTime=0;p.routeRetries=0}
-    }
-   }
-  }
-  return;
- }
+ if(staticClear){p.x=nx;p.y=ny;p.trafficWait=0;p.passHoldSeconds=0}
  else{
   const detour=route&&!point.detourTried&&!point.isDetour&&route.length<40?findMovementDetour(p,point):null;
   if(detour){
