@@ -24,82 +24,45 @@ function artPoint(x,y){return {x:PAINTED_TOWN.left+x*PAINTED_TOWN.scale,y:PAINTE
 function artPolygon(points){return points.map(([x,y])=>artPoint(x,y))}
 function nativePoint(x,y){return {x:(x-PAINTED_TOWN.left)/PAINTED_TOWN.scale,y:(y-PAINTED_TOWN.top)/PAINTED_TOWN.scale}}
 const paintedTownArt=new Image(),paintedOccluderTiles=new Map();
-paintedTownArt.src='assets/town-painted-v10.webp';
+paintedTownArt.src='assets/town-base-v16.webp';
 paintedTownArt.onload=()=>paintedOccluderTiles.clear();
-const PAINTED_PLOTS=[
- {id:'north-west',label:'北西の花庭の家',anchor:[475,204],approach:[[526,219],[541,241],[552,251]],footprint:[[397,169],[465,145],[556,176],[555,220],[474,239],[397,214]]},
- {id:'north-center',label:'北東の花庭の家',anchor:[682,224],approach:[[696,244],[711,260],[710,282]],footprint:[[610,194],[673,173],[752,206],[751,244],[681,268],[610,239]]},
- {id:'south-west',label:'川を望む東の家',anchor:[868,278],approach:[[882,307],[898,311],[914,323],[906,338]],footprint:[[799,245],[863,223],[941,254],[941,294],[864,317],[799,288]]},
- {id:'south-center',label:'石段の上の家',anchor:[405,487],approach:[[424,511],[430,542],[438,560],[447,585],[456,610]],footprint:[[311,459],[403,430],[506,473],[504,516],[412,545],[311,511]]},
- {id:'south-east',label:'広場から離れた花庭の家',anchor:[285,805],approach:[[328,838],[339,855],[385,872],[418,870]],footprint:[[191,769],[282,737],[389,777],[389,823],[291,858],[191,824]]},
- {id:'center-west-home',label:'北の木陰の家',anchor:[270,125],approach:[[300,174],[322,196],[374,231]],footprint:[[208,121],[270,99],[328,124],[329,161],[273,181],[208,161]],extra:true}
-];
-const PAINTED_LAND=artPolygon([[1090,145],[1016,300],[1020,550],[1000,690],[944,750],[840,847],[806,950],[824,1100],[768,1190],[699,1267],[586,1352],[528,1374],[365,1334],[160,1240],[50,1160],[20,1010],[32,800],[20,665],[45,405],[44,296],[171,207],[341,142],[535,42],[740,116]]);
-const PAINTED_SHORE=[[1090,145],[1016,245],[1008,400],[1014,565],[1000,690],[944,750],[840,847],[806,950],[824,1100],[768,1190],[699,1267],[586,1352],[528,1374]].map(([x,y])=>artPoint(x,y));
-const PAINTED_WALK_SPOTS=[
- {id:'main-street',label:'こみちの途中',...artPoint(593,514)},
- {id:'plaza',label:'川辺の広場',...artPoint(350,1150)},
- {id:'garden-wisteria',label:'藤棚の小径',...artPoint(774,519)},
- {id:'garden-cherry',label:'桜のそば',...artPoint(801,592)},
- {id:'garden-riverside',label:'川沿い',...artPoint(793,827)},
- {id:'garden-plaza',label:'庭園の出口',...artPoint(714,946)},
- {id:'pier',label:'川辺の桟橋',...artPoint(1010,800)},
- {id:'north-neighborhood',label:'住宅街',...artPoint(710,282)}
-];
-const PAINTED_FLOWER_SPOTS=[
- {id:'flower-garden',label:'庭園の花壇',...artPoint(773,620)},
- {id:'flower-south',label:'広場の花壇',...artPoint(687,990)},
- {id:'flower-cafe',label:'喫茶店の花壇',...artPoint(441,382)}
-];
+const PAINTED_PLOTS=[{"id":"north-west","label":"丘の大きな家","anchor":[252,190],"approach":[[252,190],[269,217],[295,253],[311,280]],"footprint":[[135,130],[293,130],[293,187],[135,187]]},{"id":"north-center","label":"北の花庭の家","anchor":[453,177],"approach":[[453,177],[463,201],[467,226]],"footprint":[[389,126],[492,126],[492,174],[389,174]]},{"id":"south-west","label":"北東の大きな家","anchor":[665,184],"approach":[[665,184],[668,209],[674,225]],"footprint":[[583,122],[704,122],[704,180],[583,180]]},{"id":"south-center","label":"中央の木陰の家","anchor":[486,348],"approach":[[486,348],[501,371],[548,391],[585,420],[601,452],[598,483]],"footprint":[[413,299],[523,299],[523,345],[413,345]]},{"id":"south-east","label":"カフェ裏の家","anchor":[146,460],"approach":[[146,460],[181,479],[237,489],[282,513]],"footprint":[[81,405],[184,405],[184,455],[81,455]]},{"id":"center-west-home","label":"商店の隣の家","anchor":[261,743],"approach":[[261,743],[277,765],[319,777],[352,778]],"footprint":[[197,688],[294,688],[294,740],[197,740]]},{"id":"garden-home","label":"花庭の家","anchor":[421,445],"approach":[[421,445],[433,472],[441,487]],"footprint":[[335,391],[455,391],[455,443],[335,443]]},{"id":"pergola-home","label":"北東の庭の家","anchor":[933,344],"approach":[[933,344],[927,373],[914,399],[927,429]],"footprint":[[845,295],[972,295],[972,342],[845,342]]},{"id":"lake-home","label":"湖畔の家","anchor":[869,579],"approach":[[869,579],[851,600],[849,612]],"footprint":[[823,532],[929,532],[929,578],[823,578]]},{"id":"east-grand","label":"東の大きな家","anchor":[995,718],"approach":[[995,718],[962,736],[890,744]],"footprint":[[917,658],[1060,658],[1060,715],[917,715]]},{"id":"east-south","label":"東の南の家","anchor":[982,843],"approach":[[982,843],[965,868],[957,888]],"footprint":[[937,784],[1049,784],[1049,841],[937,841]]}];
+const PAINTED_LAND=artPolygon([[60,330],[100,100],[370,100],[380,90],[710,90],[790,195],[1030,200],[1100,260],[1100,900],[1030,990],[1020,1250],[850,1300],[540,1355],[380,1398],[255,1398],[240,1290],[65,1240],[65,1000],[55,860],[30,820],[30,575],[65,530]]);
+const PAINTED_SHORE=[[785,574],[754,670],[775,718],[760,796],[728,847],[771,950],[708,1060],[672,1150],[555,1280],[405,1355]].map(q=>artPoint(...q));
+const PAINTED_WATER=artPolygon([[686,571],[758,579],[779,602],[748,650],[731,675],[771,710],[761,769],[735,827],[704,848],[750,936],[766,972],[707,1063],[676,1133],[620,1212],[532,1310],[422,1355],[392,1324],[421,1273],[473,1212],[504,1162],[527,1090],[550,1045],[542,1000],[579,945],[605,910],[590,867],[549,830],[548,782],[581,730],[560,706],[521,704],[505,672],[526,622],[579,600],[629,596]]);
+
+const PAINTED_WALK_SPOTS=[{id:"main-street",label:"こみちの途中",...artPoint(352,545)},{id:"plaza",label:"川辺の広場",...artPoint(295,1200)},{id:"garden-wisteria",label:"藤棚の小径",...artPoint(451,704)},{id:"garden-cherry",label:"桜のそば",...artPoint(820,1210)},{id:"garden-riverside",label:"川沿い",...artPoint(481,802)},{id:"garden-plaza",label:"庭園の出口",...artPoint(785,988)},{id:"pier",label:"湖の橋",...artPoint(660,887)},{id:"north-neighborhood",label:"住宅街",...artPoint(675,225)}];
+const PAINTED_FLOWER_SPOTS=[{id:"flower-garden",label:"庭園の花壇",...artPoint(481,919)},{id:"flower-south",label:"広場の花壇",...artPoint(371,1160)},{id:"flower-cafe",label:"喫茶店の花壇",...artPoint(270,640)}];
+
 function nativeEllipse(cx,cy,rx,ry){return Array.from({length:24},(_,i)=>[cx+Math.cos(i*Math.PI/12)*rx,cy+Math.sin(i*Math.PI/12)*ry])}
 // These silhouettes are small transparent foreground tiles copied from the same
 // painting. Residents are composited between background and foreground, not on
 // top of a flat photograph of the town.
-const PAINTED_OCCLUDERS=[
- {id:'cafe-building',depth:351,polygon:[[135,241],[151,205],[218,164],[310,158],[414,224],[419,284],[408,335],[345,355],[253,345],[164,322]]},
- {id:'cafe-parasol-west-canopy',depth:336,polygon:[[51,324],[64,304],[113,290],[163,308],[175,326],[120,334],[96,331]]},
- {id:'cafe-parasol-west-pole',depth:380,polygon:[[122,332],[130,332],[130,378],[122,378]]},
- {id:'cafe-parasol-east-canopy',depth:359,polygon:[[165,348],[174,329],[218,315],[265,330],[280,349],[229,357],[207,356]]},
- {id:'cafe-parasol-east-pole',depth:405,polygon:[[210,356],[218,356],[218,403],[210,403]]},
- {id:'house-north-west',depth:238,polygon:[[387,144],[396,119],[447,80],[516,94],[567,150],[565,219],[548,239],[473,247],[393,218]]},
- {id:'house-north-center',depth:268,polygon:[[597,164],[620,120],[678,99],[744,134],[775,179],[758,245],[682,279],[610,244]]},
- {id:'house-east',depth:318,polygon:[[781,238],[807,191],[857,149],[921,172],[956,227],[948,299],[871,332],[798,299]]},
- {id:'house-middle',depth:546,polygon:[[289,449],[324,409],[400,371],[480,405],[525,453],[510,523],[418,557],[310,519]]},
- {id:'shop-building',depth:688,polygon:[[79,582],[109,531],[166,490],[242,500],[330,550],[350,610],[326,673],[246,708],[112,672],[84,630]]},
- {id:'house-lower',depth:861,polygon:[[166,757],[194,724],[255,689],[331,704],[401,759],[399,824],[301,870],[190,837]]},
- {id:'garden-tree',depth:427,polygon:[[644,361],[662,328],[701,298],[758,293],[811,324],[828,364],[804,405],[766,421],[760,440],[735,442],[730,420],[688,409],[655,387]]},
- {id:'garden-tree-small',depth:784,polygon:[[654,718],[662,695],[690,678],[717,667],[743,679],[762,695],[772,716],[780,728],[772,741],[756,747],[752,755],[740,752],[732,761],[729,777],[735,785],[724,784],[719,790],[711,783],[703,786],[713,775],[714,760],[701,752],[690,754],[684,749],[674,753],[670,743],[660,743],[659,735],[647,734]]},
- {id:'west-tree-small',depth:760,polygon:[[357,707],[377,680],[419,662],[460,680],[479,714],[457,745],[432,755],[429,779],[408,780],[401,757],[375,744]]},
- {id:'cherry-tree',depth:706,polygon:[[826,596],[847,554],[887,529],[932,517],[979,526],[1020,557],[1062,603],[1048,653],[1009,679],[976,690],[970,725],[947,726],[939,692],[886,678],[848,645]]},
- {id:'plaza-tree',depth:1104,polygon:[[377,1003],[397,963],[432,933],[475,919],[527,925],[574,949],[610,990],[611,1027],[579,1061],[532,1079],[522,1104],[490,1108],[477,1081],[431,1065],[394,1039]]},
- {id:'wisteria',depth:430,polygon:[[789,427],[808,397],[842,376],[895,375],[935,400],[951,438],[936,468],[920,460],[902,442],[847,442],[830,464],[810,460]]},
- {id:'wisteria-post-left',depth:515,polygon:[[808,435],[823,436],[826,514],[811,514]]},
- {id:'wisteria-post-right',depth:515,polygon:[[932,436],[944,437],[943,510],[931,514]]},
- {id:'flower-arch',depth:1248,polygon:[[395,1215],[405,1173],[437,1141],[483,1127],[526,1138],[559,1167],[575,1210],[569,1253],[548,1253],[548,1204],[533,1175],[511,1158],[479,1152],[449,1166],[427,1192],[423,1255],[402,1256]]}
-];
+const PAINTED_OCCLUDERS=[{"id":"house-north-west","depth":187,"polygon":[[127,103],[214.0,65],[301,105],[293,187],[135,187]]},{"id":"house-north-center","depth":174,"polygon":[[381,99],[440.5,61],[500,101],[492,174],[389,174]]},{"id":"house-south-west","depth":180,"polygon":[[575,95],[643.5,57],[712,97],[704,180],[583,180]]},{"id":"house-south-center","depth":345,"polygon":[[405,272],[468.0,234],[531,274],[523,345],[413,345]]},{"id":"house-south-east","depth":455,"polygon":[[73,378],[132.5,340],[192,380],[184,455],[81,455]]},{"id":"house-center-west-home","depth":740,"polygon":[[189,661],[245.5,623],[302,663],[294,740],[197,740]]},{"id":"house-garden-home","depth":443,"polygon":[[327,364],[395.0,326],[463,366],[455,443],[335,443]]},{"id":"house-pergola-home","depth":342,"polygon":[[837,268],[908.5,230],[980,270],[972,342],[845,342]]},{"id":"house-lake-home","depth":578,"polygon":[[815,505],[876.0,467],[937,507],[929,578],[823,578]]},{"id":"house-east-grand","depth":715,"polygon":[[909,631],[988.5,593],[1068,633],[1060,715],[917,715]]},{"id":"house-east-south","depth":841,"polygon":[[929,757],[993.0,719],[1057,759],[1049,841],[937,841]]},{"id":"cafe-building","depth":593,"polygon":[[66,526],[151,475],[240,510],[240,577],[175,598],[77,572]]},{"id":"shop-building","depth":824,"polygon":[[46,745],[104,690],[202,735],[194,810],[126,837],[57,805]]}];
 const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,pageSuspended=false,residentDiagnosticTimer=null,residentDiagnosticsOpen=false,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:830,y:840,tx:1050,ty:1040,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:1090,y:1500,tx:910,ty:1280,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が街を散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let relationFolderId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let sharedGoalPairId='';let sharedGoalStartStamp=-1;let sharedGoalKind='date';let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;let sharedGoalTreatBy='';let sharedGoalTreatMode='';
 const places=[
  {id:'home',name:'西の住宅',icon:'🏡',...artPoint(475,204),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'home2',name:'東の住宅',icon:'🏠',...artPoint(682,224),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
- {id:'cafe',name:'喫茶こもれび',icon:'☕',x:artPoint(324,357).x-30,y:artPoint(324,357).y-40,type:'cafe',description:'花に囲まれたテラスのある喫茶店',actions:['食事','休憩','デート']},
- {id:'shop',name:'こみち商店',icon:'🛒',...artPoint(220,625),type:'shop',description:'石段の上にある小さな商店',actions:['買い物','食材を買う']},
- {id:'plaza',name:'川辺の広場',icon:'🌳',...artPoint(482,1077),type:'outdoor',description:'大きな木を囲む円形広場',actions:['散歩','休憩']},
- {id:'bench-river',name:'川辺のベンチ',icon:'🪑',...artPoint(794,779),type:'bench',description:'水辺を眺めて休めるベンチ',actions:['休憩']},
- {id:'bench-path',name:'広場のベンチ',icon:'🪑',...artPoint(386,1079),type:'bench',description:'広場の木陰で休めるベンチ',actions:['休憩']},
- {id:'bridge',name:'川辺の桟橋',icon:'🌉',...artPoint(1010,800),type:'bridge',description:'川にせり出した木の桟橋',actions:['散歩','景色を見る']},
- {id:'flower-west',name:'喫茶店の花壇',icon:'🌼',...artPoint(441,382),type:'garden',description:'テラスを彩る花壇',actions:['花を見る']},
- {id:'flower-east',name:'庭園の花壇',icon:'🌷',...artPoint(773,620),type:'garden',description:'小径のそばの花壇',actions:['花を見る']},
- {id:'flower-south',name:'広場の花壇',icon:'🌻',...artPoint(687,990),type:'garden',description:'広場を囲む花壇',actions:['花を見る']},
- {id:'wisteria-walk',name:'藤棚の小径',icon:'🌿',...artPoint(774,519),type:'outdoor',description:'藤の花と桜を楽しめる川辺の庭園',actions:['散歩','花を見る']}
+ {id:'cafe',name:'喫茶こもれび',icon:'☕',...artPoint(176,597),type:'cafe',description:'花に囲まれたテラスのある喫茶店',actions:['食事','休憩','デート']},
+ {id:'shop',name:'こみち商店',icon:'🛒',...artPoint(152,826),type:'shop',description:'石段の上にある小さな商店',actions:['買い物','食材を買う']},
+ {id:'plaza',name:'川辺の広場',icon:'🌳',...artPoint(295,1120),type:'outdoor',description:'大きな木を囲む円形広場',actions:['散歩','休憩']},
+ {id:'bench-river',name:'川辺のベンチ',icon:'🪑',...artPoint(443,822),type:'bench',description:'水辺を眺めて休めるベンチ',actions:['休憩']},
+ {id:'bench-path',name:'広場のベンチ',icon:'🪑',...artPoint(151,1090),type:'bench',description:'広場の木陰で休めるベンチ',actions:['休憩']},
+ {id:'bridge',name:'湖の橋',icon:'🌉',...artPoint(660,887),type:'bridge',description:'両岸の街をつなぐ石橋',actions:['散歩','景色を見る']},
+ {id:'flower-west',name:'喫茶店の花壇',icon:'🌼',...artPoint(270,640),type:'garden',description:'テラスを彩る花壇',actions:['花を見る']},
+ {id:'flower-east',name:'庭園の花壇',icon:'🌷',...artPoint(481,919),type:'garden',description:'小径のそばの花壇',actions:['花を見る']},
+ {id:'flower-south',name:'広場の花壇',icon:'🌻',...artPoint(371,1160),type:'garden',description:'広場を囲む花壇',actions:['花を見る']},
+ {id:'wisteria-walk',name:'藤棚の小径',icon:'🌿',...artPoint(451,704),type:'outdoor',description:'藤の花と桜を楽しめる川辺の庭園',actions:['散歩','花を見る']}
 ];
 function getPlace(id){return places.find(place=>place.id===id)||null}
+places.push({id:'bookshop',name:'こみち書店',icon:'📚',...artPoint(787,458),type:'outdoor',description:'本が並ぶ小さな書店',actions:['散歩','読書']});
 const SAVE_KEY='komichi-life-save-v1';
 const commonRoadClearance=new Map();
 const ROAD_CLEARANCE_PROBE={id:'road-clearance-probe',x:-10000,y:-10000,action:'idle',phaseState:'idle'};
 const SAVE_BACKUP_KEY=SAVE_KEY+'.backup';
 const SAVE_BEFORE_IMPORT_KEY=SAVE_KEY+'.before-import';
 let saveWritesBlocked=false,saveReady=false,loadedSaveData=null,saveWarningMessage='';
-const TOWN_LAYOUT_REVISION=15;let previousTownRevision=0;
+const TOWN_LAYOUT_REVISION=16;let previousTownRevision=0;
 // 家具・住居データ。購入者、所有者、利用者、設置場所を独立して管理する。
 const furnitureCatalog={
  bed:{id:'bed',name:'ベッド',price:1800,rooms:['bedroom'],actions:['sleep','rest'],capacity:2,ownership:'household',unique:'household',size:{w:2,h:2}},
@@ -131,7 +94,7 @@ let townExteriorCache=null;
 function townDisplayHomes(){
  if(townExteriorCache)return townExteriorCache;
  const real=Object.values(homes||{}),used=new Set(real.map(h=>h.mapPlotId));
- return townExteriorCache=[...real,...residentialPlots.filter(plot=>!used.has(plot.id)&&plot.id!=='center-west-home').map(plot=>({id:'vacant-'+plot.id,name:'',x:plot.x,y:plot.y,mapPlotId:plot.id,scenicVacant:true}))];
+ return townExteriorCache=[...real,...residentialPlots.filter(plot=>!used.has(plot.id)).map(plot=>({id:'vacant-'+plot.id,name:'',x:plot.x,y:plot.y,mapPlotId:plot.id,scenicVacant:true}))];
 }
 function uniqueWorldId(prefix,exists){
  const base=prefix+Date.now().toString(36);let id=base,suffix=1;
@@ -397,8 +360,9 @@ function isBlockedByHome(x,y,p){
 }
 // Shared placement and collision geometry for fixed public buildings.
 const WORLD_BUILDINGS={
- cafe:{id:'cafe',...artPoint(300,310),footprint:artPolygon([[163,278],[237,249],[404,276],[403,330],[343,352],[248,344],[164,322]]),door:{x:artPoint(324,357).x,halfWidth:22,minY:artPoint(324,335).y,maxY:artPoint(324,357).y},targetAction:'cafe'},
- shop:{id:'shop',...artPoint(220,625),footprint:artPolygon([[113,577],[215,546],[321,593],[320,650],[245,680],[114,642]]),door:{x:artPoint(258,671).x,halfWidth:22,minY:artPoint(258,646).y,maxY:artPoint(258,671).y},targetAction:'shoppingTrip'}
+ cafe:{id:'cafe',...artPoint(176,597),footprint:artPolygon([[78,535],[229,535],[229,577],[78,577]]),door:{x:artPoint(176,597).x,halfWidth:24,minY:artPoint(176,577).y,maxY:artPoint(176,601).y},targetAction:'cafe'},
+ shop:{id:'shop',...artPoint(152,826),footprint:artPolygon([[57,753],[190,753],[190,809],[57,809]]),door:{x:artPoint(152,826).x,halfWidth:24,minY:artPoint(152,805).y,maxY:artPoint(152,829).y},targetAction:'shoppingTrip'},
+ bookshop:{id:'bookshop',...artPoint(787,458),footprint:artPolygon([[689,393],[822,393],[822,445],[689,445]]),door:{x:artPoint(787,458).x,halfWidth:22,minY:artPoint(787,442).y,maxY:artPoint(787,460).y},targetAction:'walk'}
 };
 function facilityBlocksMovement(x,y,p){
  // 建物の接地面・入口・行動目標は共通の建物データから判定する。
@@ -428,51 +392,34 @@ function pointInPolygon(x,y,polygon){
  return inside;
 }
  // 道路ネットワーク。中央幹線から北・西の住宅地へ接続。
- const PAINTED_NATIVE_ROADS=[
- {main:true,start:[510,270],curves:[[[585,335],[630,415],[591,535]],[[569,618],[506,700],[514,803]],[[507,856],[515,894],[516,948]]]},
- {start:[510,270],curves:[[[527,262],[548,259],[552,251]]]},
- {start:[566,318],curves:[[[616,300],[654,290],[710,282]],[[753,288],[762,332],[821,349]],[[860,364],[895,352],[906,338]]]},
- {start:[600,430],curves:[[[575,436],[550,434],[535,425]],[[507,406],[470,376],[439,359]],[[410,369],[354,400],[311,382]],[[322,367],[347,359],[367,357]]]},
- {start:[551,641],curves:[[[548,619],[505,605],[456,610]]]},
- {start:[543,661],curves:[[[457,680],[367,697],[309,696]],[[294,697],[279,696],[265,696]]]},
- {start:[515,851],curves:[[[474,854],[459,893],[418,870]]]},
- {garden:true,followPaintedBend:true,start:[821,349],curves:[[[832,382],[830,422],[797,449]],[[744,461],[708,503],[749,529]],[[778,547],[822,542],[832,579]],[[838,607],[822,633],[795,649]],[[785,655],[774,660],[762,660]],[[704,668],[596,684],[620,744]],[[635,790],[750,842],[746,843]],[[770,876],[708,887],[665,898]],[[619,902],[565,887],[516,903]]]},
- {garden:true,start:[749,529],curves:[[[788,543],[833,532],[863,536]]]},
- {garden:true,start:[746,843],curves:[[[788,827],[821,829],[846,845]],[[912,825],[974,795],[1010,800]]]},
- {garden:true,start:[482,958],curves:[[[607,958],[708,1011],[708,1077]],[[708,1143],[607,1196],[482,1196]],[[357,1196],[256,1143],[256,1077]],[[256,1011],[357,958],[482,958]]]},
- {garden:true,start:[482,1196],curves:[[[482,1231],[506,1301],[493,1332]]]},
- {garden:true,start:[510,270],curves:[[[451,266],[400,250],[374,231]]]}
- ];
+ const PAINTED_NATIVE_ROADS=[{"main":true,"start":[322,956],"curves":[[[324.0,932.6666666666666],[326.0,909.3333333333334],[328,886]],[[336.0,850.0],[344.0,814.0],[352,778]],[[356.3333333333333,752.3333333333334],[360.6666666666667,726.6666666666666],[365,701]],[[364.0,671.0],[363.0,641.0],[362,611]],[[358.0,590.6666666666666],[354.0,570.3333333333334],[350,550]],[[338.3333333333333,531.3333333333334],[326.6666666666667,512.6666666666666],[315,494]],[[303.0,478.6666666666667],[291.0,463.3333333333333],[279,448]],[[268.6666666666667,434.6666666666667],[258.3333333333333,421.3333333333333],[248,408]],[[247.0,394.6666666666667],[246.0,381.3333333333333],[245,368]],[[253.33333333333334,352.3333333333333],[261.6666666666667,336.6666666666667],[270,321]],[[283.6666666666667,307.3333333333333],[297.3333333333333,293.6666666666667],[311,280]],[[328.3333333333333,271.0],[345.6666666666667,262.0],[363,253]],[[397.6666666666667,244.0],[432.3333333333333,235.0],[467,226]],[[498.0,225.66666666666666],[529.0,225.33333333333334],[560,225]],[[598.0,225.0],[636.0,225.0],[674,225]],[[716.0,225.0],[758.0,225.0],[800,225]],[[848.0,227.33333333333334],[896.0,229.66666666666666],[944,232]],[[967.0,236.33333333333334],[990.0,240.66666666666666],[1013,245]],[[1024.6666666666667,256.0],[1036.3333333333333,267.0],[1048,278]],[[1052.3333333333333,295.6666666666667],[1056.6666666666667,313.3333333333333],[1061,331]],[[1059.6666666666667,346.3333333333333],[1058.3333333333333,361.6666666666667],[1057,377]],[[1051.3333333333333,390.3333333333333],[1045.6666666666667,403.6666666666667],[1040,417]],[[1030.6666666666667,430.3333333333333],[1021.3333333333334,443.6666666666667],[1012,457]],[[1010.0,469.3333333333333],[1008.0,481.6666666666667],[1006,494]],[[1010.6666666666666,507.6666666666667],[1015.3333333333334,521.3333333333334],[1020,535]],[[1019.3333333333334,546.0],[1018.6666666666666,557.0],[1018,568]],[[1009.0,576.0],[1000.0,584.0],[991,592]],[[968.3333333333334,598.3333333333334],[945.6666666666666,604.6666666666666],[923,611]],[[908.6666666666666,616.0],[894.3333333333334,621.0],[880,626]],[[868.6666666666666,634.0],[857.3333333333334,642.0],[846,650]],[[844.6666666666666,659.6666666666666],[843.3333333333334,669.3333333333334],[842,679]],[[848.6666666666666,689.3333333333334],[855.3333333333334,699.6666666666666],[862,710]],[[864.6666666666666,722.0],[867.3333333333334,734.0],[870,746]],[[865.3333333333334,764.3333333333334],[860.6666666666666,782.6666666666666],[856,801]],[[854.0,817.6666666666666],[852.0,834.3333333333334],[850,851]],[[857.3333333333334,861.6666666666666],[864.6666666666666,872.3333333333334],[872,883]],[[900.3333333333334,884.6666666666666],[928.6666666666666,886.3333333333334],[957,888]],[[990.6666666666666,885.6666666666666],[1024.3333333333333,883.3333333333334],[1058,881]]]},{"main":true,"start":[315,494],"curves":[[[357.0,491.6666666666667],[399.0,489.3333333333333],[441,487]],[[493.3333333333333,485.6666666666667],[545.6666666666666,484.3333333333333],[598,483]],[[646.6666666666666,483.6666666666667],[695.3333333333334,484.3333333333333],[744,485]],[[777.0,479.3333333333333],[810.0,473.6666666666667],[843,468]],[[871.0,455.0],[899.0,442.0],[927,429]],[[964.6666666666666,425.0],[1002.3333333333334,421.0],[1040,417]]]},{"main":true,"start":[322,956],"curves":[[[350.6666666666667,969.3333333333334],[379.3333333333333,982.6666666666666],[408,996]],[[428.6666666666667,978.6666666666666],[449.3333333333333,961.3333333333334],[470,944]],[[497.3333333333333,931.3333333333334],[524.6666666666666,918.6666666666666],[552,906]],[[569.6666666666666,900.0],[587.3333333333334,894.0],[605,888]],[[623.3333333333334,885.0],[641.6666666666666,882.0],[660,879]],[[680.0,879.6666666666666],[700.0,880.3333333333334],[720,881]],[[740.0,885.3333333333334],[760.0,889.6666666666666],[780,894]],[[810.6666666666666,890.3333333333334],[841.3333333333334,886.6666666666666],[872,883]]]},{"main":true,"start":[295,1200],"curves":[[[298.3333333333333,1223.3333333333333],[301.6666666666667,1246.6666666666667],[305,1270]],[[306.6666666666667,1290.0],[308.3333333333333,1310.0],[310,1330]]]},{"main":true,"start":[552,906],"curves":[[[536.3333333333334,907.3333333333334],[520.6666666666666,908.6666666666666],[505,910]],[[497.0,913.0],[489.0,916.0],[481,919]]]},{"main":true,"start":[362,611],"curves":[[[343.6666666666667,610.6666666666666],[325.3333333333333,610.3333333333334],[307,610]],[[290.0,611.6666666666666],[273.0,613.3333333333334],[256,615]],[[240.66666666666666,618.3333333333334],[225.33333333333334,621.6666666666666],[210,625]],[[198.33333333333334,630.0],[186.66666666666666,635.0],[175,640]],[[160.0,641.3333333333334],[145.0,642.6666666666666],[130,644]],[[116.66666666666667,639.3333333333334],[103.33333333333333,634.6666666666666],[90,630]]]},{"main":true,"start":[362,611],"curves":[[[343.6666666666667,610.6666666666666],[325.3333333333333,610.3333333333334],[307,610]],[[289.6666666666667,606.3333333333334],[272.3333333333333,602.6666666666666],[255,599]],[[228.66666666666666,598.3333333333334],[202.33333333333334,597.6666666666666],[176,597]]]},{"main":true,"start":[328,886],"curves":[[[332.0,870.0],[336.0,854.0],[340,838]],[[310.6666666666667,838.3333333333334],[281.3333333333333,838.6666666666666],[252,839]],[[233.66666666666666,837.6666666666666],[215.33333333333334,836.3333333333334],[197,835]],[[182.0,832.0],[167.0,829.0],[152,826]]]},{"main":false,"start":[365,701],"curves":[[[389.6666666666667,693.6666666666666],[414.3333333333333,686.3333333333334],[439,679]],[[454.0,677.3333333333334],[469.0,675.6666666666666],[484,674]]],"garden":true},{"main":false,"start":[439,679],"curves":[[[443.0,687.3333333333334],[447.0,695.6666666666666],[451,704]]],"garden":true},{"main":false,"start":[350,550],"curves":[[[375.3333333333333,552.6666666666666],[400.6666666666667,555.3333333333334],[426,558]],[[447.3333333333333,564.0],[468.6666666666667,570.0],[490,576]]],"garden":true},{"main":false,"start":[365,701],"curves":[[[380.3333333333333,717.6666666666666],[395.6666666666667,734.3333333333334],[411,751]],[[438.0,759.6666666666666],[465.0,768.3333333333334],[492,777]],[[488.3333333333333,785.3333333333334],[484.6666666666667,793.6666666666666],[481,802]]],"garden":true},{"main":false,"start":[872,883],"curves":[[[859.3333333333334,902.3333333333334],[846.6666666666666,921.6666666666666],[834,941]],[[817.6666666666666,956.6666666666666],[801.3333333333334,972.3333333333334],[785,988]],[[801.3333333333334,1005.3333333333334],[817.6666666666666,1022.6666666666666],[834,1040]],[[841.3333333333334,1066.6666666666667],[848.6666666666666,1093.3333333333333],[856,1120]],[[844.0,1150.0],[832.0,1180.0],[820,1210]]],"garden":true},{"main":false,"start":[744,485],"curves":[[[758.3333333333334,476.0],[772.6666666666666,467.0],[787,458]]],"garden":true},{"main":false,"start":[395.0,1120.0],"curves":[[[392.46265108370955,1131.0978195385876],[389.92530216741915,1142.1956390771752],[387.3879532511287,1153.2934586157628]],[[380.16219487363736,1162.7017357315851],[372.9364364961461,1172.1100128474072],[365.71067811865476,1181.5182899632296]],[[354.89656649127284,1187.804699751647],[344.0824548638909,1194.0911095400645],[333.268343236509,1200.3775193284819]],[[320.51222882433933,1202.5850128856546],[307.75611441216967,1204.7925064428273],[295.0,1207.0]],[[282.24388558783033,1204.7925064428273],[269.48777117566067,1202.5850128856546],[256.731656763491,1200.3775193284819]],[[245.91754513610908,1194.0911095400645],[235.10343350872716,1187.804699751647],[224.28932188134524,1181.5182899632296]],[[217.06356350385394,1172.1100128474072],[209.8378051263626,1162.7017357315851],[202.6120467488713,1153.2934586157628]],[[200.07469783258088,1142.1956390771752],[197.53734891629043,1131.0978195385876],[195.0,1120.0]],[[197.53734891629043,1108.9021804614124],[200.07469783258088,1097.8043609228248],[202.6120467488713,1086.7065413842372]],[[209.8378051263626,1077.2982642684149],[217.06356350385394,1067.8899871525928],[224.28932188134524,1058.4817100367704]],[[235.10343350872714,1052.195300248353],[245.91754513610906,1045.9088904599355],[256.73165676349095,1039.6224806715181]],[[269.4877711756606,1037.4149871143454],[282.24388558783033,1035.2074935571727],[295.0,1033.0]],[[307.75611441216967,1035.2074935571727],[320.51222882433933,1037.4149871143454],[333.268343236509,1039.6224806715181]],[[344.0824548638909,1045.9088904599355],[354.89656649127284,1052.195300248353],[365.71067811865476,1058.4817100367704]],[[372.93643649614603,1067.8899871525928],[380.16219487363736,1077.2982642684149],[387.38795325112864,1086.7065413842372]],[[389.9253021674191,1097.8043609228248],[392.46265108370955,1108.9021804614124],[395.0,1120.0]]],"garden":true},{"main":true,"start":[322,956],"curves":[[[313.0,981.6666666666666],[304.0,1007.3333333333334],[295,1033]]]},{"main":true,"start":[408,996],"curves":[[[393.9035593728849,1016.8272366789234],[379.80711874576986,1037.6544733578469],[365.71067811865476,1058.4817100367704]]]},{"main":true,"start":[295,1200],"curves":[[[295.0,1202.3333333333333],[295.0,1204.6666666666667],[295.0,1207.0]]]},{"main":false,"start":[598,483],"curves":[[[603.3333333333334,472.0],[608.6666666666666,461.0],[614,450]],[[611.6666666666666,441.6666666666667],[609.3333333333334,433.3333333333333],[607,425]]],"garden":true},{"main":false,"start":[295,1200],"curves":[[[253.33333333333334,1186.6666666666667],[211.66666666666669,1173.3333333333333],[170,1160]],[[163.66666666666666,1148.3333333333333],[157.33333333333334,1136.6666666666667],[151,1125]]],"garden":true},{"main":false,"start":[295,1200],"curves":[[[338.0,1186.6666666666667],[381.0,1173.3333333333333],[424,1160]],[[432.0,1148.3333333333333],[440.0,1136.6666666666667],[448,1125]]],"garden":true}];
  const roadRoutes=PAINTED_NATIVE_ROADS.map(r=>({...r,start:Object.values(artPoint(...r.start)),curves:r.curves.map(c=>c.map(q=>Object.values(artPoint(...q))))}));
  const roadRendering={edge:'#bba084',surface:'#f7dec0',mainEdgeWidth:104,mainSurfaceWidth:94,branchEdgeWidth:50,branchSurfaceWidth:40,gardenEdgeWidth:32,gardenSurfaceWidth:25};
- const bridge={base:[],deck:[[816,810],[1049,725],[1102,748],[1100,813],[900,890],[821,872]].map(q=>Object.values(artPoint(...q))),rails:[],approaches:[]};
+ const bridge={base:[],deck:[[547,888],[611,850],[721,847],[797,880],[787,920],[703,916],[613,916],[560,937]].map(q=>Object.values(artPoint(...q))),rails:[],approaches:[]};
  const WORLD_ROAD_NETWORK={routes:roadRoutes,rendering:roadRendering,bridge};
 function riverBlocksMovement(x,y){
- // 橋の描画データにあるデッキの輪郭だけを歩行可能範囲にする。
- if(pointInPolygon(x,y,WORLD_ROAD_NETWORK.bridge.deck.map(([px,py])=>({x:px,y:py}))))return false;
- return x>riverEdgeX(y)-10;
+ if(pointInPolygon(x,y,WORLD_ROAD_NETWORK.bridge.deck.map(([x,y])=>({x,y}))))return false;
+ return pointInPolygon(x,y,PAINTED_WATER);
 }
 // Shared placement data for street furniture. Rendering and collision use these same objects.
-const CAFE_SEATS=[{...artPoint(112,371),face:'right'},{...artPoint(161,374),face:'left'},{...artPoint(201,408),face:'right'},{...artPoint(252,407),face:'left'}];
-const TOWN_EXIT_WAYPOINTS=[artPoint(485,1215),artPoint(485,1262),artPoint(485,1318),artPoint(485,1392)];
-const CAFE_GATEWAY=artPoint(140,360);
-const WORLD_STREET_FURNITURE={
- benches:[
- {id:'wisteria-bench',...artPoint(883,498)},
- {id:'garden-bench',...artPoint(747,622)},
- {id:'riverside-bench',...artPoint(794,779)},
- {id:'south-bench',...artPoint(386,1079)},
- {id:'south-bench-east',...artPoint(596,1080)}],
- lamps:[[462,343],[649,433],[500,642],[680,608],[606,842],[1059,779],[333,1091],[649,1094],[278,1189],[786,1194]].map(([x,y],i)=>({id:'painted-lamp-'+i,...artPoint(x,y)})),
- sign:{id:'town-sign',polygon:[]}
-};
-// Street lamps join the depth-sorted occluders with their base as the sorting
-// plane: a walker behind the base is covered by the post, a walker in front
-// of the base covers the post instead.
-WORLD_STREET_FURNITURE.lamps.forEach((lamp,i)=>{
- const n=nativePoint(lamp.x,lamp.y);
- PAINTED_OCCLUDERS.push({id:'painted-lamp-front-'+i,depth:n.y+2,polygon:[[n.x-7,n.y+4],[n.x+7,n.y+4],[n.x+5,n.y-28],[n.x+9,n.y-42],[n.x+9,n.y-57],[n.x-9,n.y-57],[n.x-9,n.y-42],[n.x-5,n.y-28]]});
-});
+const CAFE_SEATS=[{...artPoint(70,626),face:'right'},{...artPoint(116,626),face:'left'},{...artPoint(188,640),face:'right'},{...artPoint(234,640),face:'left'}];
+const TOWN_EXIT_WAYPOINTS=[artPoint(305,1270),artPoint(310,1330),artPoint(326,1370),artPoint(337,1400)];
+const CAFE_GATEWAY=artPoint(280,615);
+const WORLD_STREET_FURNITURE={benches:[{id:'wisteria-bench',...artPoint(451,650)},{id:'garden-bench',...artPoint(610,365)},{id:'riverside-bench',...artPoint(443,822)},{id:'south-bench',...artPoint(151,1090)},{id:'south-bench-east',...artPoint(448,1090)}],lamps:[[297,575],[272,909],[385,859],[514,466],[818,194],[1049,541],[797,819],[177,1140],[420,1140]].map(([x,y],i)=>({id:'lamp-'+i,...artPoint(x,y)})),sign:{id:'town-sign',polygon:[]}};
+// Transparent objects are sorted by their ground contact, not by a rectangle copied from the map.
+const TOWN_SCENERY=[
+ {id:'plaza-tree',asset:'plaza-tree',x:295,y:1120,w:270,h:247,foot:.87},
+ {id:'cherry',asset:'cherry',x:870,y:1180,w:225,h:206,foot:.92},
+ {id:'wisteria',asset:'wisteria',x:451,y:655,w:136,h:91,foot:.84,depth:625},
+ {id:'cafe-west',asset:'cafe-set',x:93,y:632,w:106,h:71,foot:.88,depth:600},
+ {id:'cafe-east',asset:'cafe-set',x:211,y:646,w:106,h:71,foot:.88,depth:600},
+ ...WORLD_STREET_FURNITURE.benches.filter(b=>b.id!=='wisteria-bench').map(b=>{const n=nativePoint(b.x,b.y);return {id:b.id,asset:'bench',x:n.x,y:n.y,w:72,h:49,foot:.84}}),
+ ...WORLD_STREET_FURNITURE.lamps.map(b=>{const n=nativePoint(b.x,b.y);return {id:b.id,asset:'lamp',x:n.x,y:n.y,w:36,h:78,foot:.92}})
+];
+const sceneryImages={};
+TOWN_SCENERY.forEach(o=>{if(!sceneryImages[o.asset]){const im=new Image();im.src='assets/object-'+o.asset+'-v16.webp';sceneryImages[o.asset]=im}});
+function drawScenery(o){const im=sceneryImages[o.asset];if(!im.complete||!im.naturalWidth)return;const a=artPoint(o.x-o.w/2,o.y-o.h*o.foot);ctx.drawImage(im,a.x,a.y,o.w*PAINTED_TOWN.scale,o.h*PAINTED_TOWN.scale)}
+
 function streetFurnitureBlocksMovement(x,y,p){
  // 街に描画しているベンチをすべて障害物として扱う。
  // カフェ前のテラス3台も含め、表示と当たり判定の数を一致させる。
@@ -480,7 +427,7 @@ function streetFurnitureBlocksMovement(x,y,p){
   const atSeat=p.action==='bench'&&Math.hypot(x-p.tx,y-p.ty)<84;
   // 立ち上がった直後だけ、座っていたベンチから安全に歩き出せるようにする。
    const leavingSeat=p.benchExit?.id===bench.id&&Math.hypot(p.x-p.benchExit.x,p.y-p.benchExit.y)<170&&Math.hypot(x-p.benchExit.x,y-p.benchExit.y)<190;
-   if(!atSeat&&!leavingSeat&&x>=bench.x-64&&x<=bench.x+64&&y>=bench.y-38&&y<=bench.y+26)return true;
+   if(!atSeat&&!leavingSeat&&x>=bench.x-58&&x<=bench.x+58&&y>=bench.y-20&&y<=bench.y+16)return true;
  }
  // 街灯の上部は歩行を塞がず、足元の支柱だけを障害物にする。
  if(WORLD_STREET_FURNITURE.lamps.some(l=>x>=l.x-7&&x<=l.x+7&&y>=l.y-12&&y<=l.y+6))return true;
@@ -502,7 +449,7 @@ function isBlockedAtPoint(x,y,p){
  if(x<-40||x>1954||y<95||y>2619)return true;
  // The south exit steps leave the painted land polygon; residents on a
  // work exit/enter trip may use that corridor (and only that corridor).
- if(p&&(p.action==='workExit'||p.action==='workEnter')&&x>TOWN_EXIT_WAYPOINTS[0].x-46&&x<TOWN_EXIT_WAYPOINTS[0].x+46&&y>TOWN_EXIT_WAYPOINTS[0].y-10)return false;
+ if(p&&(p.action==='workExit'||p.action==='workEnter')&&TOWN_EXIT_WAYPOINTS.some((a,i)=>i&&pointSegmentDistance(x,y,TOWN_EXIT_WAYPOINTS[i-1],a)<30))return false;
  const reserve=Object.values(homes||{}).some(h=>h.mapPlotId==='center-west-home');
  const onPier=pointInPolygon(x,y,WORLD_ROAD_NETWORK.bridge.deck.map(([x,y])=>({x,y})));
  if(!pointInPolygon(x,y,PAINTED_LAND)&&!onPier&&!(reserve&&x>240&&x<710&&y>120&&y<560))return true;
@@ -547,13 +494,10 @@ function findMovementDetour(p,point){
  return best;
 }
 // Static nature layout is the single source for tree placement and trunk collision.
-const WORLD_NATURE_OBJECTS={
- trees:[[750,427],[956,706],[720,784],[421,760],[502,1097]].map(([x,y],i)=>({id:'painted-tree-'+i,...artPoint(x,y),scale:1,collision:{trunkWidth:10,top:-5,bottom:5,padding:2}})),
- flowerbeds:[...[["garden-upper-bed",685,454,31,12],["garden-middle-bed",660,632,39,13],["garden-lower-bed",674,847,44,16]].map(([id,x,y,rx,ry])=>({id,soil:nativeEllipse(x,y,rx,ry).map(q=>Object.values(artPoint(...q))),top:nativeEllipse(x,y,rx,ry).map(q=>Object.values(artPoint(...q)))})),{id:'plaza-tree-bed',soil:nativeEllipse(502,1108,80,27).map(q=>Object.values(artPoint(...q))),top:nativeEllipse(502,1108,80,27).map(q=>Object.values(artPoint(...q)))}]
-};
+const WORLD_NATURE_OBJECTS={trees:[[295,1120],[870,1180]].map(([x,y],i)=>({id:'object-tree-'+i,...artPoint(x,y)})),flowerbeds:[{id:'plaza-tree-bed',soil:nativeEllipse(295,1120,53,27).map(q=>Object.values(artPoint(...q))),top:nativeEllipse(295,1120,53,27).map(q=>Object.values(artPoint(...q)))}]};
 function natureBlocksMovement(x,y,p){
- for(const t of WORLD_NATURE_OBJECTS.trees)if(Math.abs(x-t.x)<14&&Math.abs(y-t.y)<14)return true;
- if([[816,508],[936,510],[419,1248],[552,1248]].some(q=>{const a=artPoint(...q);return Math.hypot(x-a.x,y-a.y)<14}))return true;
+ if(WORLD_NATURE_OBJECTS.trees.some(t=>Math.abs(x-t.x)<14&&Math.abs(y-t.y)<14))return true;
+ if([[406,659],[496,659]].some(q=>{const a=artPoint(...q);return Math.hypot(x-a.x,y-a.y)<9}))return true;
  return WORLD_NATURE_OBJECTS.flowerbeds.some(b=>pointInPolygon(x,y,b.top.map(([x,y])=>({x,y}))));
 }
 
@@ -1727,27 +1671,7 @@ function paintedOccluderTile(item){
  const result={tile,left,top,width,height};paintedOccluderTiles.set(item.id,result);return result;
 }
 function drawPaintedOccluder(item){const q=paintedOccluderTile(item),p=artPoint(q.left,q.top);ctx.drawImage(q.tile,p.x,p.y,q.width*PAINTED_TOWN.scale,q.height*PAINTED_TOWN.scale)}
-let cafeStairPatch=null;
-const cafeStairArt=new Image();cafeStairArt.src='assets/cafe-stairs-painted-v1.webp';
-cafeStairArt.onload=()=>{cafeStairPatch=null;drawWorld()};
-function drawCafeAccessSteps(){
- if(!cafeStairArt.complete||!cafeStairArt.naturalWidth)return;
- if(!cafeStairPatch){
-  // Use only the staircase and its ground contact from the matching painted
-  // asset. Every other pixel still comes from the original town background.
-  const left=408,top=326,width=154,height=120;
-  const outline=[[425,344],[446,338],[470,337],[498,350],[522,372],[545,397],[553,425],[525,439],[491,420],[465,396],[437,374],[420,367]];
-  const tile=document.createElement('canvas');tile.width=width;tile.height=height;const t=tile.getContext('2d');
-  t.drawImage(cafeStairArt,0,0,cafeStairArt.naturalWidth,cafeStairArt.naturalHeight,-left,-top,1122,1402);
-  const mask=document.createElement('canvas');mask.width=width;mask.height=height;const m=mask.getContext('2d');
-  m.fillStyle='white';m.shadowColor='white';m.shadowBlur=2;m.beginPath();outline.forEach(([x,y],i)=>i?m.lineTo(x-left,y-top):m.moveTo(x-left,y-top));m.closePath();m.fill();
-  t.globalCompositeOperation='destination-in';t.drawImage(mask,0,0);
-  // Keep the existing lantern and its foot unchanged at the upper landing.
-  t.globalCompositeOperation='destination-out';t.fillRect(454-left,280-top,20,74);
-  cafeStairPatch={tile,left,top,width,height};
- }
- const q=cafeStairPatch,p=artPoint(q.left,q.top);ctx.drawImage(q.tile,p.x,p.y,q.width*PAINTED_TOWN.scale,q.height*PAINTED_TOWN.scale);
-}
+function drawCafeAccessSteps(){}
 function drawWorld(){
  ctx.clearRect(0,0,W,H);if(interiorHomeId){drawHomeInterior(interiorHomeId);return}
  if(!paintedTownArt.complete||!paintedTownArt.naturalWidth){ctx.fillStyle='#fadca9';ctx.fillRect(0,0,W,H);ctx.fillStyle='#8c7350';ctx.font='16px serif';ctx.textAlign='center';ctx.fillText('街',W/2,H/2);return}
@@ -1758,14 +1682,7 @@ function drawWorld(){
  drawCafeAccessSteps();
  const outdoors=chars.map((p,i)=>({p,i})).filter(({p})=>isOutdoorResident(p));
  const layers=PAINTED_OCCLUDERS.map(item=>({y:artPoint(0,item.depth).y,draw:()=>drawPaintedOccluder(item)}));
- // Optional sixth home uses its retained painted cottage asset; the five main
- // plots are already part of the town art, occupied or vacant.
- Object.values(homes).filter(h=>residentialPlots.find(q=>q.id===h.mapPlotId)?.extra).forEach((h,i)=>layers.push({y:homeEntrance(h).y,draw:()=>drawHouseExterior(h,i)}));
- WORLD_STREET_FURNITURE.benches.forEach((bench,i)=>{
-  if(!outdoors.some(({p})=>p.action==='bench'&&p.phaseState==='staying'&&p.benchSeat?.bench===i))return;
-  const n=nativePoint(bench.x,bench.y),item={id:'bench-front-'+i,polygon:[[n.x-43,n.y+2],[n.x+43,n.y+2],[n.x+43,n.y+23],[n.x-43,n.y+23]]};
-  layers.push({y:bench.y+16,draw:()=>drawPaintedOccluder(item)});
- });
+ TOWN_SCENERY.forEach(o=>layers.push({y:artPoint(o.x,o.depth??o.y).y,draw:()=>drawScenery(o)}));
  outdoors.forEach(({p,i})=>layers.push({y:p.y+(p.action==='bench'&&p.phaseState==='staying'?14:0),draw:()=>drawChar(p,i,false)}));
  layers.sort((a,b)=>a.y-b.y);layers.forEach(item=>item.draw());
  outdoors.forEach(({p})=>drawCharLabel(p));
@@ -2314,7 +2231,7 @@ function roadJoinFollowsPaint(x1,y1,x2,y2){
  const count=Math.ceil(distance/10);
  for(let i=1;i<count;i++){
   const t=i/count,x=x1+(x2-x1)*t,y=y1+(y2-y1)*t,slack=6+startDistance*(1-t);
-  const native=nativePoint(x,y);if(((native.x-482)/270)**2+((native.y-1077)/155)**2<1)continue;
+  const native=nativePoint(x,y);if(((native.x-295)/208)**2+((native.y-1120)/151)**2<1)continue;
   if(!paintedRoadSegments.some(([a,b])=>pointSegmentDistance(x,y,a,b)<=Math.min(a.paintRadius||20,b.paintRadius||20)+slack))return false;
  }
  return true;
@@ -2325,12 +2242,7 @@ function remainingHomeExitPoints(home,x,y){
  return points.slice(index).map(q=>({...q,curve:true}));
 }
 // Main-road walkers enter the cafe staircase at its foot, never through its side.
-function stairConnectionAllowed(x,y,node){
- const a=artPoint(439,359),b=artPoint(505,405),bottom=artPoint(535,425);
- const onFlight=(px,py)=>Math.min(pointSegmentDistance(px,py,a,b),pointSegmentDistance(px,py,b,bottom));
- if(onFlight(node.x,node.y)>32||Math.hypot(node.x-bottom.x,node.y-bottom.y)<40)return true;
- return onFlight(x,y)<=36||Math.hypot(x-a.x,y-a.y)<=48;
-}
+function stairConnectionAllowed(x,y,node){return true}
 function roadCandidates(x,y,p){
  const ordered=roadNodes.map(n=>({node:n,distance:Math.hypot(n.x-x,n.y-y)})).sort((a,b)=>a.distance-b.distance);
  const visible=[];let reach=null;
@@ -2772,11 +2684,11 @@ function hobbyChoicesFor(p){
   else if(/料理|お菓子|調理|cooking/.test(t)){kind='cooking';label='料理をしている';room='kitchen'}
   else if(/掃除|洗濯|家事/.test(t)){kind='chores';label='家事をしている';room='kitchen'}
   else if(/編み物|手芸|裁縫|工作|絵|描画/.test(t)){kind='craft';label=name+'をしている';room='hobby'}
-  else if(/散歩|ウォーキング|walking|ランニング|ジョギング|running/.test(t)){kind='walk';mode='walk';label=name+'をしている';pose='stand';spot={id:'hobby-walk-'+index,...artPoint(593,514),label:'こみちの途中'}}
-  else if(/写真|撮影|photography|camera/.test(t)){kind='photography';mode='walk';label='写真を撮っている';pose='stand';spot={id:'hobby-photo-'+index,...artPoint(801,592),label:'川沿い'}}
+  else if(/散歩|ウォーキング|walking|ランニング|ジョギング|running/.test(t)){kind='walk';mode='walk';label=name+'をしている';pose='stand';spot={id:'hobby-walk-'+index,...artPoint(352,545),label:'こみちの途中'}}
+  else if(/写真|撮影|photography|camera/.test(t)){kind='photography';mode='walk';label='写真を撮っている';pose='stand';spot={id:'hobby-photo-'+index,...artPoint(820,1210),label:'川沿い'}}
   else if(/買い物|ショッピング|shopping/.test(t)){kind='shopping';mode='walk';label='買い物をしている';pose='stand';spot={id:'hobby-shop-'+index,x:500,y:500,label:'街のお店'}}
-  else if(/園芸|ガーデニング|植物|gardening/.test(t)){kind='gardening';mode='flowers';label='植物の手入れをしている';pose='look';spot={id:'hobby-garden-'+index,...artPoint(773,620)}}
-  else if(/釣り|fishing/.test(t)){kind='fishing';mode='walk';label='釣りをしている';pose='sit';spot={id:'hobby-fishing-'+index,...artPoint(1010,800),label:'川辺の桟橋'}}
+  else if(/園芸|ガーデニング|植物|gardening/.test(t)){kind='gardening';mode='flowers';label='植物の手入れをしている';pose='look';spot={id:'hobby-garden-'+index,...artPoint(481,919)}}
+  else if(/釣り|fishing/.test(t)){kind='fishing';mode='walk';label='釣りをしている';pose='sit';spot={id:'hobby-fishing-'+index,...artPoint(660,887),label:'湖の橋'}}
   else if(/カフェ巡り|喫茶店巡り/.test(t)){kind='cafe';mode='cafe';label='喫茶店で過ごしている';pose='sit'}
   const timeRule=/朝|午前|昼|午後|夕方|夜|深夜/.test(name)?(/朝|午前/.test(name)?'morning':/昼/.test(name)?'noon':/午後/.test(name)?'afternoon':/夕方/.test(name)?'evening':/深夜/.test(name)?'lateNight':'night'):'any';
    const weatherRule=/雨/.test(name)?'rainy':/晴れ/.test(name)?'sunny':/曇り/.test(name)?'cloudy':/雪/.test(name)?'snowy':'any';
@@ -3121,7 +3033,7 @@ function findSocialMeetingPoints(a,b,avoid){
  const busy=[];
  chars.forEach(q=>{if(q!==a&&q!==b&&q.action==='social'&&(q.phaseState==='moving'||q.phaseState==='staying')){busy.push({x:q.tx,y:q.ty});busy.push({x:q.x,y:q.y})}});
  const centers=socialMeetingSpots()
-  .map(spot=>{const node=roadNodes.filter(n=>!mainRoadMeetingBlocked(n.x,n.y)).sort((u,v)=>Math.hypot(u.x-spot.x,u.y-spot.y)-Math.hypot(v.x-spot.x,v.y-spot.y))[0];if(!node||seenNodes.has(node))return null;seenNodes.add(node);return {x:node.x,y:node.y}})
+  .flatMap(spot=>{const nearby=roadNodes.filter(n=>!mainRoadMeetingBlocked(n.x,n.y)).sort((u,v)=>Math.hypot(u.x-spot.x,u.y-spot.y)-Math.hypot(v.x-spot.x,v.y-spot.y)).slice(0,5);return nearby.filter(n=>{if(seenNodes.has(n))return false;seenNodes.add(n);return true}).map(n=>({x:n.x,y:n.y}))})
   .filter(Boolean)
   .filter(center=>!busy.some(point=>Math.hypot(point.x-center.x,point.y-center.y)<110))
   .filter(center=>!avoid||Math.hypot(avoid.x-center.x,avoid.y-center.y)>=110)
@@ -3739,7 +3651,7 @@ function renderResidentManager(){
  body.querySelectorAll('[data-edit-resident]').forEach(b=>b.onclick=()=>{editingResidentId=b.dataset.editResident;renderResidentManager()});
  body.querySelectorAll('[data-remove-resident]').forEach(b=>b.onclick=()=>{const id=b.dataset.removeResident,p=residentById(id);if(!p||chars.length<=1){alert('最後の1人は退去できません。');return}if(!confirm(p.name+'を街から退去させますか？'))return;if(removeResident(id))renderResidentManager()});
 }
-function showTab(t,force=false){stopResidentDiagnostics();if(!force&&t===tab&&t!=='walk')t='walk';if(t!=='relations'){expandedRelationId='';relationFolderId=''}tab=t;document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));panel.classList.toggle('show',t!=='walk');panel.classList.toggle('mapPanel',t==='map');panel.classList.toggle('homePanel',t==='home');document.getElementById('mapToggle').classList.toggle('active',t==='map');document.getElementById('mapToggle').textContent=interiorHomeId?'↩︎':'🗺️';document.getElementById('mapToggle').classList.toggle('returnCity',!!interiorHomeId);document.getElementById('mapToggle').setAttribute('aria-label',interiorHomeId?'街に戻る':'地図');if(t==='walk'){document.getElementById('hint').style.display=interiorHomeId?'none':'block';if(!interiorHomeId){document.getElementById('placeTitle').textContent='街';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';document.getElementById('placeActions').classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map')}else{const home=getPlace(interiorHomeId);document.getElementById('placeTitle').textContent=home?home.name:'家の中';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').classList.add('show')}renderResidentStatus();return}document.getElementById('hint').style.display='none';if(t==='map'){document.getElementById('placeTitle').textContent='街';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';document.getElementById('placeActions').classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map');renderResidentStatus();title.textContent='街の地図';body.innerHTML='<div class="metricTitle">住人の家の中を覗く</div><div class="mapGrid">'+Object.values(homes).map(h=>'<button class="actionBtn enterHome" data-home="'+escapeHtml(h.id)+'">🏡 '+escapeHtml(h.name)+'の中へ</button>').join('')+'</div><div class="metricTitle">街のスポット</div><div class="mapGrid">'+places.filter(place=>place.type==='home'||place.type==='cafe'||place.type==='shop'||place.id==='plaza').map(place=>'<button class="actionBtn mapPlace" data-place="'+place.id+'">'+place.icon+' '+escapeHtml(place.name)+'</button>').join('')+'</div><p class="subtle">場所を選ぶと、その場所を地図に映します。</p>';body.querySelectorAll('.mapPlace').forEach(b=>b.onclick=()=>{const place=getPlace(b.dataset.place);if(!place)return;interiorHomeId='';homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;panX=450-place.x;panY=720-place.y;drawWorld();showTab('walk')});body.querySelectorAll('.enterHome').forEach(b=>b.onclick=()=>{interiorHomeId=b.dataset.home;homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;drawWorld();showTab('home')})}if(t==='home'){const home=getPlace(interiorHomeId);const household=Object.values(households).find(h=>h.homeId===interiorHomeId)||{homeId:interiorHomeId};const inventoryResident=chars.find(p=>householdForResident(p).homeId===interiorHomeId);const stock=inventoryResident?householdFoodStore(inventoryResident):householdFoodStore({homeId:interiorHomeId});title.textContent='';panel.classList.remove('show');document.getElementById('placeTitle').textContent=home?home.name:'家の中';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();const actions=document.getElementById('placeActions');actions.innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';actions.classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map',true);renderResidentStatus();return}
+function showTab(t,force=false){stopResidentDiagnostics();if(!force&&t===tab&&t!=='walk')t='walk';if(t!=='relations'){expandedRelationId='';relationFolderId=''}tab=t;document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));panel.classList.toggle('show',t!=='walk');panel.classList.toggle('mapPanel',t==='map');panel.classList.toggle('homePanel',t==='home');document.getElementById('mapToggle').classList.toggle('active',t==='map');document.getElementById('mapToggle').textContent=interiorHomeId?'↩︎':'🗺️';document.getElementById('mapToggle').classList.toggle('returnCity',!!interiorHomeId);document.getElementById('mapToggle').setAttribute('aria-label',interiorHomeId?'街に戻る':'地図');if(t==='walk'){document.getElementById('hint').style.display=interiorHomeId?'none':'block';if(!interiorHomeId){document.getElementById('placeTitle').textContent='街';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';document.getElementById('placeActions').classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map')}else{const home=getPlace(interiorHomeId);document.getElementById('placeTitle').textContent=home?home.name:'家の中';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').classList.add('show')}renderResidentStatus();return}document.getElementById('hint').style.display='none';if(t==='map'){document.getElementById('placeTitle').textContent='街';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();document.getElementById('placeActions').innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';document.getElementById('placeActions').classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map');renderResidentStatus();title.textContent='街の地図';body.innerHTML='<div class="metricTitle">住人の家の中を覗く</div><div class="mapGrid">'+Object.values(homes).map(h=>'<button class="actionBtn enterHome" data-home="'+escapeHtml(h.id)+'">🏡 '+escapeHtml(h.name)+'の中へ</button>').join('')+'</div><div class="metricTitle">街のスポット</div><div class="mapGrid">'+places.filter(place=>place.type==='home'||place.type==='cafe'||place.type==='shop'||place.id==='plaza'||place.id==='bookshop').map(place=>'<button class="actionBtn mapPlace" data-place="'+place.id+'">'+place.icon+' '+escapeHtml(place.name)+'</button>').join('')+'</div><p class="subtle">場所を選ぶと、その場所を地図に映します。</p>';body.querySelectorAll('.mapPlace').forEach(b=>b.onclick=()=>{const place=getPlace(b.dataset.place);if(!place)return;interiorHomeId='';homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;panX=450-place.x;panY=720-place.y;drawWorld();showTab('walk')});body.querySelectorAll('.enterHome').forEach(b=>b.onclick=()=>{interiorHomeId=b.dataset.home;homeListOpen=false;interiorZoom=1;interiorPanX=0;interiorPanY=0;drawWorld();showTab('home')})}if(t==='home'){const home=getPlace(interiorHomeId);const household=Object.values(households).find(h=>h.homeId===interiorHomeId)||{homeId:interiorHomeId};const inventoryResident=chars.find(p=>householdForResident(p).homeId===interiorHomeId);const stock=inventoryResident?householdFoodStore(inventoryResident):householdFoodStore({homeId:interiorHomeId});title.textContent='';panel.classList.remove('show');document.getElementById('placeTitle').textContent=home?home.name:'家の中';document.getElementById('placeSubtitle').textContent='春・'+weatherLabel();const actions=document.getElementById('placeActions');actions.innerHTML='<button id="toggleHomeResidents">住人一覧</button><button class="placeMap" id="openHomeMap">地図</button>';actions.classList.add('show');document.getElementById('toggleHomeResidents').onclick=openPlaceResidents;document.getElementById('openHomeMap').onclick=()=>showTab('map',true);renderResidentStatus();return}
 if(t==='residents'){
  title.textContent='街の住人';
  renderResidentManager();

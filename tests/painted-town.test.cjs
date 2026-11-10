@@ -9,14 +9,14 @@ const storage={};const b={console,Math,Date,Set,Map,WeakMap,JSON,Number,String,O
 // separately in the browser. This test catches disconnected paths and save loss.
 function loadModel(){
  vm.createContext(b);
- const exported='globalThis.qa={pointInPolygon,WORLD_NATURE_OBJECTS,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,CAFE_SEATS,paintedTownArt,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
+ const exported='globalThis.qa={pointInPolygon,WORLD_NATURE_OBJECTS,TOWN_SCENERY,loop,chars,homes,roadNodes,roadRoute,isBlockedByStructure,residentialPlots,homeEntrance,homeApproachPoints,homeExteriorGeometry,homeSouthRoadNode,drawWorld,artPoint,nativePoint,syncHomePlaces,WORLD_STREET_FURNITURE,PAINTED_PLOTS,PAINTED_OCCLUDERS,CAFE_SEATS,paintedTownArt,saveGame,hour,minute,calendarDay,zoom,panX,panY};})();';
  vm.runInContext(src.replace(/\}\)\(\);\s*$/,exported),b);return b.qa;
 }
 const assert=require('assert').strict,q=loadModel(),p=q.chars[0];
 assert(q,'Game model export failed');
 assert.equal(q.roadNodes.filter(n=>q.isBlockedByStructure(n.x,n.y,p)).length,0,'Road centerline overlaps a physical obstacle');
-const start=q.artPoint(593,514);
-const targets=[[367,357,'cafe'],[265,696,'walk'],[774,519,'walk'],[883,486,'bench'],[747,610,'bench'],[794,767,'bench'],[386,1067,'bench'],[596,1068,'bench'],[1010,800,'walk'],[350,1150,'walk']];
+const start=q.artPoint(352,545);
+const targets=[[176,597,'cafe'],[152,826,'walk'],[295,1207,'walk'],[451,639,'bench'],[610,354,'bench'],[443,811,'bench'],[151,1079,'bench'],[448,1079,'bench'],[660,879,'walk'],[820,1210,'walk']];
 for(const [x,y,action] of targets){
  const end=q.artPoint(x,y);Object.assign(p,{x:start.x,y:start.y,tx:end.x,ty:end.y,action,phaseState:'moving'});
  assert(q.roadRoute(p.x,p.y,p.tx,p.ty,null,p).length>=2,'Unreachable scene destination '+x+','+y);
@@ -31,7 +31,7 @@ for(const h of Object.values(q.homes)){
  assert(q.roadRoute(p.x,p.y,p.tx,p.ty,null,p).length>=2,'Home exit disconnected '+h.mapPlotId);
 }
 for(const plot of q.PAINTED_PLOTS){
- for(const [x,y] of plot.footprint)assert(((x-482)/306)**2+((y-1077)/192)**2>1,'Housing touches the plaza buffer '+plot.id);
+ for(const [x,y] of plot.footprint)assert(((x-295)/225)**2+((y-1120)/170)**2>1,'Housing touches the plaza buffer '+plot.id);
 }
 q.paintedTownArt.complete=true;q.paintedTownArt.naturalWidth=1122;q.paintedTownArt.naturalHeight=1402;q.drawWorld();
 // A waiting social partner must not cause an endless approach: once the
@@ -57,22 +57,10 @@ assert.equal(JSON.stringify(restored.chars.map(p=>p.id)),JSON.stringify(expected
 assert.equal(JSON.stringify(Object.keys(restored.homes)),JSON.stringify(expectedHomes));
 assert.equal(JSON.parse(storage['komichi-life-save-v1']).furnitureWorld.furniture.length,furnitureCount);
 assert.equal(restored.zoom,1);assert.equal(restored.panX,0);assert.equal(restored.panY,0);
-console.log('PASS: clear roads, 10 destinations, 6 two-way home approaches, plaza separation, foreground rendering and legacy save migration');
+console.log('PASS: clear roads, 10 destinations, 11 two-way home approaches, plaza separation, foreground rendering and legacy save migration');
 
-// Image-derived roots and the open ground beside the trunk must agree with
-// the foreground tile. A broad patch of copied grass used to erase walkers.
-const small=q.PAINTED_OCCLUDERS.find(o=>o.id==='garden-tree-small');
-assert.equal(small.depth,784);
-assert(!q.pointInPolygon(690,780,small.polygon.map(([x,y])=>({x,y}))),'Tree tile paints over the open path beside the trunk');
-assert(q.pointInPolygon(720,780,small.polygon.map(([x,y])=>({x,y}))),'Tree trunk lost its foreground silhouette');
-const root=q.WORLD_NATURE_OBJECTS.trees.find(t=>t.id==='painted-tree-2');
-assert(Math.abs(q.nativePoint(root.x,root.y).y-small.depth)<1,'Collision and visual root disagree');
-for(const [id,index] of [['garden-tree',0],['west-tree-small',3],['cherry-tree',1]]){
- const occluder=q.PAINTED_OCCLUDERS.find(o=>o.id===id),tree=q.WORLD_NATURE_OBJECTS.trees[index];
- assert(Math.abs(occluder.depth-q.nativePoint(tree.x,tree.y).y)<1,'Tree depth differs from its root '+id);
-}
-console.log('PASS tree silhouettes preserve open ground and depth matches painted roots');
-
+// Large scenery must use standalone transparent assets rather than background patches.
+for(const id of ['plaza-tree','cherry','wisteria']){assert(q.TOWN_SCENERY.some(o=>o.id===id));assert(!q.PAINTED_OCCLUDERS.some(o=>o.id===id));}
 // Cafe seats must stay visible: no occluder that covers a seat may sort in front of the seated resident.
 {
  const q=loadModel();
