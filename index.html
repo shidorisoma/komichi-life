@@ -326,7 +326,7 @@ let saveElapsed=0;
 function pairIdFor(a,b){const ids=[typeof a==='string'?a:a.id,typeof b==='string'?b:b.id].sort();return ids[0]==='nagisumi'&&ids[1]==='yaku'?'nagisumi-yaku':'pair:'+encodeURIComponent(JSON.stringify(ids))}
 function residentById(id){return chars.find(p=>p.id===id)||null}
 // 屋外にいる住人だけを街の描画・物理判定・屋外での交流対象にする。
-function isOutdoorResident(p){return !!p&&p.action!=='workOutside'&&!((p.action==='home'||p.action==='sleep')&&p.phaseState==='staying')}
+function isOutdoorResident(p){return !!p&&p.action!=='workOutside'&&p.action!=='workInside'&&!((p.action==='home'||p.action==='sleep')&&p.phaseState==='staying')}
 // 住宅の外観寸法・壁の接地形状を一つの計算結果として共有する。
 const homeGeometryCache=new WeakMap();
 function homeExteriorGeometry(home){
@@ -762,7 +762,7 @@ function loadGame(){
     const base=defaultResidents.find(p=>p.id===saved.id)||defaultResidents[i]||{};
     const coordinate=(value,fallback)=>Number.isFinite(value)?value:fallback;
     const px=coordinate(saved.x,base.x??450),py=coordinate(saved.y,base.y??720),repairPosition=!Number.isFinite(saved.x)||!Number.isFinite(saved.y);
-    const knownAction=['idle','walk','flowers','bench','cafe','date','home','sleep','work','workOutside','workExit','workEnter','social'].includes(saved.action);
+    const knownAction=['idle','walk','flowers','bench','cafe','date','home','sleep','work','workInside','workOutside','workExit','workEnter','social'].includes(saved.action);
     const needs={};for(const key of ['energy','hunger','mood'])needs[key]=Number.isFinite(saved.needs?.[key])?Math.max(0,Math.min(100,saved.needs[key])):(base.needs?.[key]??80);
     return {...base,...saved,id:saved.id||base.id||'legacy-'+i,name:String(saved.name||base.name||'住人'),x:px,y:py,tx:coordinate(saved.tx,px),ty:coordinate(saved.ty,py),phase:coordinate(saved.phase,0),stay:Math.max(0,coordinate(saved.stay,0)),action:knownAction?saved.action:'idle',phaseState:knownAction&&['moving','staying','idle'].includes(saved.phaseState)?saved.phaseState:'idle',needsPositionRepair:repairPosition,money:Number.isFinite(saved.money)?Math.max(0,saved.money):5000,workPayDay:Number.isFinite(saved.workPayDay)?saved.workPayDay:-1,workDaysPerWeek:Number.isFinite(saved.workDaysPerWeek)?Math.max(1,Math.min(7,saved.workDaysPerWeek)):3,workDays:Array.isArray(saved.workDays)?saved.workDays:[],workWeekKey:Number.isFinite(saved.workWeekKey)?saved.workWeekKey:-1,workWeekDays:Array.isArray(saved.workWeekDays)?saved.workWeekDays:[],incomeMode:['fixed','mixed','random'].includes(saved.incomeMode)?saved.incomeMode:'fixed',fixedIncome:Number.isFinite(saved.fixedIncome)?Math.max(0,saved.fixedIncome):1500,randomIncomeMin:Number.isFinite(saved.randomIncomeMin)?Math.max(0,saved.randomIncomeMin):0,randomIncomeMax:Number.isFinite(saved.randomIncomeMax)?Math.max(0,saved.randomIncomeMax):0,supportRemittance:saved.supportRemittance===true,supportRemittanceAmount:Number.isFinite(saved.supportRemittanceAmount)?Math.max(0,Math.floor(saved.supportRemittanceAmount)):0,supportScholarship:saved.supportScholarship===true,supportScholarshipAmount:Number.isFinite(saved.supportScholarshipAmount)?Math.max(0,Math.floor(saved.supportScholarshipAmount)):0,supportWeekKey:Number.isFinite(saved.supportWeekKey)?saved.supportWeekKey:-1,makanai:saved.makanai===true,moneyHistory:Array.isArray(saved.moneyHistory)?saved.moneyHistory.filter(h=>h&&typeof h==='object').slice(0,100):[],profile:{...(base.profile||{}),...(saved.profile||{})},needs,sociability:Number.isFinite(saved.sociability)?Math.max(0,Math.min(100,saved.sociability)):50,curiosity:Number.isFinite(saved.curiosity)?Math.max(0,Math.min(100,saved.curiosity)):50,activityLevel:Number.isFinite(saved.activityLevel)?Math.max(0,Math.min(100,saved.activityLevel)):50,walkPreference:Number.isFinite(saved.walkPreference)?Math.max(0,Math.min(100,saved.walkPreference)):50,naturePreference:Number.isFinite(saved.naturePreference)?Math.max(0,Math.min(100,saved.naturePreference)):50,cafePreference:Number.isFinite(saved.cafePreference)?Math.max(0,Math.min(100,saved.cafePreference)):50,lastInitiatedSocialStamp:Number.isFinite(saved.lastInitiatedSocialStamp)?saved.lastInitiatedSocialStamp:-1,lastSocialStamp:Number.isFinite(saved.lastSocialStamp)?saved.lastSocialStamp:-1};
    });
@@ -855,6 +855,7 @@ function startResidentDiagnostics(){
 }
 function residentPlaceLabel(p){
  if(p.action==='workOutside')return '街の外';
+ if(p.action==='workInside'){const facilityPlace=p.workFacilityId?getPlace(p.workFacilityId):null;return facilityPlace?facilityPlace.name:'仕事先'}
  if(p.action==='home'||p.action==='sleep')return '家';
  if(p.action==='cafe'||p.action==='date')return '喫茶店';
  if(p.action==='work')return '仕事先';
@@ -2429,7 +2430,7 @@ function interruptSocialForNewAction(p){
   partner.activity='街で過ごしている';partner.stayText='';partner.pose='stand';
  }
 }
-function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind==='date'){targetX=WORLD_BUILDINGS.cafe.door.x+(i%2?18:-18);targetY=WORLD_BUILDINGS.cafe.door.maxY+16}p.passing=null;p.trafficWait=0;p.socialWaitSeconds=0;if(kind!=='social')interruptSocialForNewAction(p);
+function setAction(p,i,kind,targetX,targetY,travelText,stayText,pose='stand',duration=0){if(kind==='date'){targetX=WORLD_BUILDINGS.cafe.door.x+(i%2?18:-18);targetY=WORLD_BUILDINGS.cafe.door.maxY+16}p.passing=null;p.trafficWait=0;p.socialWaitSeconds=0;p.workFacilityId=null;if(kind!=='social')interruptSocialForNewAction(p);
  // Keep the departure corridor even when the next activity is another bench,
  // or a new destination replaces a trip before the resident has stood clear.
  const previousBench=p.action==='bench'&&p.benchSeat?WORLD_STREET_FURNITURE.benches.filter(b=>b.group!=='cafe')[p.benchSeat.bench]:null;
@@ -2548,6 +2549,12 @@ function startWorkEnter(p,i){
  p.activity='仕事から帰ってきた';p.stayText='仕事から帰ってきた';p.pose='stand';p.stay=0;
  renderResidentStatus();
 }
+function exitFacilityWork(p,i){
+ const building=p.workFacilityId?WORLD_BUILDINGS[p.workFacilityId]:null;
+ p.workFacilityId=null;
+ if(building){p.x=building.door.x;p.y=building.door.maxY+10;p.tx=p.x;p.ty=p.y}
+ chooseRoutine(p,i);
+}
 function startWork(p,i,plan){
  const homeBased=/自宅|在宅|配信|ストリーマー|streamer|streaming|リモート|オンライン/.test(String(p.workplace||''));
  const mode=p.incomeMode||'fixed',fixed=Math.max(0,Math.floor(Number(p.fixedIncome??1500)||0)),min=Math.max(0,Math.floor(Number(p.randomIncomeMin)||0)),max=Math.max(min,Math.floor(Number(p.randomIncomeMax)||0));
@@ -2593,7 +2600,7 @@ function startWork(p,i,plan){
   // Work destinations need usable street-side entrances, not a building's roof center.
   let workTarget={x:place.x,y:place.y};
   const building=WORLD_BUILDINGS[place.id];
-  if(building)workTarget={x:building.door.x,y:building.id==='shop'?building.door.maxY+22:building.door.maxY+10};
+  if(building)workTarget={x:building.door.x,y:(building.door.minY+building.door.maxY)/2};
   else if(place.type==='home'&&homes[place.id]){
    const entrance=homeEntrance(homes[place.id]);
    workTarget={x:entrance.x,y:entrance.y+32};
@@ -2607,6 +2614,7 @@ function startWork(p,i,plan){
    // An unroutable workplace would otherwise retry (and log) every few minutes all shift.
    p.workCompletedDay=calendarDay;return;
   }
+  if(building)p.workFacilityId=place.id;
   commitStart();
  }
  function weatherLabel(){return weatherType==='rainy'?'雨':weatherType==='cloudy'?'くもり':'晴れ'}
@@ -2934,6 +2942,7 @@ function arrive(p,i){
  if(isOutdoorResident(p)&&['walk','flowers'].includes(p.action))separateArrivedResident(p);
  if(p.action==='workExit'){p.action='workOutside';p.activity='街の外で仕事中';p.stayText=p.activity}
  else if(p.action==='workEnter'){p.action='idle'}
+ else if(p.action==='work'&&p.workFacilityId){p.action='workInside'}
  if(p.action==='social'){
   const partner=residentById(p.socialPartnerId);
   if(partner?.action==='social'&&partner.socialPartnerId===p.id&&partner.phaseState==='staying'&&Math.hypot(partner.x-p.x,partner.y-p.y)<=115){
@@ -3185,7 +3194,7 @@ function recoverMoodFromRoutine(p,nowStamp){
  const curiosity=Math.max(0,Math.min(100,p.curiosity??50));
  let change=0;
  if(p.action==='sleep'&&p.phaseState==='staying')change=0;
- else if(p.action==='work'&&p.phaseState==='staying')change=-.08;
+ else if((p.action==='work'||p.action==='workInside')&&p.phaseState==='staying')change=-.08;
   else if(p.action==='social'&&p.phaseState==='staying')change=(1.15+sociability/180)*socialMoodRecoveryRate(p);
  else if(p.action==='cafe'&&p.phaseState==='staying')change=.8;
  else if(p.action==='bench'&&p.phaseState==='staying')change=.55;
@@ -3210,7 +3219,7 @@ function tryExecutePairInstruction(nowStamp){
  const pair=rel.residentIds.map(residentById).filter(Boolean);
  if(pair.length!==2)return false;
  const a=pair[0],b=pair[1];
- if(isSocialBusy(a)||isSocialBusy(b)||isSleeping(a)||isSleeping(b)||a.phaseState==='moving'||b.phaseState==='moving'||a.action==='work'||b.action==='work'||a.action==='date'||b.action==='date'||a.action==='social'||b.action==='social')return false;
+ if(isSocialBusy(a)||isSocialBusy(b)||isSleeping(a)||isSleeping(b)||a.phaseState==='moving'||b.phaseState==='moving'||a.action==='work'||b.action==='work'||a.action==='workInside'||b.action==='workInside'||a.action==='date'||b.action==='date'||a.action==='social'||b.action==='social')return false;
  const kind=rel.pendingInstruction;
  if(kind==='meal'){
   if(!cafeOpen())return false;
@@ -3256,7 +3265,7 @@ function tryAutoTreat(nowStamp){
   const pair=rel.residentIds.map(residentById).filter(Boolean);
   if(pair.length!==2)continue;
   const a=pair[0],b=pair[1];
-  if(isSocialBusy(a)||isSocialBusy(b)||isSleeping(a)||isSleeping(b)||a.phaseState==='moving'||b.phaseState==='moving'||a.action==='work'||b.action==='work'||a.action==='date'||b.action==='date'||a.action==='social'||b.action==='social')continue;
+  if(isSocialBusy(a)||isSocialBusy(b)||isSleeping(a)||isSleeping(b)||a.phaseState==='moving'||b.phaseState==='moving'||a.action==='work'||b.action==='work'||a.action==='workInside'||b.action==='workInside'||a.action==='date'||b.action==='date'||a.action==='social'||b.action==='social')continue;
   const status=String(rel.status||'知り合い');
   const richer=(a.money??0)>=(b.money??0)?a:b,poorer=richer===a?b:a;
   let payer=null,mode='';
@@ -3290,7 +3299,7 @@ function tickLife(){
   const dateCandidate=Object.values(relationships).find(r=>r.instructionKind==='date'&&nowStamp-(Number.isFinite(r.lastPairDateStamp)?r.lastPairDateStamp:-1000000)>600);
   if(dateCandidate){
    const pair=dateCandidate.residentIds.map(residentById).filter(Boolean);
-   if(pair.length===2&&pair.every(p=>!isSocialBusy(p)&&!isSleeping(p)&&p.action!=='work'&&p.action!=='date'&&p.action!=='social')){
+   if(pair.length===2&&pair.every(p=>!isSocialBusy(p)&&!isSleeping(p)&&p.action!=='work'&&p.action!=='workInside'&&p.action!=='date'&&p.action!=='social')){
     sharedGoal='pair-date';sharedGoalKind='date';sharedGoalPairId=dateCandidate.id;sharedGoalStartStamp=nowStamp;goalTicks=0;
    }
   }
@@ -3341,7 +3350,7 @@ function tickLife(){
   // and writes nothing. Only two residents who are actually next to each
   // other, both standing or sitting still, sometimes strike up a real
   // conversation - and only that conversation counts.
-  const canChat=isOutdoorResident(a)&&isOutdoorResident(b)&&(a.phaseState==='staying'||a.phaseState==='idle')&&(b.phaseState==='staying'||b.phaseState==='idle')&&!isSocialBusy(a)&&!isSocialBusy(b)&&a.action!=='work'&&b.action!=='work'&&a.action!=='sleep'&&b.action!=='sleep'&&a.action!=='date'&&b.action!=='date'&&Math.hypot(a.x-b.x,a.y-b.y)<62;
+  const canChat=isOutdoorResident(a)&&isOutdoorResident(b)&&(a.phaseState==='staying'||a.phaseState==='idle')&&(b.phaseState==='staying'||b.phaseState==='idle')&&!isSocialBusy(a)&&!isSocialBusy(b)&&a.action!=='work'&&b.action!=='work'&&a.action!=='workInside'&&b.action!=='workInside'&&a.action!=='sleep'&&b.action!=='sleep'&&a.action!=='date'&&b.action!=='date'&&Math.hypot(a.x-b.x,a.y-b.y)<62;
   if(canChat&&nowStamp-relation.lastChatStamp>=120&&Math.random()<.06){
    relation.lastChatStamp=nowStamp;
    const gainFactors=relationGainFactors(relation);
@@ -3361,7 +3370,7 @@ function tickLife(){
  const recoveryStamp=calendarDay*1440+hour*60+minute;
  if(minute%10===0&&recoveryStamp!==lastRecoveryStamp){
   lastRecoveryStamp=recoveryStamp;
-  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe'||p.action==='sleep'||p.action==='home'||p.action==='work')){n.energy=Math.min(100,n.energy+(p.action==='sleep'?13:p.action==='bench'?9:p.action==='home'?5:p.action==='work'?-0.4:3));if(p.action!=='sleep')n.mood=Math.min(100,n.mood+(p.action==='home'?1.2:2));if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+22);if(p.action==='home'&&p.homeHobby?.kind==='cooking'){const cg=p.mealSkill||cookingSkillOf(p);n.hunger=Math.min(100,n.hunger+(cg==='good'?11:cg==='poor'?3:6));if(cg==='good')n.energy=Math.min(100,n.energy+2)}}});
+  chars.forEach(p=>{const n=p.needs;if(p.phaseState==='staying'&&(p.action==='bench'||p.action==='cafe'||p.action==='sleep'||p.action==='home'||p.action==='work'||p.action==='workInside')){n.energy=Math.min(100,n.energy+(p.action==='sleep'?13:p.action==='bench'?9:p.action==='home'?5:p.action==='work'?-0.4:3));if(p.action!=='sleep')n.mood=Math.min(100,n.mood+(p.action==='home'?1.2:2));if(p.action==='cafe')n.hunger=Math.min(100,n.hunger+22);if(p.action==='home'&&p.homeHobby?.kind==='cooking'){const cg=p.mealSkill||cookingSkillOf(p);n.hunger=Math.min(100,n.hunger+(cg==='good'?11:cg==='poor'?3:6));if(cg==='good')n.energy=Math.min(100,n.energy+2)}}});
   renderResidentStatus();
  }
  updateRelationshipPanel();
@@ -3538,7 +3547,7 @@ function loop(t){
  }else{
   p.stuckTime=0;p.routeRetries=0;
  }
-}else if(route&&(p.routeIndex||1)<route.length-1){const reached=route[Math.min(p.routeIndex||1,route.length-1)];const safeReach=reached&&!isBlockedByStructure(reached.x,reached.y,p)&&movementSegmentClear(p.x,p.y,reached.x,reached.y,p);if(safeReach){p.x=reached.x;p.y=reached.y;p.routeIndex=(p.routeIndex||1)+1;p.stuckTime=0;p.routeRetries=0}else{const detour=reached?findMovementDetour(p,reached):null;if(detour){route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route}else{p.stuckTime=(p.stuckTime||0)+dt;if(p.stuckTime>1.5){p.stuckTime=0;p.routeRetries=(p.routeRetries||0)+1;if(p.routeRetries>=2)recoverResidentFromFailedRoute(p,i);else{p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);p.routeIndex=1}}}}}else arrive(p,i)}else if(p.phaseState==='staying'){if(p.action==='social'&&waitForSocialPartner(p,dt))return;p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else if(p.action==='workOutside'){completeWork(p);startWorkEnter(p,i)}else{if(p.action==='work'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}else if(p.phaseState==='idle'){
+}else if(route&&(p.routeIndex||1)<route.length-1){const reached=route[Math.min(p.routeIndex||1,route.length-1)];const safeReach=reached&&!isBlockedByStructure(reached.x,reached.y,p)&&movementSegmentClear(p.x,p.y,reached.x,reached.y,p);if(safeReach){p.x=reached.x;p.y=reached.y;p.routeIndex=(p.routeIndex||1)+1;p.stuckTime=0;p.routeRetries=0}else{const detour=reached?findMovementDetour(p,reached):null;if(detour){route.splice(Math.min(p.routeIndex||1,route.length-1),0,detour);p.routePoints=route}else{p.stuckTime=(p.stuckTime||0)+dt;if(p.stuckTime>1.5){p.stuckTime=0;p.routeRetries=(p.routeRetries||0)+1;if(p.routeRetries>=2)recoverResidentFromFailedRoute(p,i);else{p.routePoints=roadRoute(p.x,p.y,p.tx,p.ty,(p.action==='home'||p.action==='sleep')?homes[householdForResident(p).homeId]:null,p);p.routeIndex=1}}}}}else arrive(p,i)}else if(p.phaseState==='staying'){if(p.action==='social'&&waitForSocialPartner(p,dt))return;p.stay=Math.max(0,(p.stay||0)-dt);if(p.stay<=0){if(p.action==='social')finishSocialPair(p,i);else if(p.action==='workOutside'){completeWork(p);startWorkEnter(p,i)}else if(p.action==='workInside'){completeWork(p);exitFacilityWork(p,i)}else{if(p.action==='work'||p.workHomeShift)completeWork(p);chooseRoutine(p,i)}}}else if(p.phaseState==='idle'){
  p.nextActionRetrySeconds=Math.max(0,(Number.isFinite(p.nextActionRetrySeconds)?p.nextActionRetrySeconds:0)-dt);
  if(p.nextActionRetrySeconds<=0)chooseRoutine(p,i)
 }})}}drawWorld();
