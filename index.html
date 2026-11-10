@@ -31,8 +31,8 @@ const PAINTED_LAND=artPolygon([[60,330],[100,100],[370,100],[380,90],[710,90],[7
 const PAINTED_SHORE=[[785,574],[754,670],[775,718],[760,796],[728,847],[771,950],[708,1060],[672,1150],[555,1280],[405,1355]].map(q=>artPoint(...q));
 const PAINTED_WATER=artPolygon([[686,571],[758,579],[779,602],[748,650],[731,675],[771,710],[761,769],[735,827],[704,848],[750,936],[766,972],[707,1063],[676,1133],[620,1212],[532,1310],[422,1355],[392,1324],[421,1273],[473,1212],[504,1162],[527,1090],[550,1045],[542,1000],[579,945],[605,910],[590,867],[549,830],[548,782],[581,730],[560,706],[521,704],[505,672],[526,622],[579,600],[629,596]]);
 
-const PAINTED_WALK_SPOTS=[{id:"main-street",label:"こみちの途中",...artPoint(352,545)},{id:"plaza",label:"川辺の広場",...artPoint(295,1200)},{id:"garden-wisteria",label:"藤棚の小径",...artPoint(451,704)},{id:"garden-cherry",label:"桜のそば",...artPoint(820,1210)},{id:"garden-riverside",label:"川沿い",...artPoint(481,802)},{id:"garden-plaza",label:"庭園の出口",...artPoint(785,988)},{id:"pier",label:"湖の橋",...artPoint(660,887)},{id:"north-neighborhood",label:"住宅街",...artPoint(675,225)}];
-const PAINTED_FLOWER_SPOTS=[{id:"flower-garden",label:"庭園の花壇",...artPoint(481,919)},{id:"flower-south",label:"広場の花壇",...artPoint(371,1160)},{id:"flower-cafe",label:"喫茶店の花壇",...artPoint(270,640)}];
+const PAINTED_WALK_SPOTS=[{id:"main-street",label:"こみちの途中",...artPoint(352,545)},{id:"plaza",label:"湖畔の広場",...artPoint(295,1200)},{id:"garden-wisteria",label:"藤棚の小径",...artPoint(451,704)},{id:"garden-cherry",label:"桜のそば",...artPoint(820,1210)},{id:"garden-riverside",label:"湖畔",...artPoint(481,802)},{id:"garden-plaza",label:"庭園の出口",...artPoint(785,988)},{id:"pier",label:"湖の橋",...artPoint(660,887)},{id:"north-neighborhood",label:"住宅街",...artPoint(675,225)}];
+const PAINTED_FLOWER_SPOTS=[{id:"flower-garden",label:"庭園の花壇",...artPoint(425,940)},{id:"flower-south",label:"広場の花壇",...artPoint(298,1162)},{id:"flower-cafe",label:"喫茶店の花壇",...artPoint(158,614)}];
 
 function nativeEllipse(cx,cy,rx,ry){return Array.from({length:24},(_,i)=>[cx+Math.cos(i*Math.PI/12)*rx,cy+Math.sin(i*Math.PI/12)*ry])}
 // These silhouettes are small transparent foreground tiles copied from the same
@@ -42,20 +42,20 @@ const PAINTED_OCCLUDERS=[{"id":"house-north-west","depth":187,"polygon":[[127,10
 const c=document.getElementById('world');let ctx=c.getContext('2d');let W=0,H=0,dpr=1,zoom=1,panX=0,panY=0,interiorHomeId='',interiorZoom=1,interiorPanX=0,interiorPanY=0,homeListOpen=false,paused=false,pageSuspended=false,residentDiagnosticTimer=null,residentDiagnosticsOpen=false,minute=25,hour=15,day=2,calendarDay=0,selected=0,tab='walk',last=0,elapsed=0,weatherType='sunny',weatherDay=0;const defaultResidents=[{id:'nagisumi',name:'凪澄',profile:{role:'住人',detail:'28歳・195cm／銀髪・青い瞳／落ち着いていて責任感が強い'},needs:{energy:86,hunger:72,mood:82},x:830,y:840,tx:1050,ty:1040,phase:0,activity:'夜玖を見守りながら散歩中',color:'#252a32',hair:'#c9cbd1',kind:'nagisumi',scale:1.13},{id:'yaku',name:'夜玖',profile:{role:'住人',detail:'19歳・162cm／黒髪・眼鏡・ヘッドホン／寡黙でゲーム好き'},needs:{energy:74,hunger:68,mood:88},x:1090,y:1500,tx:910,ty:1280,phase:2,activity:'のんびり散歩中',color:'#e6e3df',hair:'#24232a',kind:'yaku',scale:.94}];const chars=defaultResidents.map(p=>({...p,money:5000,workPayDay:-1,incomeMode:'fixed',fixedIncome:1500,randomIncomeMin:0,randomIncomeMax:0,moneyHistory:[],profile:{...p.profile},needs:{...p.needs}}));let bond={affection:68,trust:76,intimacy:61};let relationships={};let diary=[{time:'15:25',text:'凪澄と夜玖が街を散歩している。'}];let memories=[];let unlockedEvents={};let expandedRelationId='';let relationFolderId='';let editingResidentId='';let residentPageId='';let sharedGoal='';let goalTicks=0;let sharedGoalPairId='';let sharedGoalStartStamp=-1;let sharedGoalKind='date';let lastRoutine=0;let lastRecoveryStamp=-1;let lastBondStamp=-1;let lastSocialPairId='';let sameSocialPairCount=0;let sharedGoalTreatBy='';let sharedGoalTreatMode='';
 const places=[
  {id:'home',name:'西の住宅',icon:'🏡',...artPoint(475,204),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
- {id:'home2',name:'東の住宅',icon:'🏠',...artPoint(682,224),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
+ {id:'home2',name:'東の住宅',icon:'🏠',...artPoint(933,350),type:'home',description:'住人たちが暮らす家',actions:['帰宅','休憩']},
  {id:'cafe',name:'喫茶こもれび',icon:'☕',...artPoint(176,597),type:'cafe',description:'花に囲まれたテラスのある喫茶店',actions:['食事','休憩','デート']},
- {id:'shop',name:'こみち商店',icon:'🛒',...artPoint(152,826),type:'shop',description:'石段の上にある小さな商店',actions:['買い物','食材を買う']},
- {id:'plaza',name:'川辺の広場',icon:'🌳',...artPoint(295,1120),type:'outdoor',description:'大きな木を囲む円形広場',actions:['散歩','休憩']},
- {id:'bench-river',name:'川辺のベンチ',icon:'🪑',...artPoint(443,822),type:'bench',description:'水辺を眺めて休めるベンチ',actions:['休憩']},
+ {id:'shop',name:'こみち商店',icon:'🛒',...artPoint(122,772),type:'shop',description:'石段の上にある小さな商店',actions:['買い物','食材を買う']},
+ {id:'plaza',name:'湖畔の広場',icon:'🌳',...artPoint(295,1120),type:'outdoor',description:'大きな木を囲む円形広場',actions:['散歩','休憩']},
+ {id:'bench-river',name:'湖畔のベンチ',icon:'🪑',...artPoint(443,822),type:'bench',description:'水辺を眺めて休めるベンチ',actions:['休憩']},
  {id:'bench-path',name:'広場のベンチ',icon:'🪑',...artPoint(151,1090),type:'bench',description:'広場の木陰で休めるベンチ',actions:['休憩']},
  {id:'bridge',name:'湖の橋',icon:'🌉',...artPoint(660,887),type:'bridge',description:'両岸の街をつなぐ石橋',actions:['散歩','景色を見る']},
- {id:'flower-west',name:'喫茶店の花壇',icon:'🌼',...artPoint(270,640),type:'garden',description:'テラスを彩る花壇',actions:['花を見る']},
- {id:'flower-east',name:'庭園の花壇',icon:'🌷',...artPoint(481,919),type:'garden',description:'小径のそばの花壇',actions:['花を見る']},
- {id:'flower-south',name:'広場の花壇',icon:'🌻',...artPoint(371,1160),type:'garden',description:'広場を囲む花壇',actions:['花を見る']},
+ {id:'flower-west',name:'喫茶店の花壇',icon:'🌼',...artPoint(158,614),type:'garden',description:'テラスを彩る花壇',actions:['花を見る']},
+ {id:'flower-east',name:'庭園の花壇',icon:'🌷',...artPoint(425,940),type:'garden',description:'小径のそばの花壇',actions:['花を見る']},
+ {id:'flower-south',name:'広場の花壇',icon:'🌻',...artPoint(298,1162),type:'garden',description:'広場を囲む花壇',actions:['花を見る']},
  {id:'wisteria-walk',name:'藤棚の小径',icon:'🌿',...artPoint(451,704),type:'outdoor',description:'藤の花と桜を楽しめる川辺の庭園',actions:['散歩','花を見る']}
 ];
 function getPlace(id){return places.find(place=>place.id===id)||null}
-places.push({id:'bookshop',name:'こみち書店',icon:'📚',...artPoint(787,458),type:'outdoor',description:'本が並ぶ小さな書店',actions:['散歩','読書']});
+places.push({id:'bookshop',name:'こみち書店',icon:'📚',...artPoint(806,458),type:'outdoor',description:'本が並ぶ小さな書店',actions:['散歩','読書']});
 const SAVE_KEY='komichi-life-save-v1';
 const commonRoadClearance=new Map();
 const ROAD_CLEARANCE_PROBE={id:'road-clearance-probe',x:-10000,y:-10000,action:'idle',phaseState:'idle'};
@@ -361,8 +361,8 @@ function isBlockedByHome(x,y,p){
 // Shared placement and collision geometry for fixed public buildings.
 const WORLD_BUILDINGS={
  cafe:{id:'cafe',...artPoint(176,597),footprint:artPolygon([[78,535],[229,535],[229,577],[78,577]]),door:{x:artPoint(176,597).x,halfWidth:24,minY:artPoint(176,577).y,maxY:artPoint(176,601).y},targetAction:'cafe'},
- shop:{id:'shop',...artPoint(152,826),footprint:artPolygon([[57,753],[190,753],[190,809],[57,809]]),door:{x:artPoint(152,826).x,halfWidth:24,minY:artPoint(152,805).y,maxY:artPoint(152,829).y},targetAction:'shoppingTrip'},
- bookshop:{id:'bookshop',...artPoint(787,458),footprint:artPolygon([[689,393],[822,393],[822,445],[689,445]]),door:{x:artPoint(787,458).x,halfWidth:22,minY:artPoint(787,442).y,maxY:artPoint(787,460).y},targetAction:'walk'}
+ shop:{id:'shop',...artPoint(122,758),footprint:artPolygon([[32,695],[178,695],[178,782],[32,782]]),door:{x:artPoint(122,758).x,halfWidth:24,minY:artPoint(122,742).y,maxY:artPoint(122,760).y},targetAction:'shoppingTrip'},
+ bookshop:{id:'bookshop',...artPoint(806,458),footprint:artPolygon([[682,390],[838,390],[838,450],[682,450]]),door:{x:artPoint(806,458).x,halfWidth:22,minY:artPoint(806,442).y,maxY:artPoint(806,460).y},targetAction:'walk'}
 };
 function facilityBlocksMovement(x,y,p){
  // 建物の接地面・入口・行動目標は共通の建物データから判定する。
@@ -2023,7 +2023,7 @@ function writePersonalDiary(p){
    const talk=style.express>=65?'話が弾んだ':style.terse?'静かに過ごした':'近況を話した';
    stem=partner?partner.name+'と一緒に過ごして、'+talk:'誰かと一緒に過ごして、'+talk;
   }
-  else if(cat.key==='fishing')stem='川辺で釣りをした';
+  else if(cat.key==='fishing')stem='湖畔で釣りをした';
   else if(cat.key==='cooking')stem='家で料理をした';
   else if(cat.key==='photo')stem='街の景色を写真に収めた';
   else if(cat.key==='flowers')stem='花壇の花を眺めた';
@@ -2878,7 +2878,7 @@ function chooseRoutine(p,i){
     return
    }
    if(hobby.mode==='cafe'){const cafe=getPlace('cafe');setAction(p,i,'cafe',cafe.x+30,cafe.y+40,'喫茶店へ向かっている',hobby.label,'sit',16+Math.random()*20);return}
-   const q=hobby.mode==='flowers'?chooseFreshSpot(p,PAINTED_FLOWER_SPOTS):(hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:740,y:540,label:'川沿い'},{id:'hobby-path-'+hobby.priority,x:420,y:650,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:600,y:760,label:'川辺の広場'}]));
+   const q=hobby.mode==='flowers'?chooseFreshSpot(p,PAINTED_FLOWER_SPOTS):(hobby.spot||chooseFreshSpot(p,[{id:'hobby-riverside-'+hobby.priority,x:841,y:1579,label:'湖畔'},{id:'hobby-path-'+hobby.priority,x:577,y:1072,label:'こみちの途中'},{id:'hobby-plaza-'+hobby.priority,x:538,y:2150,label:'湖畔の広場'}]));
    if(hobby.mode==='flowers'){p.flowerScene={kind:'gardening',stay:hobby.label,diary:hobby.label+'を楽しんだ'};}
    const shoppingPlace=hobby.kind==='shopping'?getPlace('shop'):null;if(shoppingPlace)p.shoppingTrip=true;setAction(p,i,hobby.mode==='flowers'?'flowers':'walk',shoppingPlace?WORLD_BUILDINGS.shop.door.x:q.x,ySafe(shoppingPlace?WORLD_BUILDINGS.shop.door.maxY+22:q.y),shoppingPlace?shoppingPlace.name+'へ向かっている':q.label?(q.label+'へ向かっている'):'趣味の場所へ向かっている',hobby.label,hobby.pose,14+Math.random()*22);if(hobby.kind==='fishing')p.fishingTrip=true;if(hobby.kind==='photography')p.photoTrip=true;
   }})});
@@ -2942,7 +2942,7 @@ function arrive(p,i){
  renderResidentStatus();
  p.pose=p.action==='bench'||p.action==='cafe'||p.action==='date'||p.action==='sleep'||p.action==='home'?'sit':p.action==='flowers'?'look':'stand';
  if(p.action==='cafe'){const cost=450;p.money=Math.max(0,(Number(p.money)||0)-cost);recordMoney(p,'expense',cost,'喫茶こもれび');p.needs.hunger=Math.min(100,(p.needs?.hunger??80)+12);p.needs.mood=Math.min(100,(p.needs?.mood??80)+2);const cafeHobbies=hobbyChoicesFor(p);const cafeMenu=cafeHobbies.some(h=>h.kind==='reading')?['ホットコーヒーとスコーン','カフェオレとバタークッキー']:cafeHobbies.some(h=>h.kind==='cooking')?['季節の焼き菓子とコーヒー','厚焼きパンケーキとカフェオレ']:cafeHobbies.some(h=>h.kind==='music')?['カフェオレとバタークッキー','ホットコーヒーとスコーン']:['ホットコーヒーとスコーン','カフェオレとバタークッキー','季節の焼き菓子と紅茶'];if(weatherType==='rainy')cafeMenu.push('ホットチョコレートとシナモントースト');else if(weatherType==='sunny')cafeMenu.push('アイスコーヒーとレモンケーキ');else if(weatherType==='cloudy')cafeMenu.push('カフェオレと焼きたてマフィン');p.cafeOrder=cafeMenu[(Math.random()*cafeMenu.length)|0];p.activity=(p.cafeScene||'喫茶店でひと休みしている')+'。'+p.cafeOrder+'を楽しんでいる';}
- if(p.action==='walk'&&p.fishingTrip){const stock=householdFoodStore(p);stock.fishIngredients=Math.min(5,stock.fishIngredients+1);p.fishingTrip=false;addDiary(p.name+'が川辺で魚を釣り、自宅へ持ち帰った。');}
+ if(p.action==='walk'&&p.fishingTrip){const stock=householdFoodStore(p);stock.fishIngredients=Math.min(5,stock.fishIngredients+1);p.fishingTrip=false;addDiary(p.name+'が湖畔で魚を釣り、自宅へ持ち帰った。');}
  if(p.action==='walk'&&p.photoTrip){p.needs.mood=Math.min(100,p.needs.mood+3);p.photoTrip=false;addDiary(p.name+'が街の景色を写真に収め、気分転換をした。');}
  if(p.action==='walk'&&p.shoppingTrip){p.shoppingTrip=false;const cost=800+Math.floor(Math.random()*1701);if((Number(p.money)||0)-cost>=5000){p.money-=cost;recordMoney(p,'expense',cost,'買い物');p.needs.mood=Math.min(100,p.needs.mood+2);const cooks=hobbyChoicesFor(p).some(h=>h.kind==='cooking');const stock=householdFoodStore(p);const grocery=Math.random()<(cooks&&stock.foodIngredients<2?.8:.15);if(grocery)stock.foodIngredients=Math.min(5,stock.foodIngredients+1);addDiary(p.name+'が街のお店で'+cost.toLocaleString('ja-JP')+'円の買い物を楽しんだ。'+(grocery?'食材も買って帰った。':''));}else{addDiary(p.name+'は予算を考えて、お店を見て回るだけにした。')}}
  
