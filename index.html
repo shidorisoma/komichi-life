@@ -31,7 +31,7 @@ const PAINTED_LAND=artPolygon([[60,330],[100,100],[370,100],[380,90],[710,90],[7
 const PAINTED_SHORE=[[785,574],[754,670],[775,718],[760,796],[728,847],[771,950],[708,1060],[672,1150],[555,1280],[405,1355]].map(q=>artPoint(...q));
 const PAINTED_WATER=artPolygon([[686,571],[758,579],[779,602],[748,650],[731,675],[771,710],[761,769],[735,827],[704,848],[750,936],[766,972],[707,1063],[676,1133],[620,1212],[532,1310],[422,1355],[392,1324],[421,1273],[473,1212],[504,1162],[527,1090],[550,1045],[542,1000],[579,945],[605,910],[590,867],[549,830],[548,782],[581,730],[560,706],[521,704],[505,672],[526,622],[579,600],[629,596]]);
 
-const PAINTED_WALK_SPOTS=[{id:"main-street",label:"こみちの途中",...artPoint(352,545)},{id:"plaza",label:"湖畔の広場",...artPoint(295,1200)},{id:"garden-wisteria",label:"藤棚の小径",...artPoint(451,704)},{id:"garden-cherry",label:"桜のそば",...artPoint(820,1210)},{id:"garden-riverside",label:"湖畔",...artPoint(481,802)},{id:"garden-plaza",label:"庭園の出口",...artPoint(785,988)},{id:"pier",label:"湖の橋",...artPoint(660,887)},{id:"north-neighborhood",label:"住宅街",...artPoint(675,225)}];
+const PAINTED_WALK_SPOTS=[{id:"main-street",label:"こみちの途中",...artPoint(352,545)},{id:"plaza",label:"湖畔の広場",...artPoint(295,1200)},{id:"garden-wisteria",label:"藤棚の小径",...artPoint(451,704)},{id:"garden-cherry",label:"桜のそば",...artPoint(820,1210)},{id:"garden-riverside",label:"湖畔",...artPoint(481,802)},{id:"garden-plaza",label:"東の湖畔",...artPoint(785,988)},{id:"pier",label:"湖の橋",...artPoint(660,887)},{id:"north-neighborhood",label:"住宅街",...artPoint(675,225)}];
 const PAINTED_FLOWER_SPOTS=[{id:"flower-garden",label:"庭園の花壇",...artPoint(425,940)},{id:"flower-south",label:"広場の花壇",...artPoint(298,1162)},{id:"flower-cafe",label:"喫茶店の花壇",...artPoint(158,614)}];
 
 function nativeEllipse(cx,cy,rx,ry){return Array.from({length:24},(_,i)=>[cx+Math.cos(i*Math.PI/12)*rx,cy+Math.sin(i*Math.PI/12)*ry])}
@@ -405,7 +405,7 @@ function riverBlocksMovement(x,y){
 const CAFE_SEATS=[{...artPoint(70,626),face:'right'},{...artPoint(116,626),face:'left'},{...artPoint(188,640),face:'right'},{...artPoint(234,640),face:'left'}];
 const TOWN_EXIT_WAYPOINTS=[artPoint(305,1270),artPoint(310,1330),artPoint(326,1370),artPoint(337,1400)];
 const CAFE_GATEWAY=artPoint(280,615);
-const WORLD_STREET_FURNITURE={benches:[{id:'wisteria-bench',...artPoint(451,650)},{id:'garden-bench',...artPoint(610,365)},{id:'riverside-bench',...artPoint(443,822)},{id:'south-bench',...artPoint(151,1090)},{id:'south-bench-east',...artPoint(448,1090)}],lamps:[[297,575],[272,909],[385,859],[514,466],[818,194],[1049,541],[797,819],[177,1140],[420,1140]].map(([x,y],i)=>({id:'lamp-'+i,...artPoint(x,y)})),sign:{id:'town-sign',polygon:[]}};
+const WORLD_STREET_FURNITURE={benches:[{id:'wisteria-bench',...artPoint(451,650)},{id:'garden-bench',...artPoint(610,365)},{id:'riverside-bench',...artPoint(443,822)},{id:'south-bench',...artPoint(151,1090)},{id:'south-bench-east',...artPoint(448,1090)},{id:'lake-east-bench',...artPoint(890,1030)}],lamps:[[297,575],[272,909],[385,859],[514,466],[818,194],[1049,541],[797,819],[177,1140],[420,1140]].map(([x,y],i)=>({id:'lamp-'+i,...artPoint(x,y)})),sign:{id:'town-sign',polygon:[]}};
 // Transparent objects are sorted by their ground contact, not by a rectangle copied from the map.
 const TOWN_SCENERY=[
  {id:'plaza-tree',asset:'plaza-tree',x:295,y:1120,w:270,h:247,foot:.87},
@@ -2521,9 +2521,10 @@ function sleepWindowFor(p){const rhythm=p.lifeRhythm||'normal';if(rhythm==='morn
  }
  function workPlaceFor(p){
   const name=String(p.workplace||'');
-  const usablePlaces=places.filter(q=>q.type==='home'?!!homes[q.id]:['cafe','shop','plaza'].includes(q.id));
+  const usablePlaces=places.filter(q=>q.type==='home'?!!homes[q.id]:['cafe','shop','plaza','bookshop'].includes(q.id));
   const matched=usablePlaces.find(q=>name&&(name.includes(q.name)||q.name.includes(name)));
   if(matched)return matched;
+  if(/書店|本屋|ブック|books/i.test(name))return getPlace('bookshop');
   if(/喫茶|カフェ|飲食|店/.test(name))return getPlace('cafe');
   return getPlace('plaza');
  }
